@@ -344,7 +344,7 @@ void main() {
         );
 
         expect(
-          r.exception!.linkException!.originalException,
+          r.exception!.exception!.originalException,
           e,
         );
       });
@@ -365,7 +365,7 @@ void main() {
         );
 
         expect(
-          r.exception!.linkException!.originalException,
+          r.exception!.exception!.originalException,
           e,
         );
       });
@@ -743,7 +743,7 @@ void main() {
           emitsInOrder(
             [
               isA<QueryResult>().having(
-                (result) => result.exception!.linkException,
+                (result) => result.exception!.exception,
                 'wrapped exception',
                 ex,
               ),
@@ -778,7 +778,7 @@ void main() {
           emitsInOrder(
             [
               isA<QueryResult>().having(
-                (result) => result.exception!.linkException!.originalException,
+                (result) => result.exception!.exception!.originalException,
                 'wrapped exception',
                 err,
               ),

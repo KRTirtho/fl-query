@@ -9,6 +9,7 @@ class QueryKey {
   QueryKey.parse(String keyStr) : _key = keyStr.split(".");
 
   String get key => _key.map((k) => k.replaceAll(".", "")).join(".");
+  List<String> get keyAsList => _key;
 
   @override
   String toString() {
