@@ -73,9 +73,13 @@ class QueryCache extends Subscribable<QueryCacheListener> {
         cache: this,
         queryKey: queryKey,
         queryHash: queryHash,
-        options: client.defaultQueryOptions(options),
+        options: client.defaultQueryOptions(
+          QueryObserverOptions.fromJson(options.toJson()),
+        ),
         state: state,
-        defaultOptions: client.getQueryDefaults(queryKey),
+        defaultOptions: QueryOptions.fromJson(
+          client.getQueryDefaults(queryKey)?.toJson() ?? {},
+        ),
         meta: options.meta,
       );
       add(query);

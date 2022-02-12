@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:fl_query/src/core/query.dart';
 import 'package:fl_query/src/core/query_key.dart';
 import 'package:fl_query/src/core/retryer.dart';
 
 typedef QueryMeta<T> = Map<String, T>;
 typedef QueryKeyHashFunction = String Function(QueryKey queryKey);
-typedef QueryFunction<T, TPageParam> = Function(QueryFunctionContext context);
+typedef QueryFunction<T, TPageParam> = FutureOr<T> Function(
+  QueryFunctionContext<TPageParam> context,
+);
 typedef GetPreviousPageParamFunction<TQueryFnData> = Function(
   TQueryFnData firstPage,
   List<TQueryFnData> allPages,
@@ -64,6 +68,7 @@ class QueryOptions<TQueryFnData, TError, TData> {
     this.structuralSharing,
     this.getPreviousPageParam,
     this.getNextPageParam,
+    this.behavior,
   });
 
   QueryOptions.fromJson(Map<String, dynamic> json) {
@@ -144,36 +149,40 @@ class RefetchPageFilters<TPageData> {
       refetchPage;
 }
 
-class RefetchQueryFilters<TPageData>
-    implements QueryFilters, RefetchPageFilters<TPageData> {
-  @override
-  bool? active;
-  @override
-  bool? exact;
-  @override
-  bool? fetching;
-  @override
-  bool? inactive;
-  @override
-  bool Function(Query query)? predicate;
-  @override
-  bool? queryKey;
+class RefetchableQueryFilters<TPageData> extends QueryFilters
+    implements RefetchPageFilters<TPageData> {
   @override
   bool Function(TPageData lastPage, int index, List<TPageData> allPages)?
       refetchPage;
-  @override
-  bool? stale;
-
-  RefetchQueryFilters({
-    this.active,
-    this.exact,
-    this.inactive,
-    this.predicate,
-    this.queryKey,
-    this.stale,
-    this.fetching,
+  RefetchableQueryFilters({
+    bool? active,
+    bool? exact,
+    bool? inactive,
+    bool Function(Query query)? predicate,
+    bool? queryKey,
+    bool? stale,
+    bool? fetching,
     this.refetchPage,
-  });
+  }) : super(
+          active: active,
+          exact: exact,
+          fetching: fetching,
+          inactive: inactive,
+          predicate: predicate,
+          queryKey: queryKey,
+          stale: stale,
+        );
+
+  RefetchableQueryFilters.fromJson(Map<String, dynamic> json) {
+    active = json["active"];
+    exact = json["exact"];
+    inactive = json["inactive"];
+    queryKey = json["queryKey"];
+    stale = json["stale"];
+    fetching = json["fetching"];
+    predicate = json["predicate"];
+    refetchPage = json["refetchPage"];
+  }
 
   @override
   Map<String, dynamic> toJson() {
@@ -185,19 +194,62 @@ class RefetchQueryFilters<TPageData>
       "stale": stale,
       "fetching": fetching,
       "predicate": predicate,
+      "refetchPage": refetchPage,
     };
   }
 }
 
-class ResultOptions {
-  bool? throwOnError;
-}
+class InvalidateQueryFilters<TPageData>
+    extends RefetchableQueryFilters<TPageData> {
+  bool? refetchActive;
+  bool? refetchInactive;
 
-class RefetchOptions implements ResultOptions {
-  bool? cancelRefetch;
+  InvalidateQueryFilters({
+    bool? active,
+    bool? exact,
+    bool? inactive,
+    bool Function(Query query)? predicate,
+    bool? queryKey,
+    bool? stale,
+    bool? fetching,
+    bool Function(TPageData lastPage, int index, List<TPageData> allPages)?
+        refetchPage,
+    this.refetchActive,
+    this.refetchInactive,
+  }) : super(
+          active: active,
+          exact: exact,
+          fetching: fetching,
+          inactive: inactive,
+          predicate: predicate,
+          queryKey: queryKey,
+          stale: stale,
+          refetchPage: refetchPage,
+        );
+
+  InvalidateQueryFilters.fromJson(Map<String, dynamic> json)
+      : super.fromJson(json) {
+    refetchActive = json["refetchActive"];
+    refetchInactive = json["refetchInactive"];
+  }
 
   @override
+  Map<String, dynamic> toJson() {
+    return {
+      ...super.toJson(),
+      "refetchActive": refetchActive,
+      "refetchInactive": refetchInactive,
+    };
+  }
+}
+
+class RefetchOptions {
   bool? throwOnError;
+  bool? cancelRefetch;
+  RefetchOptions({
+    this.cancelRefetch,
+    this.throwOnError,
+  });
 }
 
 enum QueryStatus {
@@ -228,7 +280,7 @@ class QueryObserverResult<TData, TError> {
   bool isSuccess;
   Future<QueryObserverResult<TData, TError>> Function<TPageData>({
     RefetchOptions options,
-    RefetchQueryFilters<TPageData> filters,
+    RefetchableQueryFilters<TPageData> filters,
   }) refetch;
   void Function() remove;
   QueryStatus status;
@@ -402,6 +454,48 @@ class QueryObserverOptions<TQueryFnData, TError, TData, TQueryData>
           structuralSharing: structuralSharing,
           defaulted: defaulted,
         );
+
+  QueryObserverOptions.fromJson(Map<String, dynamic> json)
+      : enabled = json["enabled"],
+        staleTime = json["staleTime"],
+        refetchInterval = json["refetchInterval"],
+        refetchIntervalInBackground = json["refetchIntervalInBackground"],
+        refetchOnReconnect = json["refetchOnReconnect"],
+        refetchOnMount = json["refetchOnMount"],
+        retryOnMount = json["retryOnMount"],
+        onSuccess = json["onSuccess"],
+        onError = json["onError"],
+        onSettled = json["onSettled"],
+        useErrorBoundary = json["useErrorBoundary"],
+        select = json["select"],
+        suspense = json["suspense"],
+        keepPreviousData = json["keepPreviousData"],
+        placeholderData = json["placeholderData"],
+        optimisticResults = json["optimisticResults"],
+        super.fromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      ...super.toJson(),
+      "enabled": enabled,
+      "staleTime": staleTime,
+      "refetchInterval": refetchInterval,
+      "refetchIntervalInBackground": refetchIntervalInBackground,
+      "refetchOnReconnect": refetchOnReconnect,
+      "refetchOnMount": refetchOnMount,
+      "retryOnMount": retryOnMount,
+      "onSuccess": onSuccess,
+      "onError": onError,
+      "onSettled": onSettled,
+      "useErrorBoundary": useErrorBoundary,
+      "select": select,
+      "suspense": suspense,
+      "keepPreviousData": keepPreviousData,
+      "placeholderData": placeholderData,
+      "optimisticResults": optimisticResults,
+    };
+  }
 }
 
 class QueryFunctionContext<TPageParam> {
@@ -416,4 +510,67 @@ class QueryFunctionContext<TPageParam> {
     this.pageParam,
     this.meta,
   });
+}
+
+class DefaultOptions<TError> {
+  QueryObserverOptions<dynamic, TError, dynamic, dynamic>? queries;
+  // MutationObserverOptions<dynamic, TError, dynamic>? mutations;
+  DefaultOptions({
+    this.queries,
+  });
+}
+
+class FetchQueryOptions<TQueryFnData, TError, TData>
+    extends QueryOptions<TQueryFnData, TError, TData> {
+  /**
+   * The time in milliseconds after data is considered stale.
+   * If the data is fresh it will be returned from the cache.
+   */
+  Duration? staleTime;
+  FetchQueryOptions(
+    ShouldRetryFunction<TError>? retry,
+    RetryDelayFunction<TError>? retryDelay,
+    Duration? cacheTime,
+    bool Function(TData? oldData, TData newData)? isDataEqual,
+    QueryFunction? queryFn,
+    QueryKey? queryKey,
+    String? queryHash,
+    QueryKeyHashFunction? queryKeyHashFn,
+    TData? initialData,
+    DateTime? initialDataUpdatedAt,
+    QueryBehavior<TQueryFnData, TError, TData>? behavior,
+    bool? structuralSharing,
+    GetPreviousPageParamFunction<TQueryFnData>? getPreviousPageParam,
+    GetNextPageParamFunction<TQueryFnData>? getNextPageParam,
+    bool? defaulted,
+    this.staleTime,
+  ) : super(
+          retry: retry,
+          retryDelay: retryDelay,
+          cacheTime: cacheTime,
+          isDataEqual: isDataEqual,
+          queryFn: queryFn,
+          queryKey: queryKey,
+          queryHash: queryHash,
+          queryKeyHashFn: queryKeyHashFn,
+          initialData: initialData,
+          initialDataUpdatedAt: initialDataUpdatedAt,
+          behavior: behavior,
+          structuralSharing: structuralSharing,
+          getPreviousPageParam: getPreviousPageParam,
+          getNextPageParam: getNextPageParam,
+          defaulted: defaulted,
+        );
+
+  FetchQueryOptions.fromJson(Map<String, dynamic> json)
+      : staleTime = json["staleTime"],
+        super.fromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      ...super.toJson(),
+      "staleTime": staleTime,
+    };
+  }
 }

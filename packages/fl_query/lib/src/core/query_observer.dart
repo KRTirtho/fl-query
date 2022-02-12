@@ -188,13 +188,14 @@ class QueryObserver<TQueryFnData, TError, TData, TQueryData>
   }
 
   Future<QueryObserverResult<TData, TError>> getNextResult(
-      ResultOptions? options) {
+    bool? throwOnError,
+  ) {
     var completer = Completer<QueryObserverResult<TData, TError>>();
     var unsubscribe;
     unsubscribe = subscribe((result) {
       if (!result.isFetching) {
         unsubscribe?.call();
-        if (result.isError && options?.throwOnError == true) {
+        if (result.isError && throwOnError == true) {
           if (!completer.isCompleted)
             completer.completeError(result.error as Object);
         } else {
@@ -588,7 +589,7 @@ class QueryObserver<TQueryFnData, TError, TData, TQueryData>
   }
 
   Future<QueryObserverResult<TData, TError>> refetch<TPageData>({
-    RefetchQueryFilters<TPageData>? filters,
+    RefetchableQueryFilters<TPageData>? filters,
     RefetchOptions? options,
   }) {
     return fetch(
