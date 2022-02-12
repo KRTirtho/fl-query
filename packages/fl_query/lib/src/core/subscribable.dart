@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:meta/meta.dart';
 
 abstract class Subscribable<TListener extends Function> {
   @protected

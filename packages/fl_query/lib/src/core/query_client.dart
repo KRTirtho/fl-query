@@ -86,8 +86,7 @@ class QueryClient {
   // }
 
   TData? getQueryData<TData>(
-    QueryKey,
-    queryKey, [
+    QueryKey queryKey, [
     QueryFilters? filters,
   ]) {
     return _queryCache
@@ -357,13 +356,14 @@ class QueryClient {
     }
   }
 
-  getMutationDefaults() {}
-  setMutationDefaults() {}
+  // getMutationDefaults() {}
+  // setMutationDefaults() {}
+  // getMutationCache() {}
+
   QueryCache getQueryCache() {
     return _queryCache;
   }
 
-  getMutationCache() {}
   void clear() {
     _queryCache.clear();
     // _mutationCache.clear();

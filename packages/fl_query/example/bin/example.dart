@@ -127,20 +127,18 @@ var todos = [
   },
 ];
 
-void main(List<String> arguments) {
-  QueryCache cache = QueryCache();
-  for (var todo in todos.asMap().entries) {
-    cache.writeQuery(QueryKey.fromList(["KEY", todo.key.toString()]), data: {
-      "data": todo.value,
-      "meta": {
-        "created": DateTime.now(),
-        "expiration": DateTime.now().add(Duration(hours: 2))
-      }
-    });
-  }
-
-  for (var i = 0; i < todos.length; i++) {
-    var result = cache.readQuery(QueryKey.fromList(["KEY", i.toString()]));
-    print(result);
-  }
+void main(List<String> arguments) async {
+  var key = QueryKey("TEST");
+  QueryClient queryClient = QueryClient();
+  queryClient.mount();
+  var data = await queryClient.fetchQuery<Map, dynamic, Map>(
+    queryKey: key,
+    queryFn: (context) {
+      return Future.value(todos.first);
+    },
+  );
+  print("FETCHED DATA=====");
+  print(data);
+  print("======CACHED DATA");
+  print(queryClient.getQueryData(key));
 }

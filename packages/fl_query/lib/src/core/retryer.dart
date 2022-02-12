@@ -43,7 +43,8 @@ class Retryer<TData, TError> {
   late void Function() cancelRetry;
   late void Function() continueRetry;
   late void Function() continueFn;
-  late Future<TData> future;
+  // late Future<TData> future;
+  late Completer<TData> completer;
   int failureCount;
   bool isPaused;
   bool isResolved;
@@ -92,9 +93,9 @@ class Retryer<TData, TError> {
 
     this.continueFn = () => continueFn?.call();
 
-    Completer<TData> completer = Completer<TData>();
+    completer = Completer<TData>();
 
-    this.future = completer.future;
+    // this.future = completer.future;
 
     resolve(value) {
       if (!this.isResolved) {
@@ -115,11 +116,11 @@ class Retryer<TData, TError> {
     }
 
     pause() {
-      Completer completer = Completer();
-      if (!completer.isCompleted) continueFn = completer.complete;
+      Completer pauseCompleter = Completer();
+      if (!pauseCompleter.isCompleted) continueFn = pauseCompleter.complete;
       this.isPaused = true;
       onPause?.call();
-      return completer.future.then((val) {
+      return pauseCompleter.future.then((val) {
         continueFn = null;
         this.isPaused = false;
         onContinue?.call();

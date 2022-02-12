@@ -1,6 +1,6 @@
 // TYPES
 
-import 'package:fl_query/src/core/utils.dart';
+import 'dart:async';
 
 typedef NotifyCallback = void Function();
 
@@ -44,7 +44,7 @@ class _NotifyManager {
     if (_transactions > 0) {
       _queue.add(callback);
     } else {
-      scheduleMicrotask((val) {
+      scheduleMicrotask(() {
         _notifyFn(callback);
       });
     }
@@ -66,7 +66,7 @@ class _NotifyManager {
     var queue = _queue;
     _queue = [];
     if (queue.isNotEmpty) {
-      scheduleMicrotask((val) {
+      scheduleMicrotask(() {
         _batchNotifyFn(() {
           queue.forEach((fn) {
             _notifyFn(fn);

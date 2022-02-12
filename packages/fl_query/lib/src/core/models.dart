@@ -23,7 +23,7 @@ class QueryOptions<TQueryFnData, TError, TData> {
   RetryDelayFunction<TError>? retryDelay;
   Duration? cacheTime;
   bool Function(TData? oldData, TData newData)? isDataEqual;
-  QueryFunction? queryFn;
+  QueryFunction<TQueryFnData, dynamic>? queryFn;
   QueryKey? queryKey;
 
   /// Basically [QueryKey.key] in short form
@@ -434,7 +434,7 @@ class QueryObserverOptions<TQueryFnData, TError, TData, TQueryData>
     QueryKeyHashFunction? queryKeyHashFn,
     Duration? cacheTime,
     bool Function(TQueryData? oldData, TQueryData newData)? isDataEqual,
-    QueryFunction? queryFn,
+    QueryFunction<TQueryFnData, dynamic>? queryFn,
     String? queryHash,
     TQueryData? initialData,
     DateTime? initialDataUpdatedAt,
@@ -532,7 +532,7 @@ class FetchQueryOptions<TQueryFnData, TError, TData>
     RetryDelayFunction<TError>? retryDelay,
     Duration? cacheTime,
     bool Function(TData? oldData, TData newData)? isDataEqual,
-    QueryFunction? queryFn,
+    QueryFunction<TQueryFnData, dynamic>? queryFn,
     QueryKey? queryKey,
     String? queryHash,
     QueryKeyHashFunction? queryKeyHashFn,

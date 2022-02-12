@@ -2,16 +2,6 @@ import 'package:fl_query/src/core/models.dart';
 import 'package:fl_query/src/core/query.dart';
 import 'package:fl_query/src/core/query_key.dart';
 
-/**
- * Schedules a microtask.
- * This can be useful to schedule state updates after rendering.
- */
-void scheduleMicrotask(void Function(dynamic val) callback) {
-  Future.value()
-      .then(callback)
-      .catchError((error) => Future.delayed(Duration.zero, () => throw error));
-}
-
 /// Default query keys hash function.
 /// Dummy function just to fill the gaps for original react-query like
 /// function body signatures
@@ -113,15 +103,15 @@ T replaceEqualDeep<T>(T a, T b) {
 
   bool isList = (a is Iterable && b is Iterable);
   if (isList || (a is Map && b is Map)) {
-    var aSize = isList ? a.length : (a as Map).keys.length;
-    var bItems = isList ? b : (b as Map).keys;
-    var bSize = bItems.length;
+    int aSize = isList ? a.length : (a as Map).keys.length;
+    List bItems = (isList ? b : (b as Map).keys).toList();
+    int bSize = bItems.length;
     var copy;
 
     int equalItems = 0;
 
     for (int i = 0; i < bSize; i++) {
-      var key = isList ? i : (bItems as Map)[i];
+      var key = isList ? i : bItems[i];
       if (isList) {
         copy ??= [];
         copy[key] = replaceEqualDeep((a as List)[key], (b as List)[key]);

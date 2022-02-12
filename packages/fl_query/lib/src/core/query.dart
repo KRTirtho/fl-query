@@ -18,7 +18,7 @@ class FetchOptions {
 }
 
 class FetchContext<TQueryFnData, TError, TData> {
-  FutureOr Function() fetchFn;
+  FutureOr<TQueryFnData> Function() fetchFn;
   FetchOptions? fetchOptions;
   QueryOptions<TQueryFnData, TError, TData> options;
   QueryKey queryKey;
@@ -171,7 +171,8 @@ class Query<TQueryFnData, TError, TData> {
   QueryMeta? meta;
 
   QueryCache _cache;
-  Future<TData>? _future;
+  // Future<TData>? _future;
+  Completer<TData>? _completer;
   Timer? _gcTimeout;
   Retryer<TData, TError>? _retryer;
   List<QueryObserver> _observers;
@@ -268,22 +269,28 @@ class Query<TQueryFnData, TError, TData> {
     DataUpdateFunction<TData?, TData> updater, {
     DateTime? updatedAt,
   }) {
-    var prevData = this.state.data;
-    var data = updater(prevData);
-    // Use prev data if an isDataEqual function is defined and returns `true`
-    if (this.options.isDataEqual?.call(prevData, data) == true) {
-      data = prevData as TData;
-    } else if (this.options.structuralSharing != false) {
-      // Structurally share data between prev and new data if needed
-      data = replaceEqualDeep<TData>(prevData ?? {} as TData, data);
+    try {
+      var prevData = this.state.data;
+      var data = updater(prevData);
+      // Use prev data if an isDataEqual function is defined and returns `true`
+      if (this.options.isDataEqual?.call(prevData, data) == true) {
+        data = prevData as TData;
+      } else if (this.options.structuralSharing != false) {
+        // Structurally share data between prev and new data if needed
+        data = replaceEqualDeep<TData>(prevData ?? {} as TData, data);
+      }
+      // Set data and mark it as cached
+      _dispatch(Action(
+        ActionType.success,
+        data: data,
+        dataUpdatedAt: updatedAt,
+      ));
+      return data;
+    } catch (e, stack) {
+      print("[Query.setData] $e");
+      print(stack);
+      rethrow;
     }
-    // Set data and mark it as cached
-    _dispatch(Action(
-      ActionType.success,
-      data: data,
-      dataUpdatedAt: updatedAt,
-    ));
-    return data;
   }
 
   void setState(
@@ -298,9 +305,13 @@ class Query<TQueryFnData, TError, TData> {
   }
 
   Future<void> cancel({bool? revert, bool? silent}) {
-    var future = _future;
+    // var future = _future;
     _retryer?.cancel(revert: revert, silent: silent);
-    return future != null ? future.then(noop).catchError(noop) : Future.value();
+    if (_completer != null && !_completer!.isCompleted) {
+      _completer!.completeError("Cancelled Job", StackTrace.current);
+      return _completer!.future.then(noop).catchError(noop);
+    }
+    return Future.value();
   }
 
   void reset() {
@@ -330,11 +341,11 @@ class Query<TQueryFnData, TError, TData> {
           fetchOptions?.cancelRefetch == true) {
         // Silently cancel current fetch if the user wants to cancel re-fetches
         this.cancel(silent: true);
-      } else if (_future != null) {
+      } else if (_completer != null) {
         // make sure that retries that were potentially cancelled due to unmounts can continue
         _retryer?.continueRetry();
         // Return current promise if we are already fetching
-        return _future!;
+        return _completer!.future;
       }
     }
 
@@ -354,7 +365,8 @@ class Query<TQueryFnData, TError, TData> {
           queryKeyHashFn: observer.options.queryKeyHashFn,
           cacheTime: observer.options.cacheTime,
           isDataEqual: observer.options.isDataEqual,
-          queryFn: observer.options.queryFn,
+          queryFn:
+              observer.options.queryFn as QueryFunction<TQueryFnData, dynamic>,
           queryHash: observer.options.queryHash,
           initialData: observer.options.initialData,
           initialDataUpdatedAt: observer.options.initialDataUpdatedAt,
@@ -387,16 +399,17 @@ class Query<TQueryFnData, TError, TData> {
     // })
 
     // Create fetch function
-    fetchFn() {
+    FutureOr<TQueryFnData> fetchFn() {
       if (this.options.queryFn == null) {
         return Future.error('Missing queryFn');
       }
       _abortSignalConsumed = false;
-      return options?.queryFn?.call(queryFnContext);
+      return options!.queryFn!.call(queryFnContext);
     }
 
     // Trigger behavior hook
-    FetchContext<TQueryFnData, TError, TData> context = FetchContext(
+    FetchContext<TQueryFnData, TError, TData> context =
+        FetchContext<TQueryFnData, TError, TData>(
       fetchOptions: fetchOptions,
       options: this.options,
       queryKey: queryKey,
@@ -423,7 +436,7 @@ class Query<TQueryFnData, TError, TData> {
 
         // Notify cache callback
         _cache.onData?.call(data, this);
-
+        if (_completer?.isCompleted == false) _completer?.complete(data);
         // Remove query after fetching if cache time is 0
         if (this.cacheTime == null || this.cacheTime == Duration.zero) {
           _optionalRemove();
@@ -447,6 +460,9 @@ class Query<TQueryFnData, TError, TData> {
         if (this.cacheTime == null || this.cacheTime == Duration.zero) {
           _optionalRemove();
         }
+        if (_completer?.isCompleted == false)
+          _completer?.completeError(
+              error ?? "Retry Failed", StackTrace.current);
       },
       onFail: (failureCount, error) {
         _dispatch(Action(ActionType.failed));
@@ -461,8 +477,8 @@ class Query<TQueryFnData, TError, TData> {
       retryDelay: context.options.retryDelay,
     );
 
-    this._future = _retryer!.future;
-    return this._future!;
+    this._completer = _retryer!.completer;
+    return this._completer!.future;
   }
 
   void _dispatch(Action<TData, TError> action) {
