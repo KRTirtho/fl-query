@@ -60,8 +60,10 @@ class QueryCache extends Subscribable<QueryCacheListener> {
         super();
 
   Query<TQueryFnData, TError, TData> build<TQueryFnData, TError, TData>(
-      QueryClient client, QueryOptions<TQueryFnData, TError, TData> options,
-      [QueryState<TData, TError>? state]) {
+    QueryClient client,
+    QueryOptions<TQueryFnData, TError, TData> options, [
+    QueryState<TData, TError>? state,
+  ]) {
     QueryKey queryKey = options.queryKey!;
     String queryHash =
         options.queryHash ?? hashQueryKeyByOptions(queryKey, options);

@@ -8,13 +8,13 @@ typedef NotifyFunction = void Function(void Function() callback);
 
 typedef BatchNotifyFunction = void Function(void Function() callback);
 
-class _NotifyManager {
+class NotifyManager {
   List<NotifyCallback> _queue;
   int _transactions;
   late NotifyFunction _notifyFn;
   late BatchNotifyFunction _batchNotifyFn;
 
-  _NotifyManager()
+  NotifyManager()
       : _queue = [],
         _transactions = 0 {
     _notifyFn = (void Function() callback) {
@@ -27,7 +27,7 @@ class _NotifyManager {
   }
 
   T batch<T>(T Function() callback) {
-    T result;
+    final T result;
     _transactions++;
     try {
       result = callback();
@@ -40,7 +40,7 @@ class _NotifyManager {
     return result;
   }
 
-  schedule(NotifyCallback callback) {
+  void schedule(NotifyCallback callback) {
     if (_transactions > 0) {
       _queue.add(callback);
     } else {
@@ -92,4 +92,4 @@ class _NotifyManager {
 
 // SINGLETON
 
-_NotifyManager notifyManager = new _NotifyManager();
+NotifyManager notifyManager = new NotifyManager();

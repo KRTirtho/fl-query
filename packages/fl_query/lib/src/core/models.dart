@@ -522,10 +522,8 @@ class DefaultOptions<TError> {
 
 class FetchQueryOptions<TQueryFnData, TError, TData>
     extends QueryOptions<TQueryFnData, TError, TData> {
-  /**
-   * The time in milliseconds after data is considered stale.
-   * If the data is fresh it will be returned from the cache.
-   */
+  /// The time after data is considered stale.
+  /// If the data is fresh it will be returned from the cache.
   Duration? staleTime;
   FetchQueryOptions(
     ShouldRetryFunction<TError>? retry,

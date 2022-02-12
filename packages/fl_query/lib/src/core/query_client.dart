@@ -112,10 +112,16 @@ class QueryClient {
     DataUpdateFunction<TData?, TData> updater, [
     DateTime? updatedAt,
   ]) {
-    var defaultedOptions =
-        defaultQueryOptions(QueryObserverOptions(queryKey: queryKey));
-    return _queryCache.build(this, defaultedOptions).setData(
-          updater as Function(dynamic),
+    final QueryOptions<dynamic, dynamic, TData> defaultedOptions =
+        QueryOptions<dynamic, dynamic, TData>.fromJson(
+            defaultQueryOptions<dynamic, dynamic, TData, dynamic>(
+                    QueryObserverOptions<dynamic, dynamic, TData, dynamic>(
+                        queryKey: queryKey))
+                .toJson());
+    return _queryCache
+        .build<dynamic, dynamic, TData>(this, defaultedOptions)
+        .setData(
+          updater,
           updatedAt: updatedAt,
         );
   }
@@ -144,8 +150,7 @@ class QueryClient {
   }
 
   QueryState<TData, TError>? getQueryState<TData, TError>(
-    QueryKey,
-    queryKey, [
+    QueryKey queryKey, [
     QueryFilters? filters,
   ]) {
     return _queryCache

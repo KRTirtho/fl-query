@@ -22,123 +22,35 @@ var todos = [
     "title": "qui ullam ratione quibusdam voluptatem quia omnis",
     "completed": false
   },
-  {
-    "userId": 1,
-    "id": 7,
-    "title": "illo expedita consequatur quia in",
-    "completed": false
-  },
-  {
-    "userId": 1,
-    "id": 8,
-    "title": "quo adipisci enim quam ut ab",
-    "completed": true
-  },
-  {
-    "userId": 1,
-    "id": 9,
-    "title": "molestiae perspiciatis ipsa",
-    "completed": false
-  },
-  {
-    "userId": 1,
-    "id": 10,
-    "title": "illo est ratione doloremque quia maiores aut",
-    "completed": true
-  },
-  {
-    "userId": 1,
-    "id": 11,
-    "title": "vero rerum temporibus dolor",
-    "completed": true
-  },
-  {
-    "userId": 1,
-    "id": 12,
-    "title": "ipsa repellendus fugit nisi",
-    "completed": true
-  },
-  {"userId": 1, "id": 13, "title": "et doloremque nulla", "completed": false},
-  {
-    "userId": 1,
-    "id": 14,
-    "title": "repellendus sunt dolores architecto voluptatum",
-    "completed": true
-  },
-  {
-    "userId": 1,
-    "id": 15,
-    "title": "ab voluptatum amet voluptas",
-    "completed": true
-  },
-  {
-    "userId": 1,
-    "id": 16,
-    "title": "accusamus eos facilis sint et aut voluptatem",
-    "completed": true
-  },
-  {
-    "userId": 1,
-    "id": 17,
-    "title": "quo laboriosam deleniti aut qui",
-    "completed": true
-  },
-  {
-    "userId": 1,
-    "id": 18,
-    "title": "dolorum est consequatur ea mollitia in culpa",
-    "completed": false
-  },
-  {
-    "userId": 1,
-    "id": 19,
-    "title": "molestiae ipsa aut voluptatibus pariatur dolor nihil",
-    "completed": true
-  },
-  {
-    "userId": 1,
-    "id": 20,
-    "title": "ullam nobis libero sapiente ad optio sint",
-    "completed": true
-  },
-  {
-    "userId": 2,
-    "id": 21,
-    "title": "suscipit repellat esse quibusdam voluptatem incidunt",
-    "completed": false
-  },
-  {
-    "userId": 2,
-    "id": 22,
-    "title": "distinctio vitae autem nihil ut molestias quo",
-    "completed": true
-  },
-  {
-    "userId": 2,
-    "id": 23,
-    "title": "et itaque necessitatibus maxime molestiae qui quas velit",
-    "completed": false
-  },
-  {
-    "userId": 2,
-    "id": 24,
-    "title": "adipisci non ad dicta qui amet quaerat doloribus ea",
-    "completed": false
-  },
 ];
 
-void main(List<String> arguments) async {
-  var key = QueryKey("TEST");
-  QueryClient queryClient = QueryClient();
-  queryClient.mount();
-  var data = await queryClient.fetchQuery<Map, dynamic, Map>(
-    queryKey: key,
-    queryFn: (context) {
-      return Future.value(todos.first);
-    },
-  );
-  print("FETCHED DATA=====");
-  print(data);
-  print("======CACHED DATA");
-  print(queryClient.getQueryData(key));
+void main() async {
+  try {
+    var key = QueryKey("TEST");
+    QueryClient queryClient = QueryClient();
+    queryClient.mount();
+    var data = await queryClient.fetchQuery<Map, dynamic, Map>(
+      queryKey: key,
+      queryFn: (context) {
+        return Future.value(todos.first);
+      },
+    );
+    print("======FETCHED DATA======");
+    print(data);
+    print("======CACHED DATA======");
+    print(queryClient.getQueryData(key));
+    queryClient.setQueryData<Map>(key, (prevData) {
+      return {
+        ...(prevData) ?? {},
+        "title": "Yehi aloh heh",
+        "completed": true,
+      };
+    });
+    print("======CACHED DATA======");
+    print(queryClient.getQueryData(key));
+    print("======STATE======");
+    print(queryClient.getQueryState(key)?.toJson());
+  } catch (e) {
+    print(e);
+  }
 }
