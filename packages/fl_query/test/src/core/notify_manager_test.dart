@@ -22,7 +22,7 @@ void main() {
         final NotifyManager notifyManager = NotifyManager();
         int called = 0;
         notifyManager.schedule(() => called++);
-        await Future.delayed(Duration(seconds: 1));
+        await Future.delayed(Duration(milliseconds: 1));
         expect(called, equals(1));
       },
     );
@@ -35,7 +35,7 @@ void main() {
         int level2 = 0;
         int level3 = 0;
         callback() async {
-          await Future.delayed(Duration(seconds: 20));
+          await Future.delayed(Duration(milliseconds: 20));
           level3++;
         }
 
@@ -46,7 +46,7 @@ void main() {
           });
           level1++;
         });
-        await Future.delayed(Duration(seconds: 30));
+        await Future.delayed(Duration(milliseconds: 30));
         expect(level1, equals(1));
         expect(level2, equals(1));
         expect(level3, equals(1));

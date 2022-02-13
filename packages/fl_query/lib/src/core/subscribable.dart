@@ -5,7 +5,7 @@ abstract class Subscribable<TListener extends Function> {
   List<TListener> listeners;
   Subscribable() : listeners = [];
 
-  void Function() subscribe(TListener? listener) {
+  void Function() subscribe([TListener? listener]) {
     var callback = listener ?? (() => null);
 
     listeners.add(callback as TListener);

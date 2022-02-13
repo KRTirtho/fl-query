@@ -25,6 +25,7 @@ dev_dependencies:
   coverage: ^1.0.3
   http_parser: ^4.0.0
   lints: ^1.0.1
+  build_runner: ^2.1.7
 
 # The following section is specific to Flutter.
 # flutter:

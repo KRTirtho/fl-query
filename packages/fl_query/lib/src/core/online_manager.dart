@@ -4,16 +4,16 @@ import 'package:internet_connection_checker/internet_connection_checker.dart';
 typedef SetupFn = void Function()? Function(
     void Function([bool? online]) setOnline);
 
-class _OnlineManager extends Subscribable {
+class OnlineManager extends Subscribable {
   bool? _online;
   void Function()? _cleanup;
   SetupFn? _setup;
 
-  _OnlineManager() {
+  OnlineManager([InternetConnectionChecker? connectionChecker]) {
+    connectionChecker ??= InternetConnectionChecker();
     _setup = (listener) {
-      var subscription = InternetConnectionChecker()
-          .onStatusChange
-          .listen((status) => listener());
+      var subscription =
+          connectionChecker!.onStatusChange.listen((status) => listener());
       return () {
         subscription.cancel();
       };
@@ -35,7 +35,7 @@ class _OnlineManager extends Subscribable {
     }
   }
 
-  setEventListener(SetupFn setup) {
+  void setEventListener(SetupFn setup) {
     _setup = setup;
     _cleanup?.call();
     _cleanup = setup(([bool? online]) {
@@ -69,4 +69,4 @@ class _OnlineManager extends Subscribable {
   }
 }
 
-_OnlineManager onlineManager = _OnlineManager();
+OnlineManager onlineManager = OnlineManager();
