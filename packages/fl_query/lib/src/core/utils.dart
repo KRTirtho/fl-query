@@ -1,6 +1,7 @@
 import 'package:fl_query/src/core/models.dart';
 import 'package:fl_query/src/core/query.dart';
 import 'package:fl_query/src/core/query_key.dart';
+import 'package:collection/collection.dart';
 
 /// Default query keys hash function.
 /// Dummy function just to fill the gaps for original react-query like
@@ -95,41 +96,61 @@ bool shallowEqualMap(Map? a, Map? b) {
 /// If not, it will replace any deeply equal children of `b` with those
 /// of `a`\
 /// This can be used for structural sharing between JSON values for example.
-/// `a` & `b` can only be Type of [Iterable] or [Map]
-T replaceEqualDeep<T>(T a, T b) {
+/// `a` & `b` can only be Type of [List] or [Map]
+replaceEqualDeep(a, b) {
   if (a == b) {
     return a;
   }
 
-  bool isList = (a is Iterable && b is Iterable);
-  if (isList || (a is Map && b is Map)) {
-    int aSize = isList ? a.length : (a as Map).keys.length;
-    List bItems = (isList ? b : (b as Map).keys).toList();
-    int bSize = bItems.length;
-    var copy;
-
-    int equalItems = 0;
-
-    for (int i = 0; i < bSize; i++) {
-      var key = isList ? i : bItems[i];
-      if (isList) {
-        copy ??= [];
-        copy[key] = replaceEqualDeep((a as List)[key], (b as List)[key]);
-        if (copy[key] == a[key]) {
-          equalItems++;
-        }
-      } else {
-        copy ??= {};
-        copy[key] = replaceEqualDeep((a as Map)[key], (b as Map)[key]);
-        if (copy[key] == a[key]) {
-          equalItems++;
-        }
-      }
-    }
-
-    return aSize == bSize && equalItems == aSize ? a : copy as T;
+  int aSize;
+  List bItems;
+  int bSize;
+  int equalItems = 0;
+  onEqual() => equalItems++;
+  var copy;
+  if (a is List && b is List) {
+    aSize = a.length;
+    bItems = b;
+    bSize = bItems.length;
+    copy = replaceEqualDeepList(a, b, onEqual);
+  } else if (a is Map && b is Map) {
+    aSize = a.keys.length;
+    bItems = b.keys.toList();
+    bSize = bItems.length;
+    copy = replaceEqualDeepMap(a, b, onEqual);
+  } else {
+    return b;
   }
-  return b;
+  return aSize == bSize && equalItems == aSize ? a : copy;
+}
+
+Map replaceEqualDeepMap(Map a, Map b, void Function() onEqual) {
+  final copy = Map.from(a);
+  copy.clear();
+  for (final bEntry in b.entries) {
+    final aItem = a[bEntry.key];
+    copy[bEntry.key] =
+        aItem != null ? replaceEqualDeep(aItem, bEntry.value) : bEntry.value;
+    if (copy[bEntry.key] == aItem) {
+      onEqual();
+    }
+  }
+  return copy;
+}
+
+List replaceEqualDeepList(List a, List b, void Function() onEqual) {
+  final copy = List.of(a, growable: true);
+  copy.clear();
+  for (final bEntry in b.asMap().entries) {
+    final aItem = a.firstWhereIndexedOrNull((i, _) => i == bEntry.key);
+    final result =
+        aItem != null ? replaceEqualDeep(aItem, bEntry.value) : bEntry.value;
+    copy.add(result);
+    if (copy.last == aItem) {
+      onEqual();
+    }
+  }
+  return copy;
 }
 
 Duration timeUntilStale(DateTime updatedAt, [Duration? staleTime]) =>

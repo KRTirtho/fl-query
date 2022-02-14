@@ -9,16 +9,19 @@ typedef QueryKeyHashFunction = String Function(QueryKey queryKey);
 typedef QueryFunction<T, TPageParam> = FutureOr<T> Function(
   QueryFunctionContext<TPageParam> context,
 );
-typedef GetPreviousPageParamFunction<TQueryFnData> = Function(
+typedef GetPreviousPageParamFunction<TQueryFnData extends Map<String, dynamic>>
+    = Function(
   TQueryFnData firstPage,
   List<TQueryFnData> allPages,
 );
-typedef GetNextPageParamFunction<TQueryFnData> = Function(
+typedef GetNextPageParamFunction<TQueryFnData extends Map<String, dynamic>>
+    = Function(
   TQueryFnData firstPage,
   List<TQueryFnData> allPages,
 );
 
-class QueryOptions<TQueryFnData, TError, TData> {
+class QueryOptions<TQueryFnData extends Map<String, dynamic>, TError,
+    TData extends Map<String, dynamic>> {
   ShouldRetryFunction<TError>? retry;
   RetryDelayFunction<TError>? retryDelay;
   Duration? cacheTime;
@@ -259,7 +262,7 @@ enum QueryStatus {
   success,
 }
 
-class QueryObserverResult<TData, TError> {
+class QueryObserverResult<TData extends Map<String, dynamic>, TError> {
   TData? data;
   DateTime? dataUpdatedAt;
   TError? error;
@@ -373,7 +376,11 @@ class QueryObserverResult<TData, TError> {
   }
 }
 
-typedef RefetchIntervalFunction<TQueryFnData, TError, TQueryData, TData>
+typedef RefetchIntervalFunction<
+        TQueryFnData extends Map<String, dynamic>,
+        TError,
+        TQueryData extends Map<String, dynamic>,
+        TData extends Map<String, dynamic>>
     = Duration? Function(
   TData? data,
   Query<TQueryFnData, TError, TQueryData> query,
@@ -391,7 +398,11 @@ enum RefetchOnMount {
   always,
 }
 
-class QueryObserverOptions<TQueryFnData, TError, TData, TQueryData>
+class QueryObserverOptions<
+        TQueryFnData extends Map<String, dynamic>,
+        TError,
+        TData extends Map<String, dynamic>,
+        TQueryData extends Map<String, dynamic>>
     extends QueryOptions<TQueryFnData, TError, TQueryData> {
   bool? enabled;
   Duration? staleTime;
@@ -520,7 +531,8 @@ class DefaultOptions<TError> {
   });
 }
 
-class FetchQueryOptions<TQueryFnData, TError, TData>
+class FetchQueryOptions<TQueryFnData extends Map<String, dynamic>, TError,
+        TData extends Map<String, dynamic>>
     extends QueryOptions<TQueryFnData, TError, TData> {
   /// The time after data is considered stale.
   /// If the data is fresh it will be returned from the cache.

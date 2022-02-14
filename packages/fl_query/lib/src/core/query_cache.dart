@@ -59,7 +59,10 @@ class QueryCache extends Subscribable<QueryCacheListener> {
         _queriesMap = {},
         super();
 
-  Query<TQueryFnData, TError, TData> build<TQueryFnData, TError, TData>(
+  Query<TQueryFnData, TError, TData> build<
+      TQueryFnData extends Map<String, dynamic>,
+      TError,
+      TData extends Map<String, dynamic>>(
     QueryClient client,
     QueryOptions<TQueryFnData, TError, TData> options, [
     QueryState<TData, TError>? state,
@@ -124,8 +127,10 @@ class QueryCache extends Subscribable<QueryCacheListener> {
     });
   }
 
-  Query<TQueryFnData, TError, TData>? get<TQueryFnData, TError, TData>(
-      String queryHash) {
+  Query<TQueryFnData, TError, TData>? get<
+      TQueryFnData extends Map<String, dynamic>,
+      TError,
+      TData extends Map<String, dynamic>>(String queryHash) {
     return _queriesMap[queryHash] as Query<TQueryFnData, TError, TData>?;
   }
 
@@ -133,13 +138,16 @@ class QueryCache extends Subscribable<QueryCacheListener> {
     return _queries;
   }
 
-  Query? find<TQueryFnData, TError, TData>(
+  Query<TQueryFnData, TError, TData>? find<
+      TQueryFnData extends Map<String, dynamic>,
+      TError,
+      TData extends Map<String, dynamic>>(
     QueryKey queryKey,
     QueryFilters queryFilters,
   ) {
     queryFilters.exact ??= true;
-    return _queries
-        .firstWhereOrNull((query) => matchQuery(queryFilters, query));
+    return _queries.firstWhereOrNull((query) => matchQuery(queryFilters, query))
+        as Query<TQueryFnData, TError, TData>?;
   }
 
   List<Query> findAll(QueryKey? queryKey, [QueryFilters? filters]) {

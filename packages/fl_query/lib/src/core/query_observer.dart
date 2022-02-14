@@ -15,8 +15,8 @@ import 'package:fl_query/src/core/subscribable.dart';
 import 'package:fl_query/src/core/utils.dart';
 import 'package:meta/meta.dart';
 
-typedef QueryObserverListener<TData, TError> = void Function(
-    QueryObserverResult<TData, TError> result);
+typedef QueryObserverListener<TData extends Map<String, dynamic>, TError> = void
+    Function(QueryObserverResult<TData, TError> result);
 
 class NotifyOptions {
   bool? cache;
@@ -52,13 +52,18 @@ class ObserverFetchOptions extends FetchOptions {
   }) : super(cancelRefetch: cancelRefetch, meta: meta);
 }
 
-class SelectQuery<TQueryData, TData> {
+class SelectQuery<TQueryData extends Map<String, dynamic>,
+    TData extends Map<String, dynamic>> {
   TData Function(TQueryData data) fn;
   TData result;
   SelectQuery(this.fn, this.result);
 }
 
-class QueryObserver<TQueryFnData, TError, TData, TQueryData>
+class QueryObserver<
+        TQueryFnData extends Map<String, dynamic>,
+        TError,
+        TData extends Map<String, dynamic>,
+        TQueryData extends Map<String, dynamic>>
     extends Subscribable<QueryObserverListener> {
   late QueryObserverOptions<TQueryFnData, TError, TData, TQueryData> options;
   QueryClient _client;
@@ -70,7 +75,7 @@ class QueryObserver<TQueryFnData, TError, TData, TQueryData>
       _currentResultOptions;
   QueryObserverResult<TData, TError>? _previousQueryResult;
   Exception? _previousSelectError;
-  SelectQuery? _previousSelect;
+  SelectQuery<TQueryData, TData>? _previousSelect;
   Timer? _staleTimeout;
   Timer? _refetchInterval;
   Duration? _currentRefetchInterval;
@@ -119,8 +124,8 @@ class QueryObserver<TQueryFnData, TError, TData, TQueryData>
     QueryObserverOptions<TQueryFnData, TError, TData, TQueryData>? options, [
     NotifyOptions? notifyOptions,
   ]) {
-    var prevOptions = this.options;
-    var prevQuery = _currentQuery;
+    final prevOptions = this.options;
+    final prevQuery = _currentQuery;
 
     this.options = this._client.defaultQueryObserverOptions(options);
 
@@ -190,7 +195,7 @@ class QueryObserver<TQueryFnData, TError, TData, TQueryData>
   Future<QueryObserverResult<TData, TError>> getNextResult(
     bool? throwOnError,
   ) {
-    var completer = Completer<QueryObserverResult<TData, TError>>();
+    final completer = Completer<QueryObserverResult<TData, TError>>();
     var unsubscribe;
     unsubscribe = subscribe((result) {
       if (!result.isFetching) {
@@ -215,8 +220,8 @@ class QueryObserver<TQueryFnData, TError, TData, TQueryData>
 
   Future<QueryObserverResult<TData, TError>> fetchOptimistic(
       QueryObserverOptions<TQueryFnData, TError, TData, TQueryData> options) {
-    var defaultedOptions = _client.defaultQueryObserverOptions(options);
-    var query = _client.getQueryCache().build(_client, defaultedOptions);
+    final defaultedOptions = _client.defaultQueryObserverOptions(options);
+    final query = _client.getQueryCache().build(_client, defaultedOptions);
 
     return query.fetch().then((val) {
       return createResult(query, defaultedOptions);
@@ -269,7 +274,7 @@ class QueryObserver<TQueryFnData, TError, TData, TQueryData>
     Map<String, dynamic> prevResultMap = prevResult.toJson();
 
     return resultMap.keys.any((key) {
-      var changed = resultMap[key] != prevResultMap[key];
+      final changed = resultMap[key] != prevResultMap[key];
       bool? isIncluded = includedProps?.any((x) => x == key);
       bool isExcluded =
           options.notifyOnChangePropsExclusions?.any((x) => x == key) ?? false;
@@ -280,7 +285,7 @@ class QueryObserver<TQueryFnData, TError, TData, TQueryData>
   }
 
   void updateResult([NotifyOptions? notifyOptions]) {
-    QueryObserverResult<TData, TError>? prevResult = _currentResult;
+    final QueryObserverResult<TData, TError>? prevResult = _currentResult;
 
     if (_currentQuery != null)
       _currentResult = this.createResult(_currentQuery!, this.options);
@@ -288,7 +293,7 @@ class QueryObserver<TQueryFnData, TError, TData, TQueryData>
     _currentResultOptions = this.options;
 
     // Only notify if something has changed
-    if (shallowEqualMap(_currentResult.toJson(), prevResult.toJson())) {
+    if (shallowEqualMap(_currentResult.toJson(), prevResult?.toJson())) {
       return;
     }
     NotifyOptions defaultNotifyOptions = NotifyOptions(cache: true);
@@ -304,11 +309,12 @@ class QueryObserver<TQueryFnData, TError, TData, TQueryData>
   }
 
   void _updateQuery() {
-    var query = this._client.getQueryCache().build(this._client, this.options);
+    final query =
+        this._client.getQueryCache().build(this._client, this.options);
 
     if (query == _currentQuery) return;
 
-    var prevQuery = _currentQuery;
+    final prevQuery = _currentQuery;
     _currentQuery = query;
     _currentQueryInitialState = query.state;
     _previousQueryResult = _currentResult;
@@ -339,22 +345,22 @@ class QueryObserver<TQueryFnData, TError, TData, TQueryData>
     Query<TQueryFnData, TError, TQueryData> query,
     QueryObserverOptions<TQueryFnData, TError, TData, TQueryData> options,
   ) {
-    var prevQuery = _currentQuery;
-    var prevOptions = this.options;
-    var prevResult = _currentResult;
-    var prevResultState = _currentResultState;
-    var prevResultOptions = _currentResultOptions;
-    bool queryChange = query != prevQuery;
-    var queryInitialState =
+    final prevQuery = _currentQuery;
+    final prevOptions = this.options;
+    final prevResult = _currentResult;
+    final prevResultState = _currentResultState;
+    final prevResultOptions = _currentResultOptions;
+    final bool queryChange = query != prevQuery;
+    final queryInitialState =
         queryChange ? query.state : _currentQueryInitialState;
-    var prevQueryResult = queryChange ? _currentResult : _previousQueryResult;
+    final prevQueryResult = queryChange ? _currentResult : _previousQueryResult;
 
-    var state = query.state;
-    var dataUpdatedAt = state.dataUpdatedAt;
-    var error = state.error;
-    var errorUpdatedAt = state.errorUpdatedAt;
-    var isFetching = state.isFetching;
-    var status = state.status;
+    final state = query.state;
+    DateTime? dataUpdatedAt = state.dataUpdatedAt;
+    TError? error = state.error;
+    DateTime? errorUpdatedAt = state.errorUpdatedAt;
+    bool isFetching = state.isFetching;
+    QueryStatus status = state.status;
 
     bool isPreviousData = false;
     bool isPlaceholderData = false;
@@ -362,9 +368,9 @@ class QueryObserver<TQueryFnData, TError, TData, TQueryData>
 
     // Optimistically set result in fetching state if needed
     if (options.optimisticResults == true) {
-      var mounted = hasListeners();
+      final bool mounted = hasListeners();
 
-      var fetchOnMount = !mounted && shouldFetchOnMount(query, options);
+      final bool fetchOnMount = !mounted && shouldFetchOnMount(query, options);
 
       bool fetchOptionally = mounted &&
           prevQuery != null &&
@@ -401,7 +407,7 @@ class QueryObserver<TQueryFnData, TError, TData, TQueryData>
         try {
           data = options.select?.call(state.data);
           if (options.structuralSharing != false) {
-            data = replaceEqualDeep(prevResult?.data, data);
+            data = replaceEqualDeep(prevResult.data, data);
           }
           if (options.select != null && data != null) {
             _previousSelect = SelectQuery<TQueryData, TData>(
@@ -429,7 +435,7 @@ class QueryObserver<TQueryFnData, TError, TData, TQueryData>
         (status == QueryStatus.loading || status == QueryStatus.idle)) {
       var placeholderData;
 
-      if (prevResult?.isPlaceholderData == true &&
+      if (prevResult.isPlaceholderData == true &&
           options.placeholderData == prevResultOptions?.placeholderData) {
         placeholderData = prevResult.data;
       } else {
@@ -439,7 +445,7 @@ class QueryObserver<TQueryFnData, TError, TData, TQueryData>
             placeholderData = options.select?.call(placeholderData);
             if (options.structuralSharing != false) {
               placeholderData =
-                  replaceEqualDeep(prevResult?.data, placeholderData);
+                  replaceEqualDeep(prevResult.data, placeholderData);
             }
             _previousSelectError = null;
           } catch (selectError) {
@@ -459,7 +465,8 @@ class QueryObserver<TQueryFnData, TError, TData, TQueryData>
       }
     }
 
-    QueryObserverResult<TData, TError> result = QueryObserverResult(
+    final QueryObserverResult<TData, TError> result =
+        QueryObserverResult<TData, TError>(
       status: status,
       dataUpdatedAt: dataUpdatedAt,
       isLoading: status == QueryStatus.loading,
@@ -602,7 +609,11 @@ class QueryObserver<TQueryFnData, TError, TData, TQueryData>
   }
 }
 
-bool shouldLoadOnMount<TQueryFnData, TError, TData, TQueryData>(
+bool shouldLoadOnMount<
+    TQueryFnData extends Map<String, dynamic>,
+    TError,
+    TData extends Map<String, dynamic>,
+    TQueryData extends Map<String, dynamic>>(
   Query<TQueryFnData, TError, TQueryData> query,
   QueryObserverOptions<TQueryFnData, TError, TData, TQueryData> options,
 ) {
@@ -612,7 +623,11 @@ bool shouldLoadOnMount<TQueryFnData, TError, TData, TQueryData>(
           options.retryOnMount == false));
 }
 
-bool shouldRefetchOnMount<TQueryFnData, TError, TData, TQueryData>(
+bool shouldRefetchOnMount<
+    TQueryFnData extends Map<String, dynamic>,
+    TError,
+    TData extends Map<String, dynamic>,
+    TQueryData extends Map<String, dynamic>>(
   Query<TQueryFnData, TError, TQueryData> query,
   QueryObserverOptions<TQueryFnData, TError, TData, TQueryData> options,
 ) {
@@ -623,7 +638,11 @@ bool shouldRefetchOnMount<TQueryFnData, TError, TData, TQueryData>(
               isStale(query, options))));
 }
 
-bool shouldFetchOnMount<TQueryFnData, TError, TData, TQueryData>(
+bool shouldFetchOnMount<
+    TQueryFnData extends Map<String, dynamic>,
+    TError,
+    TData extends Map<String, dynamic>,
+    TQueryData extends Map<String, dynamic>>(
   Query<TQueryFnData, TError, TQueryData> query,
   QueryObserverOptions<TQueryFnData, TError, TData, TQueryData> options,
 ) {
@@ -631,17 +650,26 @@ bool shouldFetchOnMount<TQueryFnData, TError, TData, TQueryData>(
       shouldRefetchOnMount(query, options));
 }
 
-bool shouldFetchOnReconnect<TQueryFnData, TError, TData, TQueryData>(
+bool shouldFetchOnReconnect<
+    TQueryFnData extends Map<String, dynamic>,
+    TError,
+    TData extends Map<String, dynamic>,
+    TQueryData extends Map<String, dynamic>>(
   Query<TQueryFnData, TError, TQueryData> query,
   QueryObserverOptions<TQueryFnData, TError, TData, TQueryData> options,
 ) {
   return (options.enabled != false &&
       (options.refetchOnReconnect == RefetchOnReconnect.always ||
           (options.refetchOnReconnect != RefetchOnReconnect.off &&
-              isStale(query, options))));
+              isStale<TQueryFnData, TError, TData, TQueryData>(
+                  query, options))));
 }
 
-bool shouldFetchOptionally<TQueryFnData, TError, TData, TQueryData>(
+bool shouldFetchOptionally<
+    TQueryFnData extends Map<String, dynamic>,
+    TError,
+    TData extends Map<String, dynamic>,
+    TQueryData extends Map<String, dynamic>>(
   Query<TQueryFnData, TError, TQueryData> query,
   Query<TQueryFnData, TError, TQueryData> prevQuery,
   QueryObserverOptions<TQueryFnData, TError, TData, TQueryData> options,
@@ -653,7 +681,11 @@ bool shouldFetchOptionally<TQueryFnData, TError, TData, TQueryData>(
       isStale(query, options));
 }
 
-bool isStale<TQueryFnData, TError, TData, TQueryData>(
+bool isStale<
+    TQueryFnData extends Map<String, dynamic>,
+    TError,
+    TData extends Map<String, dynamic>,
+    TQueryData extends Map<String, dynamic>>(
   Query<TQueryFnData, TError, TQueryData> query,
   QueryObserverOptions<TQueryFnData, TError, TData, TQueryData> options,
 ) {

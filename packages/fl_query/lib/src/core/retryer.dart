@@ -36,9 +36,9 @@ bool isCancelledError(value) {
 }
 
 typedef OnError<TError> = void Function(TError error);
-typedef OnData<TData> = void Function(TData data);
+typedef OnData<TData extends Map<String, dynamic>> = void Function(TData data);
 
-class Retryer<TData, TError> {
+class Retryer<TData extends Map<String, dynamic>, TError> {
   late void Function({bool? revert, bool? silent}) cancel;
   late void Function() cancelRetry;
   late void Function() continueRetry;

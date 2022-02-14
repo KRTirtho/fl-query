@@ -26,7 +26,7 @@ class MutationDefaults {
   // });
 }
 
-class QueryData<TData> {
+class QueryData<TData extends Map<String, dynamic>> {
   QueryKey queryKey;
   TData data;
   QueryData({
@@ -85,17 +85,18 @@ class QueryClient {
   //   return _mutationCache.findAll({ ...filters, fetching: true }).length
   // }
 
-  TData? getQueryData<TData>(
+  TData? getQueryData<TData extends Map<String, dynamic>>(
     QueryKey queryKey, [
     QueryFilters? filters,
   ]) {
     return _queryCache
-        .find<TData, dynamic, dynamic>(queryKey, filters ?? QueryFilters())
+        .find<TData, dynamic, Map<String, dynamic>>(
+            queryKey, filters ?? QueryFilters())
         ?.state
-        .data;
+        .data as TData?;
   }
 
-  List<QueryData<TData>> getQueriesData<TData>({
+  List<QueryData<TData>> getQueriesData<TData extends Map<String, dynamic>>({
     QueryKey? queryKey,
     QueryFilters? filters,
   }) {
@@ -107,26 +108,27 @@ class QueryClient {
     }).toList();
   }
 
-  TData setQueryData<TData>(
+  TData setQueryData<TData extends Map<String, dynamic>>(
     QueryKey queryKey,
     DataUpdateFunction<TData?, TData> updater, [
     DateTime? updatedAt,
   ]) {
-    final QueryOptions<dynamic, dynamic, TData> defaultedOptions =
-        QueryOptions<dynamic, dynamic, TData>.fromJson(
-            defaultQueryOptions<dynamic, dynamic, TData, dynamic>(
-                    QueryObserverOptions<dynamic, dynamic, TData, dynamic>(
-                        queryKey: queryKey))
+    final QueryOptions<Map<String, dynamic>, dynamic, TData> defaultedOptions =
+        QueryOptions<Map<String, dynamic>, dynamic, TData>.fromJson(
+            defaultQueryOptions<Map<String, dynamic>, dynamic, TData,
+                        Map<String, dynamic>>(
+                    QueryObserverOptions<Map<String, dynamic>, dynamic, TData,
+                        Map<String, dynamic>>(queryKey: queryKey))
                 .toJson());
     return _queryCache
-        .build<dynamic, dynamic, TData>(this, defaultedOptions)
+        .build<Map<String, dynamic>, dynamic, TData>(this, defaultedOptions)
         .setData(
           updater,
           updatedAt: updatedAt,
         );
   }
 
-  List<QueryData> setQueriesData<TData>({
+  List<QueryData> setQueriesData<TData extends Map<String, dynamic>>({
     required DataUpdateFunction<TData?, TData> updater,
     QueryKey? queryKey,
     QueryFilters? filters,
@@ -149,12 +151,13 @@ class QueryClient {
         .toList();
   }
 
-  QueryState<TData, TError>? getQueryState<TData, TError>(
+  QueryState<TData, TError>?
+      getQueryState<TData extends Map<String, dynamic>, TError>(
     QueryKey queryKey, [
     QueryFilters? filters,
   ]) {
     return _queryCache
-        .find<TData, TError, dynamic>(
+        .find<TData, TError, Map<String, dynamic>>(
           queryKey,
           filters ?? QueryFilters(),
         )
@@ -257,13 +260,15 @@ class QueryClient {
     return future;
   }
 
-  Future<TData> fetchQuery<TQueryFnData, TError, TData>({
+  Future<TData> fetchQuery<TQueryFnData extends Map<String, dynamic>, TError,
+      TData extends Map<String, dynamic>>({
     QueryKey? queryKey,
     QueryFunction<TQueryFnData, dynamic>? queryFn,
     FetchQueryOptions<TQueryFnData, TError, TData>? options,
   }) {
     var defaultedOptions = this.defaultQueryOptions(
-      QueryObserverOptions(
+      QueryObserverOptions<Map<String, dynamic>, dynamic, Map<String, dynamic>,
+          TData>(
         queryFn: queryFn,
         queryKey: queryKey,
         staleTime: options?.staleTime,
@@ -280,28 +285,33 @@ class QueryClient {
     );
     // returning 0 indicates turing off retry
     defaultedOptions.retry ??= (_, __) => 0;
-    var query = _queryCache.build(this, defaultedOptions);
+    var query = _queryCache.build<Map<String, dynamic>, dynamic, TData>(
+        this, defaultedOptions);
     return query.isStaleByTime(defaultedOptions.staleTime)
         ? query.fetch(defaultedOptions)
         : Future.value(query.state.data as TData);
   }
 
-  Future<void> prefetchQuery<TQueryFnData, TError, TData>({
+  Future<void> prefetchQuery<TQueryFnData extends Map<String, dynamic>, TError,
+      TData extends Map<String, dynamic>>({
     QueryKey? queryKey,
     QueryFunction<TQueryFnData, dynamic>? queryFn,
     FetchQueryOptions<TQueryFnData, TError, TData>? options,
   }) {
-    return fetchQuery(
+    return fetchQuery<TQueryFnData, dynamic, TData>(
       queryKey: queryKey,
       queryFn: queryFn,
       options: options,
     ).then(noop).catchError(noop);
   }
 
-  QueryObserverOptions<TQueryFnData, TError, TData, TQueryData>
-      defaultQueryOptions<TQueryFnData, TError, TData, TQueryData>(
-          QueryObserverOptions<TQueryFnData, TError, TData, TQueryData>?
-              options) {
+  QueryObserverOptions<TQueryFnData, TError, TData,
+      TQueryData> defaultQueryOptions<
+          TQueryFnData extends Map<String, dynamic>,
+          TError,
+          TData extends Map<String, dynamic>,
+          TQueryData extends Map<String, dynamic>>(
+      QueryObserverOptions<TQueryFnData, TError, TData, TQueryData>? options) {
     if (options?.defaulted == true) return options!;
     var defaultedOptions =
         QueryObserverOptions<TQueryFnData, TError, TData, TQueryData>.fromJson({
@@ -322,7 +332,11 @@ class QueryClient {
   }
 
   QueryObserverOptions<TQueryFnData, TError, TData, TQueryData>
-      defaultQueryObserverOptions<TQueryFnData, TError, TData, TQueryData>([
+      defaultQueryObserverOptions<
+          TQueryFnData extends Map<String, dynamic>,
+          TError,
+          TData extends Map<String, dynamic>,
+          TQueryData extends Map<String, dynamic>>([
     QueryObserverOptions<TQueryFnData, TError, TData, TQueryData>? options,
   ]) {
     return this.defaultQueryOptions(options);

@@ -17,7 +17,8 @@ class FetchOptions {
   FetchOptions({this.cancelRefetch, this.meta});
 }
 
-class FetchContext<TQueryFnData, TError, TData> {
+class FetchContext<TQueryFnData extends Map<String, dynamic>, TError,
+    TData extends Map<String, dynamic>> {
   FutureOr<TQueryFnData> Function() fetchFn;
   FetchOptions? fetchOptions;
   QueryOptions<TQueryFnData, TError, TData> options;
@@ -35,12 +36,13 @@ class FetchContext<TQueryFnData, TError, TData> {
   });
 }
 
-class QueryBehavior<TQueryFnData, TError, TData> {
+class QueryBehavior<TQueryFnData extends Map<String, dynamic>, TError,
+    TData extends Map<String, dynamic>> {
   void Function(FetchContext<TQueryFnData, TError, TData> context) onFetch;
   QueryBehavior({required this.onFetch});
 }
 
-class QueryState<TData, TError> {
+class QueryState<TData extends Map<String, dynamic>, TError> {
   TData? data;
   TError? error;
   QueryStatus status;
@@ -120,7 +122,7 @@ class SetStateOptions {
   }
 }
 
-class Action<TData, TError> {
+class Action<TData extends Map<String, dynamic>, TError> {
   ActionType type;
   Object? meta;
   TData? data;
@@ -160,7 +162,8 @@ class Action<TData, TError> {
   }
 }
 
-class Query<TQueryFnData, TError, TData> {
+class Query<TQueryFnData extends Map<String, dynamic>, TError,
+    TData extends Map<String, dynamic>> {
   QueryKey queryKey;
   String queryHash;
   late QueryOptions<TQueryFnData, TError, TData> options;
@@ -277,7 +280,7 @@ class Query<TQueryFnData, TError, TData> {
         data = prevData as TData;
       } else if (this.options.structuralSharing != false) {
         // Structurally share data between prev and new data if needed
-        data = replaceEqualDeep<TData>(prevData ?? {} as TData, data);
+        data = replaceEqualDeep(prevData ?? {} as TData, data);
       }
       // Set data and mark it as cached
       _dispatch(Action(
@@ -360,7 +363,7 @@ class Query<TQueryFnData, TError, TData> {
       var observer =
           _observers.firstWhereOrNull((x) => x.options.queryFn != null);
       if (observer != null) {
-        _setOptions(QueryOptions(
+        _setOptions(QueryOptions<TQueryFnData, TError, TData>(
           queryKey: observer.options.queryKey,
           queryKeyHashFn: observer.options.queryKeyHashFn,
           cacheTime: observer.options.cacheTime,
@@ -368,7 +371,7 @@ class Query<TQueryFnData, TError, TData> {
           queryFn:
               observer.options.queryFn as QueryFunction<TQueryFnData, dynamic>,
           queryHash: observer.options.queryHash,
-          initialData: observer.options.initialData,
+          initialData: observer.options.initialData as TData?,
           initialDataUpdatedAt: observer.options.initialDataUpdatedAt,
           meta: observer.options.meta,
           structuralSharing: observer.options.structuralSharing,

@@ -29,7 +29,8 @@ void main() async {
     var key = QueryKey("TEST");
     QueryClient queryClient = QueryClient();
     queryClient.mount();
-    var data = await queryClient.fetchQuery<Map, dynamic, Map>(
+    var data = await queryClient
+        .fetchQuery<Map<String, dynamic>, dynamic, Map<String, dynamic>>(
       queryKey: key,
       queryFn: (context) {
         return Future.value(todos.first);
@@ -39,7 +40,7 @@ void main() async {
     print(data);
     print("======CACHED DATA======");
     print(queryClient.getQueryData(key));
-    queryClient.setQueryData<Map>(key, (prevData) {
+    queryClient.setQueryData<Map<String, dynamic>>(key, (prevData) {
       return {
         ...(prevData) ?? {},
         "title": "Yehi aloh heh",
