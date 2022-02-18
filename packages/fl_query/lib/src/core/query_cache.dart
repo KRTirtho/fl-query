@@ -139,26 +139,31 @@ class QueryCache extends Subscribable<QueryCacheListener> {
   }
 
   Query<TQueryFnData, TError, TData>? find<
-      TQueryFnData extends Map<String, dynamic>,
-      TError,
-      TData extends Map<String, dynamic>>(
-    QueryKey queryKey,
-    QueryFilters queryFilters,
-  ) {
+          TQueryFnData extends Map<String, dynamic>,
+          TError,
+          TData extends Map<String, dynamic>>(QueryKey queryKey,
+      [QueryFilters? queryFilters]) {
+    queryFilters ??= QueryFilters();
     queryFilters.exact ??= true;
-    return _queries.firstWhereOrNull((query) => matchQuery(queryFilters, query))
-        as Query<TQueryFnData, TError, TData>?;
+    return _queries.firstWhereOrNull((query) => matchQuery(
+          queryFilters!,
+          query,
+          queryKey,
+        )) as Query<TQueryFnData, TError, TData>?;
   }
 
-  List<Query> findAll(QueryKey? queryKey, [QueryFilters? filters]) {
-    if (queryKey == null && filters == null)
-      throw Exception(
-          "[QueryCache.findAll] both `queryKey` & `filters` can't be null");
-    bool filterIsEmpty =
-        filters?.toJson().entries.every((map) => map.value == null) ?? false;
-    return filterIsEmpty
+  List<Query> findAll([QueryKey? queryKeys, QueryFilters? filters]) {
+    return filters == null && queryKeys == null
         ? _queries
-        : _queries.where((query) => matchQuery(filters!, query)).toList();
+        : _queries
+            .where(
+              (query) => matchQuery(
+                filters ?? QueryFilters(),
+                query,
+                queryKeys,
+              ),
+            )
+            .toList();
   }
 
   void notify(QueryCacheNotifyEvent event) {
@@ -168,12 +173,6 @@ class QueryCache extends Subscribable<QueryCacheListener> {
       }
     });
   }
-
-  @override
-  void onSubscribe() {}
-
-  @override
-  void onUnsubscribe() {}
 
   /// Dummy function just to keep the API similar to react-query
   void onFocus() {}

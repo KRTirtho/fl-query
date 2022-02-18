@@ -6,14 +6,14 @@ abstract class Subscribable<TListener extends Function> {
   Subscribable() : listeners = [];
 
   void Function() subscribe([TListener? listener]) {
-    var callback = listener ?? (() => null);
+    listener ??= (() => null) as TListener;
 
-    listeners.add(callback as TListener);
+    listeners.add(listener);
 
     onSubscribe();
 
     return () {
-      listeners = listeners.where((x) => x != callback).toList();
+      listeners = listeners.where((x) => x != listener).toList();
       onUnsubscribe();
     };
   }
@@ -23,8 +23,8 @@ abstract class Subscribable<TListener extends Function> {
   }
 
   @protected
-  void onSubscribe();
+  void onSubscribe() {}
 
   @protected
-  void onUnsubscribe();
+  void onUnsubscribe() {}
 }

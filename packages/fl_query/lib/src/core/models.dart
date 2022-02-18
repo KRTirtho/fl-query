@@ -537,7 +537,7 @@ class FetchQueryOptions<TQueryFnData extends Map<String, dynamic>, TError,
   /// The time after data is considered stale.
   /// If the data is fresh it will be returned from the cache.
   Duration? staleTime;
-  FetchQueryOptions(
+  FetchQueryOptions({
     ShouldRetryFunction<TError>? retry,
     RetryDelayFunction<TError>? retryDelay,
     Duration? cacheTime,
@@ -554,7 +554,7 @@ class FetchQueryOptions<TQueryFnData extends Map<String, dynamic>, TError,
     GetNextPageParamFunction<TQueryFnData>? getNextPageParam,
     bool? defaulted,
     this.staleTime,
-  ) : super(
+  }) : super(
           retry: retry,
           retryDelay: retryDelay,
           cacheTime: cacheTime,

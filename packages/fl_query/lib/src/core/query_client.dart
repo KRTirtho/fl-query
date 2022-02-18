@@ -97,10 +97,10 @@ class QueryClient {
   }
 
   List<QueryData<TData>> getQueriesData<TData extends Map<String, dynamic>>({
-    QueryKey? queryKey,
+    QueryKey? queryKeys,
     QueryFilters? filters,
   }) {
-    return getQueryCache().findAll(queryKey, filters).map((query) {
+    return getQueryCache().findAll(queryKeys, filters).map((query) {
       return QueryData<TData>(
         data: query.state.data as TData,
         queryKey: query.queryKey,
@@ -130,15 +130,15 @@ class QueryClient {
 
   List<QueryData> setQueriesData<TData extends Map<String, dynamic>>({
     required DataUpdateFunction<TData?, TData> updater,
-    QueryKey? queryKey,
+    QueryKey? queryKeys,
     QueryFilters? filters,
     DateTime? updatedAt,
   }) {
-    if (queryKey == null && filters == null)
+    if (queryKeys == null && filters == null)
       throw Exception(
           "[QueryClient.setQueriesData] both `queryKey` & `filters` can't be null at the same time");
     return notifyManager
-        .batch(() => getQueryCache().findAll(queryKey, filters).map(
+        .batch(() => getQueryCache().findAll(queryKeys, filters).map(
               (query) => QueryData(
                 queryKey: query.queryKey,
                 data: setQueryData<TData>(
@@ -164,10 +164,10 @@ class QueryClient {
         ?.state as QueryState<TData, TError>?;
   }
 
-  void removeQueries({QueryKey? queryKey, QueryFilters? filters}) {
+  void removeQueries({QueryKey? queryKeys, QueryFilters? filters}) {
     notifyManager.batch(
       () => {
-        _queryCache.findAll(queryKey, filters).forEach((query) {
+        _queryCache.findAll(queryKeys, filters).forEach((query) {
           _queryCache.remove(query);
         })
       },
@@ -175,7 +175,7 @@ class QueryClient {
   }
 
   Future<void> resetQueries<TPageData>({
-    QueryKey? queryKey,
+    QueryKey? queryKeys,
     RefetchableQueryFilters<TPageData>? filters,
     bool? throwOnError,
   }) {
@@ -186,7 +186,7 @@ class QueryClient {
     });
 
     return notifyManager.batch(() {
-      _queryCache.findAll(queryKey, filters).forEach((query) {
+      _queryCache.findAll(queryKeys, filters).forEach((query) {
         query.reset();
       });
       return refetchQueries(
@@ -197,13 +197,13 @@ class QueryClient {
   }
 
   Future<void> cancelQueries({
-    QueryKey? queryKey,
+    QueryKey? queryKeys,
     QueryFilters? filters,
     bool? revert = true,
     bool? silent,
   }) {
     var futures = notifyManager.batch(() =>
-        _queryCache.findAll(queryKey, filters).map((query) => query.cancel(
+        _queryCache.findAll(queryKeys, filters).map((query) => query.cancel(
               revert: revert,
               silent: silent,
             )));
@@ -211,7 +211,7 @@ class QueryClient {
   }
 
   Future<void> invalidateQueries<TPageData>({
-    QueryKey? queryKey,
+    QueryKey? queryKeys,
     InvalidateQueryFilters<TPageData>? filters,
     RefetchOptions? options,
   }) {
@@ -223,7 +223,7 @@ class QueryClient {
       "inactive": filters?.refetchInactive ?? false,
     });
     return notifyManager.batch(() {
-      _queryCache.findAll(queryKey, filters).forEach((query) {
+      _queryCache.findAll(queryKeys, filters).forEach((query) {
         query.invalidate();
       });
       return this.refetchQueries(
@@ -234,12 +234,12 @@ class QueryClient {
   }
 
   Future<void> refetchQueries<TPageData>({
-    QueryKey? queryKey,
+    QueryKey? queryKeys,
     RefetchableQueryFilters<TPageData>? filters,
     RefetchOptions? options,
   }) {
     var futures = notifyManager.batch(
-      () => _queryCache.findAll(queryKey, filters).map(
+      () => _queryCache.findAll(queryKeys, filters).map(
             (query) => query.fetch(
               null,
               ObserverFetchOptions(

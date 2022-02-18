@@ -280,7 +280,7 @@ class Query<TQueryFnData extends Map<String, dynamic>, TError,
         data = prevData as TData;
       } else if (this.options.structuralSharing != false) {
         // Structurally share data between prev and new data if needed
-        data = replaceEqualDeep(prevData ?? {} as TData, data);
+        data = replaceEqualDeep(prevData, data);
       }
       // Set data and mark it as cached
       _dispatch(Action(

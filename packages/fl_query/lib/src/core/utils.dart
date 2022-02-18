@@ -39,12 +39,20 @@ QueryStatusFilter mapQueryStatusFilter(
   }
 }
 
-bool matchQuery(QueryFilters filters, Query query, [QueryKey? queryKey]) {
-  if (queryKey != null) {
-    if (filters.exact! &&
-        query.queryHash != hashQueryKeyByOptions(queryKey, query.options))
+bool matchQuery(
+  QueryFilters filters,
+  Query query, [
+
+  /// multiple queryKeys to find the query
+  QueryKey? queryKeys,
+]) {
+  if (queryKeys != null) {
+    if (filters.exact == true &&
+        query.queryHash != hashQueryKeyByOptions(queryKeys, query.options))
       return false;
-    else if (query.queryKey.key != queryKey) return false;
+    else if (query.queryKey.key != queryKeys.key &&
+        !queryKeys.keyAsList.contains(query.queryKey.key) &&
+        !query.queryKey.keyAsList.contains(queryKeys.key)) return false;
   }
   QueryStatusFilter queryStatusFilter =
       mapQueryStatusFilter(filters.active, filters.inactive);
