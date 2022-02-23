@@ -92,6 +92,9 @@ class QueryCache extends Subscribable<QueryCacheListener> {
     return query;
   }
 
+  QueryHashMap get queriesMap => _queriesMap;
+  List<Query> get queries => _queries;
+
   void add(Query query) {
     if (!_queriesMap.containsKey(query.queryHash)) {
       _queriesMap[query.queryHash] = query;

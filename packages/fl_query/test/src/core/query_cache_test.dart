@@ -1,5 +1,6 @@
 import 'package:fl_query/src/core/core.dart';
 import 'package:fl_query/src/core/query_cache.dart';
+import 'package:fl_query/src/core/retryer.dart';
 import 'package:test/expect.dart';
 import 'package:test/scaffolding.dart';
 
@@ -209,6 +210,90 @@ void main() {
           },
         );
         expect(queryCache.findAll().length, 2);
+      });
+    });
+
+    group('QueryCacheConfig.onError', () {
+      test('should be called when a query errors', () async {
+        final key = queryKey();
+        var errorArg;
+        var queryArg;
+        onError(error, query) {
+          errorArg = error;
+          queryArg = query;
+        }
+
+        final testCache = new QueryCache(onError: onError);
+        final testClient = new QueryClient(queryCache: testCache);
+        await testClient
+            .prefetchQuery<Map<String, dynamic>, dynamic, Map<String, dynamic>>(
+                queryKey: key, queryFn: (_) => Future.error('error'));
+        final query = testCache.find(key);
+        expect(errorArg, equals("error"));
+        expect(queryArg, equals(query));
+      });
+    });
+
+    group('QueryCacheConfig.onSuccess', () {
+      test('should be called when a query is successful', () async {
+        final key = queryKey();
+        var dataArg;
+        var queryArg;
+        onData(data, query) {
+          dataArg = data;
+          queryArg = query;
+        }
+
+        final testCache = new QueryCache(onData: onData);
+        final testClient = new QueryClient(queryCache: testCache);
+        await testClient
+            .prefetchQuery<Map<String, dynamic>, dynamic, Map<String, dynamic>>(
+          queryKey: key,
+          queryFn: (_) => Future.value({"data": 5}),
+        );
+        final query = testCache.find(key);
+        expect(dataArg, equals({"data": 5}));
+        expect(queryArg, equals(query));
+      });
+    });
+    group('QueryCache.add', () {
+      test('should not try to add a query already added to the cache',
+          () async {
+        final key = queryKey();
+        final hash = key.key;
+
+        await queryClient.prefetchQuery(
+            queryKey: key, queryFn: (_) => {"data": 'data1'});
+
+        // Directly add the query from the cache
+        // to simulate a race condition
+        final query = queryCache.queriesMap[hash] as Query;
+
+        // No error should be thrown when trying to add the query
+        queryCache.add(query);
+        expect(queryCache.queries.length, 1);
+
+        // Clean-up to avoid an error when queryClient.clear()
+        queryCache.remove(query);
+      });
+    });
+
+    group('QueryCache.remove', () {
+      test('should not try to remove a query already removed from the cache',
+          () async {
+        final key = queryKey();
+        final hash = key.key;
+
+        await queryClient.prefetchQuery(
+            queryKey: key, queryFn: (_) => {"data": 'data1'});
+
+        // Directly remove the query from the cache
+        // to simulate a race condition
+        final query = queryCache.queriesMap[hash] as Query;
+        queryCache.queriesMap.remove(hash);
+
+        // No error should be thrown when trying to remove the query
+        expect(() => queryCache.remove(query), isNot(throwsException));
       });
     });
   });
