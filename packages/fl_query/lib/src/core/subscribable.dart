@@ -1,12 +1,16 @@
 import 'package:meta/meta.dart';
 
+//? using a single argument due to TypeCast Error cause queryObserver
+//? listeners
+void placeholder(a1) {}
+
 abstract class Subscribable<TListener extends Function> {
   @protected
   List<TListener> listeners;
   Subscribable() : listeners = [];
 
   void Function() subscribe([TListener? listener]) {
-    listener ??= (() => null) as TListener;
+    listener ??= placeholder as TListener;
 
     listeners.add(listener);
 

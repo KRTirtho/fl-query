@@ -558,7 +558,8 @@ class Query<TQueryFnData extends Map<String, dynamic>, TError,
   bool isStale() {
     return (this.state.isInvalidated ||
         this.state.dataUpdatedAt == null ||
-        _observers.any((observer) => observer.getCurrentResult().isStale));
+        _observers
+            .any((observer) => observer.getCurrentResult()?.isStale == true));
   }
 
   bool isStaleByTime(Duration? staleTime) {

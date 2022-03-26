@@ -91,10 +91,8 @@ bool shallowEqualMap(Map? a, Map? b) {
     return false;
   }
 
-  for (var item in a!.entries) {
-    var aVal = item.value;
-    var bVal = b?[item.key];
-    if (aVal != bVal) return false;
+  for (final item in a!.entries) {
+    if (a[item.key] != b?[item.key]) return false;
   }
 
   return true;

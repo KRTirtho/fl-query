@@ -281,7 +281,7 @@ class QueryObserverResult<TData extends Map<String, dynamic>, TError> {
   bool isRefetching;
   bool isStale;
   bool isSuccess;
-  Future<QueryObserverResult<TData, TError>> Function<TPageData>({
+  Future<QueryObserverResult<TData, TError>?> Function<TPageData>({
     RefetchOptions options,
     RefetchableQueryFilters<TPageData> filters,
   }) refetch;

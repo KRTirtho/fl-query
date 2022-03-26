@@ -26,12 +26,21 @@ class NotifyOptions {
 
   NotifyOptions({this.cache, this.listeners, this.onError, this.onSuccess});
 
-  Map<String, dynamic> toJson() {
+  /// [safe] default `true`- if it's true then there'll be no key
+  /// containing null value
+  Map<String, dynamic> toJson([bool safe = true]) {
     final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['cache'] = this.cache;
-    data['listeners'] = this.listeners;
-    data['onError'] = this.onError;
-    data['onSuccess'] = this.onSuccess;
+    if (safe) {
+      if (this.cache != null) data['cache'] = this.cache;
+      if (this.listeners != null) data['listeners'] = this.listeners;
+      if (this.onError != null) data['onError'] = this.onError;
+      if (this.onSuccess != null) data['onSuccess'] = this.onSuccess;
+    } else {
+      data['cache'] = this.cache;
+      data['listeners'] = this.listeners;
+      data['onError'] = this.onError;
+      data['onSuccess'] = this.onSuccess;
+    }
     return data;
   }
 
@@ -65,11 +74,16 @@ class QueryObserver<
         TData extends Map<String, dynamic>,
         TQueryData extends Map<String, dynamic>>
     extends Subscribable<QueryObserverListener> {
-  late QueryObserverOptions<TQueryFnData, TError, TData, TQueryData> options;
+  QueryObserverOptions<TQueryFnData, TError, TData, TQueryData> options;
   QueryClient _client;
   Query<TQueryFnData, TError, TQueryData>? _currentQuery;
+
   late QueryState<TQueryData, TError> _currentQueryInitialState;
-  late QueryObserverResult<TData, TError> _currentResult;
+  QueryObserverResult<TData, TError>? _currentResult;
+
+  /// List of tracked keys/properties of [QueryObserverResult]
+  late List<String> _trackedProps;
+
   QueryState<TQueryData, TError>? _currentResultState;
   QueryObserverOptions<TQueryFnData, TError, TData, TQueryData>?
       _currentResultOptions;
@@ -80,12 +94,13 @@ class QueryObserver<
   Timer? _refetchInterval;
   Duration? _currentRefetchInterval;
 
-  /// List of tracked keys/properties of [QueryObserverResult]
-  late List<String> _trackedProps;
-
-  QueryObserver(this._client, options)
-      : _trackedProps = [],
-        _previousSelectError = null {
+  QueryObserver(
+    this._client,
+    QueryObserverOptions<TQueryFnData, TError, TData, TQueryData>? _options,
+  )   : _trackedProps = [],
+        _previousSelectError = null,
+        options = _options ?? QueryObserverOptions(),
+        super() {
     this.setOptions(options);
   }
 
@@ -120,7 +135,7 @@ class QueryObserver<
     _currentQuery?.removeObserver(this);
   }
 
-  setOptions(
+  void setOptions(
     QueryObserverOptions<TQueryFnData, TError, TData, TQueryData>? options, [
     NotifyOptions? notifyOptions,
   ]) {
@@ -143,6 +158,24 @@ class QueryObserver<
       _executeFetch();
     }
     ;
+
+    this.updateResult(notifyOptions);
+    if (mounted &&
+        (_currentQuery != prevQuery ||
+            this.options.enabled != prevOptions.enabled ||
+            this.options.staleTime != prevOptions.staleTime)) {
+      _updateStaleTimeout();
+    }
+
+    final nextRefetchInterval = _computeRefetchInterval();
+
+    // Update refetch interval if needed
+    if (mounted &&
+        (_currentQuery != prevQuery ||
+            this.options.enabled != prevOptions.enabled ||
+            nextRefetchInterval != _currentRefetchInterval)) {
+      _updateRefetchInterval(nextRefetchInterval);
+    }
   }
 
   QueryObserverResult<TData, TError> getOptimisticResult(
@@ -155,7 +188,7 @@ class QueryObserver<
     return createResult(query, defaultedOptions);
   }
 
-  QueryObserverResult<TData, TError> getCurrentResult() {
+  QueryObserverResult<TData, TError>? getCurrentResult() {
     return _currentResult;
   }
 
@@ -229,7 +262,7 @@ class QueryObserver<
   }
 
   @protected
-  Future<QueryObserverResult<TData, TError>> fetch(
+  Future<QueryObserverResult<TData, TError>?> fetch(
     ObserverFetchOptions fetchOptions,
   ) {
     return _executeFetch(fetchOptions).then((val) {
@@ -257,7 +290,7 @@ class QueryObserver<
   bool _shouldNotifyListeners(QueryObserverResult<TData, TError> result,
       [QueryObserverResult<TData, TError>? prevResult]) {
     if (prevResult == null) return true;
-    if (!options.notifyOnChangeProps &&
+    if (options.notifyOnChangeProps == false &&
         options.notifyOnChangePropsExclusions == null) {
       return true;
     }
@@ -292,20 +325,25 @@ class QueryObserver<
     _currentResultState = _currentQuery?.state;
     _currentResultOptions = this.options;
 
+    final isSameMap =
+        shallowEqualMap(_currentResult?.toJson(), prevResult?.toJson());
     // Only notify if something has changed
-    if (shallowEqualMap(_currentResult.toJson(), prevResult?.toJson())) {
+    if (isSameMap) {
       return;
     }
     NotifyOptions defaultNotifyOptions = NotifyOptions(cache: true);
     if (notifyOptions?.listeners != false &&
-        _shouldNotifyListeners(_currentResult, prevResult)) {
+        _currentResult != null &&
+        _shouldNotifyListeners(_currentResult!, prevResult)) {
       defaultNotifyOptions.listeners = true;
     }
 
-    _notify(NotifyOptions.fromJson({
+    final mergedNotifyOptions = {
       ...defaultNotifyOptions.toJson(),
       ...(notifyOptions?.toJson() ?? {}),
-    }));
+    };
+
+    _notify(NotifyOptions.fromJson(mergedNotifyOptions));
   }
 
   void _updateQuery() {
@@ -407,7 +445,7 @@ class QueryObserver<
         try {
           data = options.select?.call(state.data);
           if (options.structuralSharing != false) {
-            data = replaceEqualDeep(prevResult.data, data);
+            data = replaceEqualDeep(prevResult?.data, data);
           }
           if (options.select != null && data != null) {
             _previousSelect = SelectQuery<TQueryData, TData>(
@@ -427,7 +465,7 @@ class QueryObserver<
     }
     // Use query data
     else {
-      data = state.data as TData;
+      data = state.data as TData?;
     }
 
     if (options.placeholderData != null &&
@@ -435,9 +473,9 @@ class QueryObserver<
         (status == QueryStatus.loading || status == QueryStatus.idle)) {
       var placeholderData;
 
-      if (prevResult.isPlaceholderData == true &&
+      if (prevResult?.isPlaceholderData == true &&
           options.placeholderData == prevResultOptions?.placeholderData) {
-        placeholderData = prevResult.data;
+        placeholderData = prevResult?.data;
       } else {
         placeholderData = options.placeholderData;
         if (options.select != null && placeholderData != null) {
@@ -445,7 +483,7 @@ class QueryObserver<
             placeholderData = options.select?.call(placeholderData);
             if (options.structuralSharing != false) {
               placeholderData =
-                  replaceEqualDeep(prevResult.data, placeholderData);
+                  replaceEqualDeep(prevResult?.data, placeholderData);
             }
             _previousSelectError = null;
           } catch (selectError) {
@@ -497,18 +535,18 @@ class QueryObserver<
   void _notify(NotifyOptions notifyOptions) {
     notifyManager.batch(() {
       // First trigger the configuration callbacks
-      if (notifyOptions.onSuccess == true) {
-        this.options.onSuccess?.call(_currentResult.data!);
-        this.options.onSettled?.call(_currentResult.data!);
-      } else if (notifyOptions.onError == true) {
-        this.options.onError?.call(_currentResult.error!);
-        this.options.onSettled?.call(null, _currentResult.error!);
+      if (notifyOptions.onSuccess == true && _currentResult != null) {
+        this.options.onSuccess?.call(_currentResult!.data!);
+        this.options.onSettled?.call(_currentResult!.data!);
+      } else if (notifyOptions.onError == true && _currentResult != null) {
+        this.options.onError?.call(_currentResult!.error!);
+        this.options.onSettled?.call(null, _currentResult!.error!);
       }
 
       // Then trigger the listeners
-      if (notifyOptions.listeners == true) {
+      if (notifyOptions.listeners == true && _currentResult != null) {
         this.listeners.forEach((listener) {
-          listener(_currentResult);
+          listener(_currentResult!);
         });
       }
 
@@ -526,7 +564,7 @@ class QueryObserver<
 
   Duration? _computeRefetchInterval() {
     return this.options.refetchInterval != null && _currentQuery != null
-        ? this.options.refetchInterval!(_currentResult.data, _currentQuery!)
+        ? this.options.refetchInterval!(_currentResult?.data, _currentQuery!)
         : null;
   }
 
@@ -537,22 +575,22 @@ class QueryObserver<
 
   void _updateStaleTimeout() {
     _clearStaleTimeout();
-    if (_currentResult.isStale ||
+    if (_currentResult?.isStale == true ||
         options.staleTime == null ||
-        _currentResult.dataUpdatedAt == null) return;
+        _currentResult?.dataUpdatedAt == null) return;
 
     // The timeout is sometimes triggered 1 ms before the stale time
     // expiration. To mitigate this issue we always add 1 ms to the
     // timeout.
     Duration time = Duration(
       milliseconds:
-          timeUntilStale(_currentResult.dataUpdatedAt!, this.options.staleTime)
+          timeUntilStale(_currentResult!.dataUpdatedAt!, this.options.staleTime)
                   .inMilliseconds +
               1,
     );
 
     _staleTimeout = Timer(time, () {
-      if (!_currentResult.isStale) {
+      if (!_currentResult!.isStale) {
         this.updateResult();
       }
     });
@@ -595,7 +633,7 @@ class QueryObserver<
     _currentQuery?.removeObserver(this);
   }
 
-  Future<QueryObserverResult<TData, TError>> refetch<TPageData>({
+  Future<QueryObserverResult<TData, TError>?> refetch<TPageData>({
     RefetchableQueryFilters<TPageData>? filters,
     RefetchOptions? options,
   }) {
@@ -618,7 +656,7 @@ bool shouldLoadOnMount<
   QueryObserverOptions<TQueryFnData, TError, TData, TQueryData> options,
 ) {
   return (options.enabled != false &&
-      query.state.dataUpdatedAt != null &&
+      query.state.dataUpdatedAt == null &&
       !(query.state.status == QueryStatus.error &&
           options.retryOnMount == false));
 }
