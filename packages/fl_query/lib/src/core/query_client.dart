@@ -266,7 +266,7 @@ class QueryClient {
     QueryFunction<TQueryFnData, dynamic>? queryFn,
     FetchQueryOptions<TQueryFnData, TError, TData>? options,
   }) {
-    var defaultedOptions = this.defaultQueryOptions(
+    final defaultedOptions = this.defaultQueryOptions(
       QueryObserverOptions<Map<String, dynamic>, dynamic, Map<String, dynamic>,
           TData>(
         queryFn: queryFn,
@@ -285,7 +285,7 @@ class QueryClient {
     );
     // returning 0 indicates turing off retry
     defaultedOptions.retry ??= (_, __) => 0;
-    var query = _queryCache.build<Map<String, dynamic>, dynamic, TData>(
+    final query = _queryCache.build<Map<String, dynamic>, dynamic, TData>(
         this, defaultedOptions);
     return query.isStaleByTime(defaultedOptions.staleTime)
         ? query.fetch(defaultedOptions)
@@ -313,7 +313,7 @@ class QueryClient {
           TQueryData extends Map<String, dynamic>>(
       QueryObserverOptions<TQueryFnData, TError, TData, TQueryData>? options) {
     if (options?.defaulted == true) return options!;
-    var defaultedOptions =
+    final defaultedOptions =
         QueryObserverOptions<TQueryFnData, TError, TData, TQueryData>.fromJson({
       ...(_defaultOptions.queries?.toJson() ?? {}),
       ...(getQueryDefaults(options?.queryKey)?.toJson() ?? {}),

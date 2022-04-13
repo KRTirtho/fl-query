@@ -120,7 +120,7 @@ class QueryFilters {
   bool? exact;
   bool? inactive;
   bool Function(Query query)? predicate;
-  bool? queryKey;
+  QueryKey? queryKey;
   bool? stale;
   bool? fetching;
 
@@ -162,7 +162,7 @@ class RefetchableQueryFilters<TPageData> extends QueryFilters
     bool? exact,
     bool? inactive,
     bool Function(Query query)? predicate,
-    bool? queryKey,
+    QueryKey? queryKey,
     bool? stale,
     bool? fetching,
     this.refetchPage,
@@ -212,7 +212,7 @@ class InvalidateQueryFilters<TPageData>
     bool? exact,
     bool? inactive,
     bool Function(Query query)? predicate,
-    bool? queryKey,
+    QueryKey? queryKey,
     bool? stale,
     bool? fetching,
     bool Function(TPageData lastPage, int index, List<TPageData> allPages)?
@@ -452,6 +452,11 @@ class QueryObserverOptions<
     QueryMeta? meta,
     bool? structuralSharing,
     bool? defaulted,
+    ShouldRetryFunction<TError>? retry,
+    RetryDelayFunction<TError>? retryDelay,
+    QueryBehavior<TQueryFnData, TError, TQueryData>? behavior,
+    GetPreviousPageParamFunction<TQueryFnData>? getPreviousPageParam,
+    GetNextPageParamFunction<TQueryFnData>? getNextPageParam,
   }) : super(
           queryKey: queryKey,
           queryKeyHashFn: queryKeyHashFn,
@@ -464,6 +469,11 @@ class QueryObserverOptions<
           meta: meta,
           structuralSharing: structuralSharing,
           defaulted: defaulted,
+          behavior: behavior,
+          getNextPageParam: getNextPageParam,
+          getPreviousPageParam: getPreviousPageParam,
+          retry: retry,
+          retryDelay: retryDelay,
         );
 
   QueryObserverOptions.fromJson(Map<String, dynamic> json)

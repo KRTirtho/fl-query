@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:collection';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:fl_query/src/core/models.dart';
@@ -280,7 +282,9 @@ class Query<TQueryFnData extends Map<String, dynamic>, TError,
         data = prevData as TData;
       } else if (this.options.structuralSharing != false) {
         // Structurally share data between prev and new data if needed
-        data = replaceEqualDeep(prevData, data);
+        final merged =
+            Map<String, dynamic>.from(replaceEqualDeep(prevData, data));
+        data = merged as TData;
       }
       // Set data and mark it as cached
       _dispatch(Action(
@@ -360,7 +364,7 @@ class Query<TQueryFnData extends Map<String, dynamic>, TError,
     // Use the options from the first observer with a query function if no function is found.
     // This can happen when the query is hydrated or created with setQueryData.
     if (this.options.queryFn == null) {
-      var observer =
+      final observer =
           _observers.firstWhereOrNull((x) => x.options.queryFn != null);
       if (observer != null) {
         _setOptions(QueryOptions<TQueryFnData, TError, TData>(

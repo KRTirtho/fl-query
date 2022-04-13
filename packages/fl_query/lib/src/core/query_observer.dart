@@ -94,6 +94,9 @@ class QueryObserver<
   Timer? _refetchInterval;
   Duration? _currentRefetchInterval;
 
+  @protected
+  Timer? get refetchInterval => _refetchInterval;
+
   QueryObserver(
     this._client,
     QueryObserverOptions<TQueryFnData, TError, TData, TQueryData>? _options,
@@ -225,9 +228,9 @@ class QueryObserver<
     throw UnimplementedError("COULD NOT IMPLEMENT DUE TO LANGUAGE LIMITATIONS");
   }
 
-  Future<QueryObserverResult<TData, TError>> getNextResult(
+  Future<QueryObserverResult<TData, TError>> getNextResult([
     bool? throwOnError,
-  ) {
+  ]) {
     final completer = Completer<QueryObserverResult<TData, TError>>();
     var unsubscribe;
     unsubscribe = subscribe((result) {
@@ -445,7 +448,8 @@ class QueryObserver<
         try {
           data = options.select?.call(state.data);
           if (options.structuralSharing != false) {
-            data = replaceEqualDeep(prevResult?.data, data);
+            data = Map<String, dynamic>.from(
+                replaceEqualDeep(prevResult?.data, data)) as TData;
           }
           if (options.select != null && data != null) {
             _previousSelect = SelectQuery<TQueryData, TData>(

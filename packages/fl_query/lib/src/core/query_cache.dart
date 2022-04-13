@@ -171,7 +171,7 @@ class QueryCache extends Subscribable<QueryCacheListener> {
 
   void notify(QueryCacheNotifyEvent event) {
     notifyManager.batch(() {
-      for (var listener in listeners) {
+      for (final listener in listeners) {
         listener(event);
       }
     });
