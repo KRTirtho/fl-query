@@ -439,8 +439,14 @@ class QueryObserver<
 
     // Select data if needed
     else if (options.select != null && state.data != null) {
+      print("prevResult != null ${prevResult != null}");
+      print(
+          "state.data == prevResultState?.data | ${state.data} == ${prevResultState?.data} | ${shallowEqualMap(state.data, prevResultState?.data)}");
+      print(
+          "options.select == _previousSelect?.fn ${options.select == _previousSelect?.fn}");
+      print("_previousSelectError == null ${_previousSelectError == null}");
       if (prevResult != null &&
-          state.data == prevResultState?.data &&
+          shallowEqualMap(state.data, prevResultState?.data) &&
           options.select == _previousSelect?.fn &&
           _previousSelectError == null) {
         data = _previousSelect?.result;

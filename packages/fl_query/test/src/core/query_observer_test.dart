@@ -148,6 +148,7 @@ void main() {
       }
 
       select2(_data) {
+        print(StackTrace.current);
         count++;
         return {"myCount": 99};
       }
@@ -169,6 +170,8 @@ void main() {
         select: select2,
       ));
       await Future.delayed(Duration(milliseconds: 1));
+      //! Currently causing an extra call for refetch
+      //! select shouldn't be called when refetch is called
       await observer.refetch();
       unsubscribe();
       expect(count, 2);
@@ -248,7 +251,7 @@ void main() {
         QueryObserverOptions<Map<String, dynamic>, dynamic,
             Map<String, dynamic>, Map<String, dynamic>>(
           queryKey: key,
-          queryFn: (_) => {"count": count},
+          queryFn: (_) => {"count": 1},
           select: (data) {
             count++;
             return {"myCount": data?["count"]};
@@ -394,9 +397,12 @@ void main() {
     });
 
     test('should accept unresolved query config in update function', () async {
+      // test is failing in [QueryObserver.updateResult] called by
+      // staleTimeout callback. For some reason _currentResult and
+      // prevResult is shallow equal
       final key = queryKey();
       ;
-      final observer = new QueryObserver<Map<String, dynamic>, dynamic,
+      final observer = QueryObserver<Map<String, dynamic>, dynamic,
               Map<String, dynamic>, Map<String, dynamic>>(
           queryClient,
           QueryObserverOptions<Map<String, dynamic>, dynamic,
@@ -423,7 +429,7 @@ void main() {
       }
 
       await queryClient.fetchQuery(queryKey: key, queryFn: queryFn);
-      await Future.delayed(Duration(milliseconds: 100));
+      await sleep(100);
       unsubscribe();
       expect(count, 1);
       expect(results.length, 3);
