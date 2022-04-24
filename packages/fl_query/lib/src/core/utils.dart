@@ -2,6 +2,7 @@ import 'package:fl_query/src/core/models.dart';
 import 'package:fl_query/src/core/query.dart';
 import 'package:fl_query/src/core/query_key.dart';
 import 'package:collection/collection.dart';
+import 'dart:math';
 
 /// Default query keys hash function.
 /// Dummy function just to fill the gaps for original react-query like
@@ -159,7 +160,16 @@ List replaceEqualDeepList(List a, List b, void Function() onEqual) {
   return copy;
 }
 
-Duration timeUntilStale(DateTime updatedAt, [Duration? staleTime]) =>
-    updatedAt.add(staleTime ?? Duration.zero).difference(DateTime.now());
+Duration timeUntilStale(DateTime updatedAt, [Duration? staleTime]) {
+  return Duration(
+    milliseconds: max<int>(
+      updatedAt
+          .add(staleTime ?? Duration.zero)
+          .difference(DateTime.now())
+          .inMilliseconds,
+      0,
+    ),
+  );
+}
 
 typedef DataUpdateFunction<TInput, TOutput> = TOutput Function(TInput input);

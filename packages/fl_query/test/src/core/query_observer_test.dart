@@ -397,9 +397,6 @@ void main() {
     });
 
     test('should accept unresolved query config in update function', () async {
-      // test is failing in [QueryObserver.updateResult] called by
-      // staleTimeout callback. For some reason _currentResult and
-      // prevResult is shallow equal
       final key = queryKey();
       ;
       final observer = QueryObserver<Map<String, dynamic>, dynamic,
