@@ -237,8 +237,7 @@ class QueryObserver<
       if (!result.isFetching) {
         unsubscribe?.call();
         if (result.isError && throwOnError == true) {
-          if (!completer.isCompleted)
-            completer.completeError(result.error as Object);
+          if (!completer.isCompleted) completer.completeError(result.error);
         } else {
           if (!completer.isCompleted)
             completer.complete(
