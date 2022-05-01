@@ -29,6 +29,11 @@ class CancelledError {
   bool? revert;
   bool? silent;
   CancelledError({this.revert, this.silent});
+
+  @override
+  String toString() {
+    return "CancelledError(revert: $revert, silent: $silent)";
+  }
 }
 
 bool isCancelledError(value) {
