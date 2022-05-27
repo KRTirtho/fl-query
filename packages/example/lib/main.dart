@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:fl_query/query_bowl.dart';
 import 'package:fl_query/query_builder.dart';
 import 'package:flutter/material.dart';
@@ -22,9 +24,14 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key}) : super(key: key);
 
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,7 +42,8 @@ class MyHomePage extends StatelessWidget {
         children: [
           QueryBuilder<String>(
             queryKey: "greetings",
-            task: (queryKey) => Future.value("Welcome ($queryKey)"),
+            task: (queryKey) => Future.value(
+                "Welcome ($queryKey) ${Random.secure().nextInt(100)}"),
             builder: (context, query) {
               if (query.isLoading) return const CircularProgressIndicator();
               return Row(

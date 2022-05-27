@@ -21,13 +21,14 @@ class Query<T> extends ChangeNotifier {
   QueryTaskFunction<T> task;
   final int retries;
   final Duration retryDelay;
+  final Duration _staleTime;
 
   // all properties
   T? data;
   dynamic error;
   QueryStatus status;
   int retryAttempts = 0;
-  late DateTime updatedAt;
+  DateTime updatedAt;
   int refetchCount = 0;
 
   @protected
@@ -39,15 +40,18 @@ class Query<T> extends ChangeNotifier {
   Query({
     required this.queryKey,
     required this.task,
+    required Duration staleTime,
     this.retries = 3,
     this.retryDelay = const Duration(milliseconds: 200),
     T? initialData,
     QueryListener<T>? onData,
     QueryListener<dynamic>? onError,
   })  : status = QueryStatus.pending,
+        _staleTime = staleTime,
         data = initialData,
         _onData = onData,
-        _onError = onError;
+        _onError = onError,
+        updatedAt = DateTime.now();
 
   // all getters & setters
   bool get hasData => data != null && error == null;
@@ -60,6 +64,9 @@ class Query<T> extends ChangeNotifier {
   bool get isSucceeded => status == QueryStatus.succeed && data != null;
 
   // all methods
+
+  /// Calls the task function & doesn't check if there's already
+  /// cached data available
   Future<void> _execute({bool isFetch = true}) async {
     try {
       retryAttempts = 0;
@@ -95,6 +102,9 @@ class Query<T> extends ChangeNotifier {
   }
 
   Future<T?> fetch() async {
+    if (!_isStaleData() && hasData) {
+      return data;
+    }
     return _execute().then((_) {
       fetched = true;
       return data;
@@ -104,5 +114,11 @@ class Query<T> extends ChangeNotifier {
   Future<T?> refetch() {
     refetchCount++;
     return _execute(isFetch: false).then((_) => data);
+  }
+
+  bool _isStaleData() {
+    // when current DateTime is after [update_at + stale_time] it means
+    // the data has become stale
+    return DateTime.now().isAfter(updatedAt.add(_staleTime));
   }
 }

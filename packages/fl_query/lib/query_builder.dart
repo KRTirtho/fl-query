@@ -18,19 +18,22 @@ class QueryBuilder<T> extends StatefulWidget {
 }
 
 class _QueryBuilderState<T> extends State<QueryBuilder<T>> {
-  late Query<T> query;
   @override
   void initState() {
     super.initState();
-    query = Query<T>(queryKey: widget.queryKey, task: widget.task);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await QueryBowl.of(context).fetchQuery(query);
+      await QueryBowl.of(context).fetchQuery(Query<T>(
+        queryKey: widget.queryKey,
+        task: widget.task,
+        staleTime: QueryBowl.of(context).staleTime,
+      ));
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final queryRT = QueryBowl.of(context).getQuery<T>(widget.queryKey) ?? query;
-    return widget.builder(context, queryRT);
+    final query = QueryBowl.of(context).getQuery<T>(widget.queryKey);
+    if (query == null) return Container();
+    return widget.builder(context, query);
   }
 }
