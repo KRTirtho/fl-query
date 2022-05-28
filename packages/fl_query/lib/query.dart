@@ -21,6 +21,9 @@ class Query<T> extends ChangeNotifier {
   QueryTaskFunction<T> task;
   final int retries;
   final Duration retryDelay;
+  final T? _initialData;
+
+  // got from global options
   final Duration _staleTime;
 
   // all properties
@@ -41,13 +44,14 @@ class Query<T> extends ChangeNotifier {
     required this.queryKey,
     required this.task,
     required Duration staleTime,
-    this.retries = 3,
-    this.retryDelay = const Duration(milliseconds: 200),
+    required this.retries,
+    required this.retryDelay,
     T? initialData,
     QueryListener<T>? onData,
     QueryListener<dynamic>? onError,
   })  : status = QueryStatus.pending,
         _staleTime = staleTime,
+        _initialData = initialData,
         data = initialData,
         _onData = onData,
         _onError = onError,
@@ -60,49 +64,55 @@ class Query<T> extends ChangeNotifier {
   bool get isLoading =>
       status == QueryStatus.pending && data == null && error == null;
   bool get isRefetching =>
-      status == QueryStatus.refetching && data == null && error == null;
+      status == QueryStatus.refetching && (data != null || error != null);
   bool get isSucceeded => status == QueryStatus.succeed && data != null;
 
   // all methods
 
   /// Calls the task function & doesn't check if there's already
   /// cached data available
-  Future<void> _execute({bool isFetch = true}) async {
+  Future<void> _execute() async {
     try {
       retryAttempts = 0;
-      status = isFetch ? QueryStatus.pending : QueryStatus.refetching;
       data = await task(queryKey);
       updatedAt = DateTime.now();
       status = QueryStatus.succeed;
       _onData?.call(data!);
       notifyListeners();
     } catch (e) {
-      status = QueryStatus.failed;
-      error = e;
-      _onError?.call(e);
-      notifyListeners();
-      // retrying for retry count if failed for the first time
-      while (retryAttempts <= retries) {
-        await Future.delayed(retryDelay);
-        try {
-          data = await task(queryKey);
-          status = QueryStatus.succeed;
-          _onData?.call(data!);
-          notifyListeners();
-          break;
-        } catch (e) {
-          status = QueryStatus.failed;
-          error = e;
-          retryAttempts++;
-          _onError?.call(e);
-          notifyListeners();
+      if (retries == 0) {
+        status = QueryStatus.failed;
+        error = e;
+        _onError?.call(e);
+        notifyListeners();
+      } else {
+        // retrying for retry count if failed for the first time
+        while (retryAttempts <= retries) {
+          await Future.delayed(retryDelay);
+          try {
+            data = await task(queryKey);
+            status = QueryStatus.succeed;
+            _onData?.call(data!);
+            notifyListeners();
+            break;
+          } catch (e) {
+            if (retryAttempts == retries) {
+              status = QueryStatus.failed;
+              error = e;
+              _onError?.call(e);
+              notifyListeners();
+            }
+            retryAttempts++;
+          }
         }
       }
     }
   }
 
   Future<T?> fetch() async {
-    if (!_isStaleData() && hasData) {
+    status = QueryStatus.pending;
+    notifyListeners();
+    if (!isStale && hasData) {
       return data;
     }
     return _execute().then((_) {
@@ -112,11 +122,43 @@ class Query<T> extends ChangeNotifier {
   }
 
   Future<T?> refetch() {
+    status = QueryStatus.refetching;
     refetchCount++;
-    return _execute(isFetch: false).then((_) => data);
+    notifyListeners();
+    return _execute().then((_) => data);
   }
 
-  bool _isStaleData() {
+  /// can be used to update the data manually. Can be useful when used
+  /// together with mutations to perform optimistic updates or manual data
+  /// updates
+  /// For updating particular queries after a mutation using the
+  /// `QueryBowl.refetchQueries` is more appropriate. But this one can be
+  /// used when only 1 query needs get updated
+  ///
+  /// Every time a new instance of data should be returned because of
+  /// immutability
+  update(FutureOr<T> Function(T? data) updateFn) async {
+    final newData = await updateFn(data);
+    if (data == newData) {
+      // TODO: Better Error handling & Error structure
+      throw Exception(
+          "[fl_query] new instance of data should be returned because of immutability");
+    }
+    data = newData;
+    status = QueryStatus.succeed;
+    notifyListeners();
+  }
+
+  void reset() {
+    refetchCount = 0;
+    data = _initialData;
+    error = null;
+    fetched = false;
+    status = QueryStatus.pending;
+    retryAttempts = 0;
+  }
+
+  bool get isStale {
     // when current DateTime is after [update_at + stale_time] it means
     // the data has become stale
     return DateTime.now().isAfter(updatedAt.add(_staleTime));
