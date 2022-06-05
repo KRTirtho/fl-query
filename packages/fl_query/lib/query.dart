@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fl_query/models/query_job.dart';
 import 'package:flutter/widgets.dart';
 
 enum QueryStatus {
@@ -9,16 +10,16 @@ enum QueryStatus {
   refetching;
 }
 
-typedef QueryTaskFunction<T> = FutureOr<T> Function(String);
+typedef QueryTaskFunction<T, Outside> = FutureOr<T> Function(String, Outside);
 
 typedef QueryListener<T> = FutureOr<void> Function(T);
 
 typedef ListenerUnsubscriber = void Function();
 
-class Query<T> extends ChangeNotifier {
+class Query<T extends Object, Outside> extends ChangeNotifier {
   // all params
   final String queryKey;
-  QueryTaskFunction<T> task;
+  QueryTaskFunction<T, Outside> task;
   final int retries;
   final Duration retryDelay;
   final T? _initialData;
@@ -40,10 +41,17 @@ class Query<T> extends ChangeNotifier {
   final QueryListener<T>? _onData;
   final QueryListener<dynamic>? _onError;
 
+  // externalData will always be passed to the task Callback
+  // it will change based on the presence of QueryBuilder
+  Outside _externalData;
+
+  Outside? _prevUsedExternalData;
+
   Query({
     required this.queryKey,
     required this.task,
     required Duration staleTime,
+    required Outside externalData,
     required this.retries,
     required this.retryDelay,
     T? initialData,
@@ -52,9 +60,25 @@ class Query<T> extends ChangeNotifier {
   })  : status = QueryStatus.pending,
         _staleTime = staleTime,
         _initialData = initialData,
+        _externalData = externalData,
         data = initialData,
         _onData = onData,
         _onError = onError,
+        updatedAt = DateTime.now();
+
+  Query.fromOptions(QueryJob<T, Outside> options,
+      {required Outside externalData})
+      : queryKey = options.queryKey,
+        task = options.task,
+        retries = options.retries ?? 3,
+        retryDelay = options.retryDelay ?? const Duration(milliseconds: 200),
+        _staleTime = options.staleTime ?? const Duration(days: 1),
+        _initialData = options.initialData,
+        _externalData = externalData,
+        _onData = options.onData,
+        _onError = options.onError,
+        data = options.initialData,
+        status = QueryStatus.pending,
         updatedAt = DateTime.now();
 
   // all getters & setters
@@ -66,6 +90,8 @@ class Query<T> extends ChangeNotifier {
   bool get isRefetching =>
       status == QueryStatus.refetching && (data != null || error != null);
   bool get isSucceeded => status == QueryStatus.succeed && data != null;
+  Outside get externalData => _externalData;
+  Outside? get prevUsedExternalData => _prevUsedExternalData;
 
   // all methods
 
@@ -74,7 +100,8 @@ class Query<T> extends ChangeNotifier {
   Future<void> _execute() async {
     try {
       retryAttempts = 0;
-      data = await task(queryKey);
+      data = await task(queryKey, _externalData);
+      _prevUsedExternalData = _externalData;
       updatedAt = DateTime.now();
       status = QueryStatus.succeed;
       _onData?.call(data!);
@@ -90,7 +117,8 @@ class Query<T> extends ChangeNotifier {
         while (retryAttempts <= retries) {
           await Future.delayed(retryDelay);
           try {
-            data = await task(queryKey);
+            data = await task(queryKey, _externalData);
+            _prevUsedExternalData = _externalData;
             status = QueryStatus.succeed;
             _onData?.call(data!);
             notifyListeners();
@@ -149,6 +177,10 @@ class Query<T> extends ChangeNotifier {
     notifyListeners();
   }
 
+  setExternalData(Outside externalData) {
+    _externalData = externalData;
+  }
+
   void reset() {
     refetchCount = 0;
     data = _initialData;
@@ -163,4 +195,6 @@ class Query<T> extends ChangeNotifier {
     // the data has become stale
     return DateTime.now().isAfter(updatedAt.add(_staleTime));
   }
+
+  A? cast<A>() => this is A ? this as A : null;
 }

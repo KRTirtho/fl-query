@@ -1,57 +1,49 @@
+import 'package:fl_query/models/query_job.dart';
 import 'package:fl_query/query.dart';
 import 'package:fl_query/query_bowl.dart';
 import 'package:flutter/widgets.dart';
 
-class QueryBuilder<T> extends StatefulWidget {
-  final Widget Function(BuildContext, Query<T>) builder;
-  final QueryTaskFunction<T> task;
-  final String queryKey;
-  final Duration? staleTime;
-  final int retries;
-  final T? initialData;
-  final Duration retryDelay;
-
-  final QueryListener<T>? onData;
-  final QueryListener<dynamic>? onError;
+class QueryBuilder<T extends Object, Outside> extends StatefulWidget {
+  final Function(BuildContext, Query<T, Outside>) builder;
+  final QueryJob<T, Outside> job;
+  final Outside externalData;
 
   const QueryBuilder({
+    required this.job,
+    required this.externalData,
     required this.builder,
-    required this.task,
-    required this.queryKey,
-    this.initialData,
-    this.staleTime,
-    this.retryDelay = const Duration(milliseconds: 200),
-    this.retries = 3,
-    this.onData,
-    this.onError,
     Key? key,
   }) : super(key: key);
 
   @override
-  State<QueryBuilder<T>> createState() => _QueryBuilderState<T>();
+  State<QueryBuilder<T, Outside>> createState() =>
+      _QueryBuilderState<T, Outside>();
 }
 
-class _QueryBuilderState<T> extends State<QueryBuilder<T>> {
+class _QueryBuilderState<T extends Object, Outside>
+    extends State<QueryBuilder<T, Outside>> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await QueryBowl.of(context).fetchQuery(Query<T>(
-        queryKey: widget.queryKey,
-        task: widget.task,
-        staleTime: widget.staleTime ?? QueryBowl.of(context).staleTime,
-        retries: widget.retries,
-        initialData: widget.initialData,
-        retryDelay: widget.retryDelay,
-        onData: widget.onData,
-        onError: widget.onError,
-      ));
+      await QueryBowl.of(context).fetchQuery<T, Outside>(widget.job,
+          externalData: widget.externalData);
     });
   }
 
   @override
+  void didUpdateWidget(covariant oldWidget) {
+    if (oldWidget.externalData != widget.externalData) {
+      QueryBowl.of(context)
+          .fetchQuery(widget.job, externalData: widget.externalData);
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final query = QueryBowl.of(context).getQuery<T>(widget.queryKey);
+    final query =
+        QueryBowl.of(context).getQuery<T, Outside>(widget.job.queryKey);
     if (query == null) return Container();
     return widget.builder(context, query);
   }
