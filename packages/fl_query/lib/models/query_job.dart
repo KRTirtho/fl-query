@@ -8,6 +8,10 @@ class QueryJob<T extends Object, Outside> {
   final Duration? retryDelay;
   final T? initialData;
 
+  /// If set to false then the initial fetch will not be called & to
+  /// start the process the user has to call the refetch first
+  final bool? enabled;
+
   // got from global options
   final Duration? staleTime;
 
@@ -22,5 +26,6 @@ class QueryJob<T extends Object, Outside> {
     this.staleTime,
     this.onData,
     this.onError,
+    this.enabled,
   });
 }

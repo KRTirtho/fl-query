@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:example/another_component.dart';
+import 'package:example/lazy_query.dart';
 import 'package:example/query_with_external_data.dart';
 import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';
@@ -35,7 +36,9 @@ final successJob = QueryJob<String, void>(
 
 final failedJob = QueryJob<String, void>(
   queryKey: "failure",
-  task: (queryKey, _) => Future.value("[$queryKey] Failed for unknown reason"),
+  task: (queryKey, _) => Random().nextBool()
+      ? Future.error("[$queryKey] Failed for unknown reason")
+      : Future.value("Success, you'll get slowly ${Random().nextInt(100)}!"),
 );
 
 class MyHomePage extends StatefulWidget {
@@ -90,8 +93,20 @@ class _MyHomePageState extends State<MyHomePage> {
                 job: failedJob,
                 externalData: null,
                 builder: (context, query) {
-                  if (query.hasError) return Text(query.error);
-                  return Text("Failure. You're a failure ${query.data}");
+                  return Row(
+                    children: [
+                      if (query.hasError)
+                        Text(
+                            "${query.error}. Retrying: ${query.retryAttempts}"),
+                      if (query.hasData)
+                        Text(
+                            "Success after ${query.retryAttempts}. Data: ${query.data}"),
+                      ElevatedButton(
+                        child: Text("Refetch ${query.queryKey}"),
+                        onPressed: () => query.refetch(),
+                      )
+                    ],
+                  );
                 },
               ),
             ],
@@ -102,6 +117,17 @@ class _MyHomePageState extends State<MyHomePage> {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => const QueryWithExternalData(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 10),
+          ElevatedButton(
+            child: const Text("Non Enabled Query Example"),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const LazyQuery(),
                 ),
               );
             },

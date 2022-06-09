@@ -20,6 +20,9 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
   // all params
   final String queryKey;
   QueryTaskFunction<T, Outside> task;
+
+  /// The number of times the query should refetch in the time of error
+  /// before giving up
   final int retries;
   final Duration retryDelay;
   final T? _initialData;
@@ -31,9 +34,13 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
   T? data;
   dynamic error;
   QueryStatus status;
+
+  /// total count of how many times the query retried to get a successful
+  /// result
   int retryAttempts = 0;
   DateTime updatedAt;
   int refetchCount = 0;
+  bool enabled;
 
   @protected
   bool fetched = false;
@@ -55,6 +62,7 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
     required this.retries,
     required this.retryDelay,
     T? initialData,
+    this.enabled = true,
     QueryListener<T>? onData,
     QueryListener<dynamic>? onError,
   })  : status = QueryStatus.pending,
@@ -69,6 +77,7 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
   Query.fromOptions(QueryJob<T, Outside> options,
       {required Outside externalData})
       : queryKey = options.queryKey,
+        enabled = options.enabled ?? true,
         task = options.task,
         retries = options.retries ?? 3,
         retryDelay = options.retryDelay ?? const Duration(milliseconds: 200),
@@ -90,6 +99,7 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
   bool get isRefetching =>
       status == QueryStatus.refetching && (data != null || error != null);
   bool get isSucceeded => status == QueryStatus.succeed && data != null;
+  bool get isIdle => isSucceeded && error == null;
   Outside get externalData => _externalData;
   Outside? get prevUsedExternalData => _prevUsedExternalData;
 
@@ -140,6 +150,7 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
   Future<T?> fetch() async {
     status = QueryStatus.pending;
     notifyListeners();
+    if (!enabled) return null;
     if (!isStale && hasData) {
       return data;
     }
@@ -149,11 +160,16 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
     });
   }
 
-  Future<T?> refetch() {
+  Future<T?> refetch() async {
+    // cannot let run multiple refetch at the same time. It can cause
+    // race-condition
+    if (isRefetching) return null;
     status = QueryStatus.refetching;
     refetchCount++;
+    // disabling the lazy query bound when query was actually called
+    if (!enabled) enabled = false;
     notifyListeners();
-    return _execute().then((_) => data);
+    return await _execute().then((_) => data);
   }
 
   /// can be used to update the data manually. Can be useful when used
