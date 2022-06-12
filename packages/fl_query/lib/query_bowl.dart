@@ -8,14 +8,16 @@ import 'package:flutter/widgets.dart';
 class QueryBowlScope extends StatefulWidget {
   final Widget child;
   final Duration staleTime;
+  final Duration cacheTime;
 
   /// used for periodically checking if any query got stale.
   /// If none is supplied then half of the value of staleTime is used
-  final Duration? refreshInterval;
+  final Duration refreshInterval;
   const QueryBowlScope({
     required this.child,
-    this.staleTime = const Duration(minutes: 5),
-    this.refreshInterval,
+    this.staleTime = const Duration(milliseconds: 500),
+    this.cacheTime = const Duration(minutes: 5),
+    this.refreshInterval = const Duration(minutes: 5),
     Key? key,
   }) : super(key: key);
 
@@ -33,10 +35,7 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
     super.initState();
     queries = {};
     refreshIntervalTimer = Timer.periodic(
-      widget.refreshInterval ??
-          Duration(
-            milliseconds: (widget.staleTime.inMilliseconds / 2).round(),
-          ),
+      widget.refreshInterval,
       _checkAndUpdateStaleQueriesOnBg,
     );
   }
@@ -58,19 +57,25 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
 
   void _listenToQueryUpdate() {
     for (final query in queries) {
-      query.addListener(updateQueries);
+      query.addListener(() => updateQueries(query));
     }
   }
 
   void _disposeListeners() {
     for (final query in queries) {
-      query.removeListener(updateQueries);
+      query.removeListener(() => updateQueries(query));
     }
   }
 
-  void updateQueries() {
+  void updateQueries(Query query) {
     setState(() {
-      queries = Set.from(queries);
+      // checking & not including inactive queries
+      // basically garbage collecting queries
+      queries = Set.from(
+        query.isInactive
+            ? queries.where((el) => el.queryKey != query.queryKey)
+            : queries,
+      );
     });
   }
 
@@ -114,8 +119,13 @@ class QueryBowl extends InheritedWidget {
         _queries = queries,
         super(child: child, key: key);
 
-  Future<T?> fetchQuery<T extends Object, Outside>(QueryJob<T, Outside> options,
-      {required Outside externalData}) async {
+  Future<T?> fetchQuery<T extends Object, Outside>(
+    QueryJob<T, Outside> options, {
+    required Outside externalData,
+    final QueryListener<T>? onData,
+    final QueryListener<dynamic>? onError,
+    Widget? mount,
+  }) async {
     final prevQuery =
         _queries.firstWhereOrNull((q) => q.queryKey == options.queryKey);
     if (prevQuery is Query<T, Outside>) {
@@ -123,16 +133,23 @@ class QueryBowl extends InheritedWidget {
       // changed
       final hasExternalDataChanged =
           prevQuery.prevUsedExternalData != externalData;
+      if (mount != null) prevQuery.mount(mount);
       if (!prevQuery.hasData || hasExternalDataChanged) {
         if (hasExternalDataChanged) prevQuery.setExternalData(externalData);
         return prevQuery.fetched
             ? await prevQuery.refetch()
             : await prevQuery.fetch();
       }
+      // mounting the widget that is using the query in the prevQuery
       return prevQuery.data;
     }
-    final query =
-        Query<T, Outside>.fromOptions(options, externalData: externalData);
+    final query = Query<T, Outside>.fromOptions(
+      options,
+      externalData: externalData,
+      onData: onData,
+      onError: onError,
+    );
+    if (mount != null) query.mount(mount);
     _addQuery<T, Outside>(query);
     return await query.fetch();
   }

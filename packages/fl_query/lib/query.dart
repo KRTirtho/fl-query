@@ -29,6 +29,7 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
 
   // got from global options
   final Duration _staleTime;
+  final Duration _cacheTime;
 
   // all properties
   T? data;
@@ -54,10 +55,16 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
 
   Outside? _prevUsedExternalData;
 
+  /// used for keeping track of query activity. If the are no mounts &
+  /// the passed cached time is over than the query is removed from
+  /// storage/cache
+  Set<Widget> _mounts = {};
+
   Query({
     required this.queryKey,
     required this.task,
     required Duration staleTime,
+    required Duration cacheTime,
     required Outside externalData,
     required this.retries,
     required this.retryDelay,
@@ -67,6 +74,7 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
     QueryListener<dynamic>? onError,
   })  : status = QueryStatus.pending,
         _staleTime = staleTime,
+        _cacheTime = cacheTime,
         _initialData = initialData,
         _externalData = externalData,
         data = initialData,
@@ -74,18 +82,22 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
         _onError = onError,
         updatedAt = DateTime.now();
 
-  Query.fromOptions(QueryJob<T, Outside> options,
-      {required Outside externalData})
-      : queryKey = options.queryKey,
+  Query.fromOptions(
+    QueryJob<T, Outside> options, {
+    required Outside externalData,
+    QueryListener<T>? onData,
+    QueryListener<dynamic>? onError,
+  })  : queryKey = options.queryKey,
         enabled = options.enabled ?? true,
         task = options.task,
         retries = options.retries ?? 3,
         retryDelay = options.retryDelay ?? const Duration(milliseconds: 200),
-        _staleTime = options.staleTime ?? const Duration(days: 1),
+        _staleTime = options.staleTime ?? const Duration(milliseconds: 500),
+        _cacheTime = options.cacheTime ?? const Duration(minutes: 5),
         _initialData = options.initialData,
         _externalData = externalData,
-        _onData = options.onData,
-        _onError = options.onError,
+        _onData = onData,
+        _onError = onError,
         data = options.initialData,
         status = QueryStatus.pending,
         updatedAt = DateTime.now();
@@ -100,10 +112,28 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
       status == QueryStatus.refetching && (data != null || error != null);
   bool get isSucceeded => status == QueryStatus.succeed && data != null;
   bool get isIdle => isSucceeded && error == null;
+  bool get isInactive => _mounts.isEmpty;
   Outside get externalData => _externalData;
   Outside? get prevUsedExternalData => _prevUsedExternalData;
 
   // all methods
+
+  void mount(Widget widget) {
+    _mounts.add(widget);
+  }
+
+  void unmount(Widget widget) {
+    if (_mounts.length == 1) {
+      Future.delayed(_cacheTime, () {
+        _mounts.remove(widget);
+        // for letting know QueryBowl that this one's time has come for
+        // getting crushed
+        notifyListeners();
+      });
+    } else {
+      _mounts.remove(widget);
+    }
+  }
 
   /// Calls the task function & doesn't check if there's already
   /// cached data available
@@ -213,4 +243,11 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
   }
 
   A? cast<A>() => this is A ? this as A : null;
+
+  String get debugLabel => "Query($queryKey)";
+
+  @override
+  String toString() {
+    return debugLabel;
+  }
 }

@@ -30,15 +30,18 @@ class MyApp extends StatelessWidget {
 }
 
 final successJob = QueryJob<String, void>(
-    queryKey: "greetings",
-    task: (queryKey, _) => Future.delayed(const Duration(seconds: 2),
-        () => "Welcome ($queryKey) ${Random.secure().nextInt(100)}"));
+  queryKey: "greetings",
+  task: (queryKey, _) => Future.delayed(const Duration(seconds: 2),
+      () => "Welcome ($queryKey) ${Random.secure().nextInt(100)}"),
+);
 
 final failedJob = QueryJob<String, void>(
   queryKey: "failure",
   task: (queryKey, _) => Random().nextBool()
       ? Future.error("[$queryKey] Failed for unknown reason")
-      : Future.value("Success, you'll get slowly ${Random().nextInt(100)}!"),
+      : Future.value(
+          "Success, you'll get slowly ${Random().nextInt(100)}!",
+        ),
 );
 
 class MyHomePage extends StatefulWidget {
@@ -97,7 +100,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     children: [
                       if (query.hasError)
                         Text(
-                            "${query.error}. Retrying: ${query.retryAttempts}"),
+                          "${query.error}. Retrying: ${query.retryAttempts}",
+                        ),
                       if (query.hasData)
                         Text(
                             "Success after ${query.retryAttempts}. Data: ${query.data}"),

@@ -14,9 +14,8 @@ class QueryJob<T extends Object, Outside> {
 
   // got from global options
   final Duration? staleTime;
+  final Duration? cacheTime;
 
-  final QueryListener<T>? onData;
-  final QueryListener<dynamic>? onError;
   QueryJob({
     required this.queryKey,
     required this.task,
@@ -24,8 +23,7 @@ class QueryJob<T extends Object, Outside> {
     this.retryDelay,
     this.initialData,
     this.staleTime,
-    this.onData,
-    this.onError,
+    this.cacheTime,
     this.enabled,
   });
 }
