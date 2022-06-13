@@ -18,6 +18,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return QueryBowlScope(
       child: MaterialApp(
+        // showPerformanceOverlay: true,
         title: 'Flutter Demo',
         theme: ThemeData(
           useMaterial3: true,

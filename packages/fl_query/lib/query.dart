@@ -211,7 +211,7 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
   ///
   /// Every time a new instance of data should be returned because of
   /// immutability
-  update(FutureOr<T> Function(T? data) updateFn) async {
+  setQueryData(FutureOr<T> Function(T? data) updateFn) async {
     final newData = await updateFn(data);
     if (data == newData) {
       // TODO: Better Error handling & Error structure
