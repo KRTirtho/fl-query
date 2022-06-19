@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:example/another_component.dart';
 import 'package:example/lazy_query.dart';
+import 'package:example/mutation_example.dart';
 import 'package:example/query_with_external_data.dart';
 import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';
@@ -133,6 +134,17 @@ class _MyHomePageState extends State<MyHomePage> {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => const LazyQuery(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 10),
+          ElevatedButton(
+            child: const Text("Mutation Example"),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const MutationExample(),
                 ),
               );
             },

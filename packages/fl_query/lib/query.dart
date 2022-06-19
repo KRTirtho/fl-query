@@ -46,8 +46,11 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
   @protected
   bool fetched = false;
 
-  final QueryListener<T>? _onData;
-  final QueryListener<dynamic>? _onError;
+  @protected
+  final Set<QueryListener<T>> onDataListeners = Set<QueryListener<T>>();
+  @protected
+  final Set<QueryListener<dynamic>> onErrorListeners =
+      Set<QueryListener<dynamic>>();
 
   // externalData will always be passed to the task Callback
   // it will change based on the presence of QueryBuilder
@@ -78,9 +81,10 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
         _initialData = initialData,
         _externalData = externalData,
         data = initialData,
-        _onData = onData,
-        _onError = onError,
-        updatedAt = DateTime.now();
+        updatedAt = DateTime.now() {
+    if (onData != null) onDataListeners.add(onData);
+    if (onError != null) onErrorListeners.add(onError);
+  }
 
   Query.fromOptions(
     QueryJob<T, Outside> options, {
@@ -96,11 +100,12 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
         _cacheTime = options.cacheTime ?? const Duration(minutes: 5),
         _initialData = options.initialData,
         _externalData = externalData,
-        _onData = onData,
-        _onError = onError,
         data = options.initialData,
         status = QueryStatus.pending,
-        updatedAt = DateTime.now();
+        updatedAt = DateTime.now() {
+    if (onData != null) onDataListeners.add(onData);
+    if (onError != null) onErrorListeners.add(onError);
+  }
 
   // all getters & setters
   bool get hasData => data != null && error == null;
@@ -144,13 +149,17 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
       _prevUsedExternalData = _externalData;
       updatedAt = DateTime.now();
       status = QueryStatus.succeed;
-      _onData?.call(data!);
+      for (final onData in onDataListeners) {
+        onData(data!);
+      }
       notifyListeners();
     } catch (e) {
       if (retries == 0) {
         status = QueryStatus.failed;
         error = e;
-        _onError?.call(e);
+        for (final onError in onErrorListeners) {
+          onError(error);
+        }
         notifyListeners();
       } else {
         // retrying for retry count if failed for the first time
@@ -160,14 +169,18 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
             data = await task(queryKey, _externalData);
             _prevUsedExternalData = _externalData;
             status = QueryStatus.succeed;
-            _onData?.call(data!);
+            for (final onData in onDataListeners) {
+              onData(data!);
+            }
             notifyListeners();
             break;
           } catch (e) {
             if (retryAttempts == retries) {
               status = QueryStatus.failed;
               error = e;
-              _onError?.call(e);
+              for (final onError in onErrorListeners) {
+                onError(error);
+              }
               notifyListeners();
             }
             retryAttempts++;
@@ -234,6 +247,9 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
     fetched = false;
     status = QueryStatus.pending;
     retryAttempts = 0;
+    onDataListeners.clear();
+    onErrorListeners.clear();
+    _mounts.clear();
   }
 
   bool get isStale {

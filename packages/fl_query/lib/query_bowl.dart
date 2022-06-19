@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:fl_query/models/mutation_job.dart';
 import 'package:fl_query/models/query_job.dart';
+import 'package:fl_query/mutation.dart';
 import 'package:fl_query/query.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/widgets.dart';
@@ -27,6 +29,7 @@ class QueryBowlScope extends StatefulWidget {
 
 class _QueryBowlScopeState extends State<QueryBowlScope> {
   late Set<Query> queries;
+  late Set<Mutation> mutations;
 
   late Timer refreshIntervalTimer;
 
@@ -34,6 +37,7 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
   void initState() {
     super.initState();
     queries = {};
+    mutations = {};
     refreshIntervalTimer = Timer.periodic(
       widget.refreshInterval,
       _checkAndUpdateStaleQueriesOnBg,
@@ -43,7 +47,7 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
   @override
   void dispose() {
     refreshIntervalTimer.cancel();
-    _disposeListeners();
+    _disposeUpdateListeners();
     super.dispose();
   }
 
@@ -55,15 +59,21 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
     }
   }
 
-  void _listenToQueryUpdate() {
+  void _listenToUpdates() {
     for (final query in queries) {
       query.addListener(() => updateQueries(query));
     }
+    for (final mutation in mutations) {
+      mutation.addListener(() => updateMutations(mutation));
+    }
   }
 
-  void _disposeListeners() {
+  void _disposeUpdateListeners() {
     for (final query in queries) {
       query.removeListener(() => updateQueries(query));
+    }
+    for (final mutation in mutations) {
+      mutation.removeListener(() => updateMutations(mutation));
     }
   }
 
@@ -79,19 +89,41 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
     });
   }
 
+  void updateMutations(Mutation mutation) {
+    setState(() {
+      // checking & not including inactive mutations
+      // basically garbage collecting mutations
+      mutations = Set.from(
+        mutation.isInactive
+            ? mutations.where(
+                (el) => el.mutationKey != mutation.mutationKey,
+              )
+            : mutations,
+      );
+    });
+  }
+
   void addQuery<T extends Object, Outside>(Query<T, Outside> query) {
     setState(() {
       queries = Set.from({...queries, query});
     });
   }
 
+  void addMutation<T extends Object, V>(Mutation<T, V> mutation) {
+    setState(() {
+      mutations = Set.from({...mutations, mutation});
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    _disposeListeners();
-    _listenToQueryUpdate();
+    _disposeUpdateListeners();
+    _listenToUpdates();
     return QueryBowl(
       addQuery: addQuery,
+      addMutation: addMutation,
       queries: queries,
+      mutations: mutations,
       staleTime: widget.staleTime,
       child: widget.child,
     );
@@ -102,21 +134,30 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
 /// Its responsible for creating/updating/delete queries
 class QueryBowl extends InheritedWidget {
   final Set<Query> _queries;
+  final Set<Mutation> _mutations;
   final Duration staleTime;
 
   final void Function<T extends Object, Outside>(Query<T, Outside> query)
       _addQuery;
+
+  final void Function<T extends Object, V>(Mutation<T, V> mutation)
+      _addMutation;
 
   const QueryBowl({
     required Widget child,
     required final void Function<T extends Object, Outside>(
             Query<T, Outside> query)
         addQuery,
+    required final void Function<T extends Object, V>(Mutation<T, V> mutation)
+        addMutation,
     required final Set<Query> queries,
+    required final Set<Mutation> mutations,
     required this.staleTime,
     Key? key,
   })  : _addQuery = addQuery,
         _queries = queries,
+        _mutations = mutations,
+        _addMutation = addMutation,
         super(child: child, key: key);
 
   Future<T?> fetchQuery<T extends Object, Outside>(
@@ -134,6 +175,8 @@ class QueryBowl extends InheritedWidget {
       final hasExternalDataChanged =
           prevQuery.prevUsedExternalData != externalData;
       if (mount != null) prevQuery.mount(mount);
+      if (onData != null) prevQuery.onDataListeners.add(onData);
+      if (onError != null) prevQuery.onErrorListeners.add(onError);
       if (!prevQuery.hasData || hasExternalDataChanged) {
         if (hasExternalDataChanged) prevQuery.setExternalData(externalData);
         return prevQuery.fetched
@@ -154,10 +197,42 @@ class QueryBowl extends InheritedWidget {
     return await query.fetch();
   }
 
+  void addMutation<T extends Object, V>(
+    MutationJob<T, V> options, {
+    final MutationListener<T>? onData,
+    final MutationListener<dynamic>? onError,
+    final MutationListener<V>? onMutate,
+    Widget? mount,
+  }) {
+    final prevMutation = _mutations.firstWhereOrNull(
+        (mutation) => mutation.mutationKey == options.mutationKey);
+    if (prevMutation != null && prevMutation is Mutation<T, V>) {
+      if (onData != null) prevMutation.onDataListeners.add(onData);
+      if (onError != null) prevMutation.onErrorListeners.add(onError);
+      if (onMutate != null) prevMutation.onMutateListeners.add(onMutate);
+      if (mount != null) prevMutation.mount(mount);
+    } else {
+      final mutation = Mutation.fromOptions(
+        options,
+        onData: onData,
+        onError: onError,
+        onMutate: onMutate,
+      );
+      if (mount != null) mutation.mount(mount);
+      _addMutation(mutation);
+    }
+  }
+
   Query<T, Outside>? getQuery<T extends Object, Outside>(String queryKey) {
     return _queries.firstWhereOrNull((query) {
       return query.queryKey == queryKey && query is Query<T, Outside>;
     })?.cast<Query<T, Outside>>();
+  }
+
+  Mutation<T, V>? getMutation<T extends Object, V>(String mutationKey) {
+    return _mutations.firstWhereOrNull((mutation) {
+      return mutation.mutationKey == mutationKey && mutation is Mutation<T, V>;
+    })?.cast<Mutation<T, V>>();
   }
 
   int get isFetching {
@@ -165,6 +240,16 @@ class QueryBowl extends InheritedWidget {
       0,
       (acc, query) {
         if (query.isLoading || query.isRefetching) acc++;
+        return acc;
+      },
+    );
+  }
+
+  int get isMutating {
+    return _mutations.fold<int>(
+      0,
+      (acc, mutation) {
+        if (mutation.isLoading) acc++;
         return acc;
       },
     );
@@ -181,6 +266,8 @@ class QueryBowl extends InheritedWidget {
 
   @override
   bool updateShouldNotify(QueryBowl oldWidget) {
-    return oldWidget.staleTime != staleTime || oldWidget._queries != _queries;
+    return oldWidget.staleTime != staleTime ||
+        oldWidget._queries != _queries ||
+        oldWidget._mutations != _mutations;
   }
 }

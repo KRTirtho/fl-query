@@ -68,7 +68,10 @@ class _QueryBuilderState<T extends Object, Outside>
 
   @override
   void dispose() {
-    queryBowl.getQuery(widget.job.queryKey)?.unmount(widget);
+    final query = queryBowl.getQuery(widget.job.queryKey);
+    query?.unmount(widget);
+    if (widget.onData != null) query?.onDataListeners.remove(widget.onData);
+    if (widget.onError != null) query?.onErrorListeners.remove(widget.onError);
     super.dispose();
   }
 
