@@ -16,6 +16,8 @@ typedef QueryListener<T> = FutureOr<void> Function(T);
 
 typedef ListenerUnsubscriber = void Function();
 
+typedef QueryUpdateFunction<T> = FutureOr<T> Function(T? oldData);
+
 class Query<T extends Object, Outside> extends ChangeNotifier {
   // all params
   final String queryKey;
@@ -224,7 +226,7 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
   ///
   /// Every time a new instance of data should be returned because of
   /// immutability
-  setQueryData(FutureOr<T> Function(T? data) updateFn) async {
+  void setQueryData(QueryUpdateFunction<T> updateFn) async {
     final newData = await updateFn(data);
     if (data == newData) {
       // TODO: Better Error handling & Error structure

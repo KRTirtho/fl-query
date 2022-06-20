@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:fl_query/models/mutation_job.dart';
 import 'package:fl_query/models/query_job.dart';
 import 'package:fl_query/mutation.dart';
 import 'package:fl_query/query.dart';
@@ -115,6 +114,27 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
     });
   }
 
+  int removeQueries(List<String> queryKeys) {
+    int count = 0;
+    setState(() {
+      mutations = Set.from(
+        queries.whereNot((query) {
+          final isAboutToRip = queryKeys.contains(query.queryKey);
+          if (isAboutToRip) count++;
+          return isAboutToRip;
+        }),
+      );
+    });
+    return count;
+  }
+
+  void clear() {
+    setState(() {
+      queries = Set<Query>();
+      mutations = Set<Mutation>();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     _disposeUpdateListeners();
@@ -122,6 +142,8 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
     return QueryBowl(
       addQuery: addQuery,
       addMutation: addMutation,
+      removeQueries: removeQueries,
+      clear: clear,
       queries: queries,
       mutations: mutations,
       staleTime: widget.staleTime,
@@ -143,6 +165,10 @@ class QueryBowl extends InheritedWidget {
   final void Function<T extends Object, V>(Mutation<T, V> mutation)
       _addMutation;
 
+  final int Function(List<String>) removeQueries;
+
+  final void Function() clear;
+
   const QueryBowl({
     required Widget child,
     required final void Function<T extends Object, Outside>(
@@ -153,6 +179,8 @@ class QueryBowl extends InheritedWidget {
     required final Set<Query> queries,
     required final Set<Mutation> mutations,
     required this.staleTime,
+    required this.removeQueries,
+    required this.clear,
     Key? key,
   })  : _addQuery = addQuery,
         _queries = queries,
@@ -160,6 +188,7 @@ class QueryBowl extends InheritedWidget {
         _addMutation = addMutation,
         super(child: child, key: key);
 
+  @protected
   Future<T?> fetchQuery<T extends Object, Outside>(
     QueryJob<T, Outside> options, {
     required Outside externalData,
@@ -197,6 +226,7 @@ class QueryBowl extends InheritedWidget {
     return await query.fetch();
   }
 
+  @protected
   Query<T, Outside> addQuery<T extends Object, Outside>(
     Query<T, Outside> query, {
     required ValueKey<String> key,
@@ -223,6 +253,7 @@ class QueryBowl extends InheritedWidget {
     return query;
   }
 
+  @protected
   Mutation<T, V> addMutation<T extends Object, V>(
     Mutation<T, V> mutation, {
     final MutationListener<T>? onData,
@@ -277,10 +308,30 @@ class QueryBowl extends InheritedWidget {
     );
   }
 
-  void resetQuery(String queryKey) {
-    _queries
-        .firstWhereOrNull((element) => element.queryKey == queryKey)
-        ?.reset();
+  void setQueryData<T extends Object, Outside>(
+      String queryKey, QueryUpdateFunction<T> updateCb) {
+    getQuery<T, Outside>(queryKey)?.setQueryData(updateCb);
+  }
+
+  void resetQueries(List<String> queryKeys) {
+    for (final query in _queries) {
+      if (!queryKeys.contains(query.queryKey)) continue;
+      query.reset();
+    }
+  }
+
+  void invalidateQueries(List<String> queryKeys) {
+    for (final query in _queries) {
+      if (!queryKeys.contains(query.queryKey)) continue;
+      // TODO: Implement Invaldiate Queries
+    }
+  }
+
+  Future<void> refetchQueries(List<String> queryKeys) async {
+    for (final query in _queries) {
+      if (!queryKeys.contains(query.queryKey)) continue;
+      await query.refetch();
+    }
   }
 
   static QueryBowl of(BuildContext context) =>
