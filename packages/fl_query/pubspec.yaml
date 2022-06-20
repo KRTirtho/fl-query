@@ -12,6 +12,7 @@ dependencies:
   collection: ^1.16.0
   flutter:
     sdk: flutter
+  uuid: ^3.0.6
 
 dev_dependencies:
   flutter_test:

@@ -34,7 +34,7 @@ class Mutation<T extends Object, V> extends ChangeNotifier {
   /// used for keeping track of mutation activity. If the are no mounts &
   /// the passed cached time is over than the mutation is removed from
   /// storage/cache
-  Set<Widget> _mounts = {};
+  Set<ValueKey<String>> _mounts = {};
 
   @protected
   final Set<MutationListener<T>> onDataListeners = {};
@@ -87,20 +87,20 @@ class Mutation<T extends Object, V> extends ChangeNotifier {
   bool get isInactive => _mounts.isEmpty;
   // all methods
 
-  void mount(Widget widget) {
-    _mounts.add(widget);
+  void mount(ValueKey<String> uKey) {
+    _mounts.add(uKey);
   }
 
-  void unmount(Widget widget) {
+  void unmount(ValueKey<String> uKey) {
     if (_mounts.length == 1) {
       Future.delayed(_cacheTime, () {
-        _mounts.remove(widget);
+        _mounts.remove(uKey);
         // for letting know QueryBowl that this one's time has come for
         // getting crushed
         notifyListeners();
       });
     } else {
-      _mounts.remove(widget);
+      _mounts.remove(uKey);
     }
   }
 

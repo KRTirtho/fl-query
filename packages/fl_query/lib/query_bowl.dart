@@ -165,7 +165,7 @@ class QueryBowl extends InheritedWidget {
     required Outside externalData,
     final QueryListener<T>? onData,
     final QueryListener<dynamic>? onError,
-    Widget? mount,
+    required ValueKey<String> key,
   }) async {
     final prevQuery =
         _queries.firstWhereOrNull((q) => q.queryKey == options.queryKey);
@@ -174,7 +174,7 @@ class QueryBowl extends InheritedWidget {
       // changed
       final hasExternalDataChanged =
           prevQuery.prevUsedExternalData != externalData;
-      if (mount != null) prevQuery.mount(mount);
+      prevQuery.mount(key);
       if (onData != null) prevQuery.onDataListeners.add(onData);
       if (onError != null) prevQuery.onErrorListeners.add(onError);
       if (!prevQuery.hasData || hasExternalDataChanged) {
@@ -192,34 +192,56 @@ class QueryBowl extends InheritedWidget {
       onData: onData,
       onError: onError,
     );
-    if (mount != null) query.mount(mount);
+    query.mount(key);
     _addQuery<T, Outside>(query);
     return await query.fetch();
   }
 
-  void addMutation<T extends Object, V>(
-    MutationJob<T, V> options, {
+  Query<T, Outside> addQuery<T extends Object, Outside>(
+    Query<T, Outside> query, {
+    required ValueKey<String> key,
+    final QueryListener<T>? onData,
+    final QueryListener<dynamic>? onError,
+  }) {
+    final prevQuery =
+        _queries.firstWhereOrNull((q) => q.queryKey == query.queryKey);
+    if (prevQuery is Query<T, Outside>) {
+      // run the query if its still not called or if externalData has
+      // changed
+      if (prevQuery.prevUsedExternalData != query.externalData)
+        prevQuery.setExternalData(query.externalData);
+      prevQuery.mount(key);
+      if (onData != null) prevQuery.onDataListeners.add(onData);
+      if (onError != null) prevQuery.onErrorListeners.add(onError);
+      // mounting the widget that is using the query in the prevQuery
+      return prevQuery;
+    }
+    if (onData != null) query.onDataListeners.add(onData);
+    if (onError != null) query.onErrorListeners.add(onError);
+    query.mount(key);
+    _addQuery<T, Outside>(query);
+    return query;
+  }
+
+  Mutation<T, V> addMutation<T extends Object, V>(
+    Mutation<T, V> mutation, {
     final MutationListener<T>? onData,
     final MutationListener<dynamic>? onError,
     final MutationListener<V>? onMutate,
-    Widget? mount,
+    required ValueKey<String> key,
   }) {
     final prevMutation = _mutations.firstWhereOrNull(
-        (mutation) => mutation.mutationKey == options.mutationKey);
+        (prevMutation) => prevMutation.mutationKey == mutation.mutationKey);
     if (prevMutation != null && prevMutation is Mutation<T, V>) {
       if (onData != null) prevMutation.onDataListeners.add(onData);
       if (onError != null) prevMutation.onErrorListeners.add(onError);
       if (onMutate != null) prevMutation.onMutateListeners.add(onMutate);
-      if (mount != null) prevMutation.mount(mount);
+      prevMutation.mount(key);
+      return prevMutation;
     } else {
-      final mutation = Mutation.fromOptions(
-        options,
-        onData: onData,
-        onError: onError,
-        onMutate: onMutate,
-      );
-      if (mount != null) mutation.mount(mount);
+      mutation.mount(key);
       _addMutation(mutation);
+      return mutation;
     }
   }
 

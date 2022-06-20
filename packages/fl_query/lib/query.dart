@@ -61,7 +61,7 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
   /// used for keeping track of query activity. If the are no mounts &
   /// the passed cached time is over than the query is removed from
   /// storage/cache
-  Set<Widget> _mounts = {};
+  Set<ValueKey<String>> _mounts = {};
 
   Query({
     required this.queryKey,
@@ -123,20 +123,20 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
 
   // all methods
 
-  void mount(Widget widget) {
-    _mounts.add(widget);
+  void mount(ValueKey<String> uKey) {
+    _mounts.add(uKey);
   }
 
-  void unmount(Widget widget) {
+  void unmount(ValueKey<String> uKey) {
     if (_mounts.length == 1) {
       Future.delayed(_cacheTime, () {
-        _mounts.remove(widget);
+        _mounts.remove(uKey);
         // for letting know QueryBowl that this one's time has come for
         // getting crushed
         notifyListeners();
       });
     } else {
-      _mounts.remove(widget);
+      _mounts.remove(uKey);
     }
   }
 

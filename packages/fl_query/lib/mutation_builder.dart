@@ -1,6 +1,7 @@
 import 'package:fl_query/models/mutation_job.dart';
 import 'package:fl_query/mutation.dart';
 import 'package:fl_query/query_bowl.dart';
+import 'package:fl_query/utils.dart';
 import 'package:flutter/widgets.dart';
 
 class MutationBuilder<T extends Object, V> extends StatefulWidget {
@@ -36,38 +37,62 @@ class _MutationBuilderState<T extends Object, V>
     extends State<MutationBuilder<T, V>> {
   late QueryBowl queryBowl;
 
+  late ValueKey<String> uKey;
+
+  late Mutation<T, V> mutation;
+
   @override
   void initState() {
     super.initState();
+    uKey = ValueKey<String>(uuid.v4());
+    mutation = Mutation<T, V>.fromOptions(widget.job);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       queryBowl = QueryBowl.of(context);
-      queryBowl.addMutation<T, V>(
-        widget.job,
+      mutation = queryBowl.addMutation<T, V>(
+        mutation,
         onData: widget.onData,
         onError: widget.onError,
         onMutate: widget.onMutate,
-        mount: widget,
+        key: uKey,
       );
     });
   }
 
   @override
+  void didUpdateWidget(covariant MutationBuilder<T, V> oldWidget) {
+    if (oldWidget.onData != widget.onData && oldWidget.onData != null) {
+      mutation.onDataListeners.remove(oldWidget.onData);
+      if (widget.onData != null) mutation.onDataListeners.add(widget.onData!);
+    }
+    if (oldWidget.onError != widget.onError && oldWidget.onError != null) {
+      mutation.onErrorListeners.remove(oldWidget.onError);
+      if (widget.onError != null)
+        mutation.onErrorListeners.add(widget.onError!);
+    }
+    if (oldWidget.onMutate != widget.onMutate && oldWidget.onMutate != null) {
+      mutation.onMutateListeners.remove(oldWidget.onMutate);
+      if (widget.onMutate != null)
+        mutation.onMutateListeners.add(widget.onMutate!);
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
   void dispose() {
-    final mutation = queryBowl.getMutation(widget.job.mutationKey);
-    mutation?.unmount(widget);
-    if (widget.onData != null) mutation?.onDataListeners.remove(widget.onData);
+    mutation.unmount(uKey);
+    if (widget.onData != null) mutation.onDataListeners.remove(widget.onData);
     if (widget.onError != null)
-      mutation?.onErrorListeners.remove(widget.onError);
+      mutation.onErrorListeners.remove(widget.onError);
     if (widget.onMutate != null)
-      mutation?.onMutateListeners.remove(widget.onMutate);
+      mutation.onMutateListeners.remove(widget.onMutate);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     queryBowl = QueryBowl.of(context);
-    final mutation = queryBowl.getMutation<T, V>(widget.job.mutationKey);
-    if (mutation == null) return Container();
-    return widget.builder(context, mutation);
+    final latestMutation =
+        queryBowl.getMutation<T, V>(mutation.mutationKey) ?? mutation;
+    return widget.builder(context, latestMutation);
   }
 }
