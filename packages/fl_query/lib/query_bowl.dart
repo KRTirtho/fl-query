@@ -4,6 +4,7 @@ import 'package:fl_query/models/query_job.dart';
 import 'package:fl_query/mutation.dart';
 import 'package:fl_query/query.dart';
 import 'package:collection/collection.dart';
+import 'package:fl_query/utils.dart';
 import 'package:flutter/widgets.dart';
 
 class QueryBowlScope extends StatefulWidget {
@@ -11,14 +12,30 @@ class QueryBowlScope extends StatefulWidget {
   final Duration staleTime;
   final Duration cacheTime;
 
+  // refetching options
+
+  // refetch query when new query instance mounts
+  final bool refetchOnMount;
+  // for desktop & web only
+  final bool refetchOnWindowFocus;
+  // for mobile only
+  final bool refetchOnApplicationResume;
+  // refetch when user's device reconnects to the internet after no being
+  // connected before
+  final bool refetchOnReconnect;
+
   /// used for periodically checking if any query got stale.
   /// If none is supplied then half of the value of staleTime is used
-  final Duration refreshInterval;
+  final Duration refetchInterval;
   const QueryBowlScope({
     required this.child,
-    this.staleTime = const Duration(milliseconds: 500),
+    this.staleTime = Duration.zero,
     this.cacheTime = const Duration(minutes: 5),
-    this.refreshInterval = const Duration(minutes: 5),
+    this.refetchInterval = Duration.zero,
+    this.refetchOnMount = false,
+    this.refetchOnReconnect = true,
+    this.refetchOnApplicationResume = true,
+    this.refetchOnWindowFocus = true,
     Key? key,
   }) : super(key: key);
 
@@ -30,32 +47,17 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
   late Set<Query> queries;
   late Set<Mutation> mutations;
 
-  late Timer refreshIntervalTimer;
-
   @override
   void initState() {
     super.initState();
     queries = {};
     mutations = {};
-    refreshIntervalTimer = Timer.periodic(
-      widget.refreshInterval,
-      _checkAndUpdateStaleQueriesOnBg,
-    );
   }
 
   @override
   void dispose() {
-    refreshIntervalTimer.cancel();
     _disposeUpdateListeners();
     super.dispose();
-  }
-
-  Future<void> _checkAndUpdateStaleQueriesOnBg([dynamic _]) async {
-    // checking for staled queries inside the widget as InheritedWidget
-    // classes has to be constant & doesn't this kind of dynamic behavior
-    for (final query in queries) {
-      if (query.isStale) await query.refetch();
-    }
   }
 
   void _listenToUpdates() {
@@ -147,6 +149,9 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
       queries: queries,
       mutations: mutations,
       staleTime: widget.staleTime,
+      cacheTime: widget.cacheTime,
+      refetchInterval: widget.refetchInterval,
+      refetchOnMount: widget.refetchOnMount,
       child: widget.child,
     );
   }
@@ -158,6 +163,10 @@ class QueryBowl extends InheritedWidget {
   final Set<Query> _queries;
   final Set<Mutation> _mutations;
   final Duration staleTime;
+  final Duration cacheTime;
+
+  final Duration? refetchInterval;
+  final bool refetchOnMount;
 
   final void Function<T extends Object, Outside>(Query<T, Outside> query)
       _addQuery;
@@ -179,8 +188,11 @@ class QueryBowl extends InheritedWidget {
     required final Set<Query> queries,
     required final Set<Mutation> mutations,
     required this.staleTime,
+    required this.cacheTime,
     required this.removeQueries,
     required this.clear,
+    required this.refetchOnMount,
+    this.refetchInterval,
     Key? key,
   })  : _addQuery = addQuery,
         _queries = queries,
@@ -201,8 +213,12 @@ class QueryBowl extends InheritedWidget {
     if (prevQuery is Query<T, Outside>) {
       // run the query if its still not called or if externalData has
       // changed
-      final hasExternalDataChanged =
-          prevQuery.prevUsedExternalData != externalData;
+      final hasExternalDataChanged = prevQuery.prevUsedExternalData != null &&
+          externalData != null &&
+          !isShallowEqual(
+            prevQuery.prevUsedExternalData!,
+            externalData,
+          );
       prevQuery.mount(key);
       if (onData != null) prevQuery.onDataListeners.add(onData);
       if (onError != null) prevQuery.onErrorListeners.add(onError);
@@ -215,6 +231,12 @@ class QueryBowl extends InheritedWidget {
       // mounting the widget that is using the query in the prevQuery
       return prevQuery.data;
     }
+
+    /// populating with default configurations
+    options.refetchInterval ??= refetchInterval;
+    options.staleTime ??= staleTime;
+    options.cacheTime ??= cacheTime;
+    options.refetchOnMount ??= refetchOnMount;
     final query = Query<T, Outside>.fromOptions(
       options,
       externalData: externalData,
@@ -238,8 +260,14 @@ class QueryBowl extends InheritedWidget {
     if (prevQuery is Query<T, Outside>) {
       // run the query if its still not called or if externalData has
       // changed
-      if (prevQuery.prevUsedExternalData != query.externalData)
+      if (prevQuery.prevUsedExternalData != null &&
+          query.externalData != null &&
+          !isShallowEqual(
+            prevQuery.prevUsedExternalData!,
+            query.externalData!,
+          )) {
         prevQuery.setExternalData(query.externalData);
+      }
       prevQuery.mount(key);
       if (onData != null) prevQuery.onDataListeners.add(onData);
       if (onError != null) prevQuery.onErrorListeners.add(onError);
@@ -248,6 +276,12 @@ class QueryBowl extends InheritedWidget {
     }
     if (onData != null) query.onDataListeners.add(onData);
     if (onError != null) query.onErrorListeners.add(onError);
+    query.updateDefaultOptions(
+      cacheTime: cacheTime,
+      staleTime: staleTime,
+      refetchInterval: refetchInterval,
+      refetchOnMount: refetchOnMount,
+    );
     query.mount(key);
     _addQuery<T, Outside>(query);
     return query;
@@ -270,6 +304,7 @@ class QueryBowl extends InheritedWidget {
       prevMutation.mount(key);
       return prevMutation;
     } else {
+      mutation.updateDefaultOptions(cacheTime: cacheTime);
       mutation.mount(key);
       _addMutation(mutation);
       return mutation;

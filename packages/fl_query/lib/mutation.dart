@@ -1,40 +1,24 @@
 import 'dart:async';
 
+import 'package:fl_query/base_operation.dart';
 import 'package:fl_query/models/mutation_job.dart';
 import 'package:flutter/widgets.dart';
 
 enum MutationStatus {
-  failed,
-  succeed,
-  pending,
+  error,
+  success,
+  loading,
+  idle,
 }
 
 typedef MutationListener<T> = FutureOr<void> Function(T);
 
 typedef MutationTaskFunction<T, V> = FutureOr<T> Function(String, V);
 
-class Mutation<T extends Object, V> extends ChangeNotifier {
+class Mutation<T extends Object, V> extends BaseOperation<T, MutationStatus> {
   // all params
   final String mutationKey;
   MutationTaskFunction<T, V> task;
-  final int retries;
-  final Duration retryDelay;
-  final Duration _cacheTime;
-
-  // all properties
-  T? data;
-  dynamic error;
-  MutationStatus status;
-
-  /// total count of how many times the query retried to get a successful
-  /// result
-  int retryAttempts = 0;
-  DateTime updatedAt;
-
-  /// used for keeping track of mutation activity. If the are no mounts &
-  /// the passed cached time is over than the mutation is removed from
-  /// storage/cache
-  Set<ValueKey<String>> _mounts = {};
 
   @protected
   final Set<MutationListener<T>> onDataListeners = {};
@@ -46,15 +30,13 @@ class Mutation<T extends Object, V> extends ChangeNotifier {
   Mutation({
     required this.mutationKey,
     required this.task,
-    required this.retries,
-    required this.retryDelay,
+    required super.retries,
+    required super.retryDelay,
     required Duration cacheTime,
     MutationListener<T>? onData,
     MutationListener<dynamic>? onError,
     MutationListener<V>? onMutate,
-  })  : status = MutationStatus.pending,
-        updatedAt = DateTime.now(),
-        _cacheTime = cacheTime {
+  }) : super(cacheTime: cacheTime, status: MutationStatus.idle) {
     if (onData != null) onDataListeners.add(onData);
     if (onError != null) onErrorListeners.add(onError);
     if (onMutate != null) onMutateListeners.add(onMutate);
@@ -67,61 +49,38 @@ class Mutation<T extends Object, V> extends ChangeNotifier {
     MutationListener<V>? onMutate,
   })  : mutationKey = options.mutationKey,
         task = options.task,
-        retries = options.retries ?? 3,
-        retryDelay = options.retryDelay ?? const Duration(milliseconds: 200),
-        _cacheTime = options.cacheTime ?? const Duration(minutes: 5),
-        status = MutationStatus.pending,
-        updatedAt = DateTime.now() {
+        super(
+          retries: options.retries ?? 3,
+          retryDelay: options.retryDelay ?? const Duration(milliseconds: 200),
+          cacheTime: options.cacheTime ?? const Duration(minutes: 5),
+          status: MutationStatus.idle,
+        ) {
     if (onData != null) onDataListeners.add(onData);
     if (onError != null) onErrorListeners.add(onError);
   }
 
-  // all getters & setters
-  bool get hasData => data != null && error == null;
-  bool get hasError =>
-      status == MutationStatus.failed && error != null && data == null;
-  bool get isLoading =>
-      status == MutationStatus.pending && data == null && error == null;
-  bool get isSucceeded => status == MutationStatus.succeed && data != null;
-  bool get isIdle => isSucceeded && error == null;
-  bool get isInactive => _mounts.isEmpty;
   // all methods
-
-  void mount(ValueKey<String> uKey) {
-    _mounts.add(uKey);
-  }
-
-  void unmount(ValueKey<String> uKey) {
-    if (_mounts.length == 1) {
-      Future.delayed(_cacheTime, () {
-        _mounts.remove(uKey);
-        // for letting know QueryBowl that this one's time has come for
-        // getting crushed
-        notifyListeners();
-      });
-    } else {
-      _mounts.remove(uKey);
-    }
-  }
 
   /// Calls the task function & doesn't check if there's already
   /// cached data available
-  Future<void> _execMutation(V variables) async {
+  Future<void> _execute(V variables) async {
     try {
+      status = MutationStatus.loading;
+      notifyListeners();
       retryAttempts = 0;
       for (final onMutate in onMutateListeners) {
         onMutate(variables);
       }
       data = await task(mutationKey, variables);
       updatedAt = DateTime.now();
-      status = MutationStatus.succeed;
+      status = MutationStatus.success;
       for (final onData in onDataListeners) {
         onData(data!);
       }
       notifyListeners();
     } catch (e) {
       if (retries == 0) {
-        status = MutationStatus.failed;
+        status = MutationStatus.error;
         error = e;
         for (final onError in onErrorListeners) {
           onError(error);
@@ -136,7 +95,7 @@ class Mutation<T extends Object, V> extends ChangeNotifier {
               onMutate(variables);
             }
             data = await task(mutationKey, variables);
-            status = MutationStatus.succeed;
+            status = MutationStatus.success;
             for (final onData in onDataListeners) {
               onData(data!);
             }
@@ -144,7 +103,7 @@ class Mutation<T extends Object, V> extends ChangeNotifier {
             break;
           } catch (e) {
             if (retryAttempts == retries) {
-              status = MutationStatus.failed;
+              status = MutationStatus.error;
               error = e;
               for (final onError in onErrorListeners) {
                 onError(error);
@@ -165,25 +124,45 @@ class Mutation<T extends Object, V> extends ChangeNotifier {
   }) {
     if (onData != null) onDataListeners.add(onData);
     if (onError != null) onErrorListeners.add(onError);
-    _execMutation(variables).then((_) {
+    _execute(variables).then((_) {
       onDataListeners.remove(onData);
       onErrorListeners.remove(onError);
     });
   }
 
   Future<T?> mutateAsync(V variables) async {
-    return await _execMutation(variables).then((_) => data);
+    return await _execute(variables).then((_) => data);
   }
 
-  reset() {
+  /// Update configurations of the mutation after already creating the
+  /// Mutation instance
+  void updateDefaultOptions({
+    Duration? cacheTime,
+  }) {
+    if (this.cacheTime == Duration(minutes: 5) && cacheTime != null)
+      this.cacheTime = cacheTime;
+
+    notifyListeners();
+  }
+
+  void reset() {
     data = null;
     retryAttempts = 0;
     updatedAt = DateTime.now();
     onDataListeners.clear();
     onErrorListeners.clear();
-    status = MutationStatus.pending;
+    status = MutationStatus.idle;
     onMutateListeners.clear();
   }
 
   A? cast<A>() => this is A ? this as A : null;
+
+  @override
+  bool get isError => status == MutationStatus.error;
+  @override
+  bool get isIdle => status == MutationStatus.idle;
+  @override
+  bool get isLoading => status == MutationStatus.loading;
+  @override
+  bool get isSuccess => status == MutationStatus.success;
 }

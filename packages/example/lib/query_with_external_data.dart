@@ -22,7 +22,7 @@ class QueryWithExternalData extends StatelessWidget {
         job: jobWithExternalData,
         externalData: (Random().nextDouble() * 200).toString(),
         builder: (context, query) {
-          if (query.isLoading || query.isLoading || query.data == null) {
+          if (query.isLoading || query.isRefetching || !query.hasData) {
             return const CircularProgressIndicator();
           }
           return Container(
@@ -32,6 +32,7 @@ class QueryWithExternalData extends StatelessWidget {
               shape: BoxShape.circle,
               color: Colors.blue,
             ),
+            child: Text(query.externalData),
           );
         },
       ),

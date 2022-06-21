@@ -1,12 +1,25 @@
 import 'dart:async';
 
+import 'package:fl_query/base_operation.dart';
 import 'package:fl_query/models/query_job.dart';
 import 'package:flutter/widgets.dart';
 
 enum QueryStatus {
-  failed,
-  succeed,
-  pending,
+  /// in times when an error occurs
+  /// will get reset to idle on refetch/retry
+  error,
+
+  /// when a query successfully executes
+  success,
+
+  /// when the query is running (not refetching)
+  loading,
+
+  /// when the query isn't yet fetched, re-fetched, or got reset
+  /// mostly when both [data] & [error] are null. Also [fetched] is false
+  idle,
+
+  /// when the query is refetching (rerunning)
   refetching;
 }
 
@@ -18,35 +31,22 @@ typedef ListenerUnsubscriber = void Function();
 
 typedef QueryUpdateFunction<T> = FutureOr<T> Function(T? oldData);
 
-class Query<T extends Object, Outside> extends ChangeNotifier {
+class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
   // all params
   final String queryKey;
   QueryTaskFunction<T, Outside> task;
 
-  /// The number of times the query should refetch in the time of error
-  /// before giving up
-  final int retries;
-  final Duration retryDelay;
+  bool? refetchOnMount;
+
   final T? _initialData;
 
   // got from global options
-  final Duration _staleTime;
-  final Duration _cacheTime;
-
-  // all properties
-  T? data;
-  dynamic error;
-  QueryStatus status;
+  Duration _staleTime;
 
   /// total count of how many times the query retried to get a successful
   /// result
-  int retryAttempts = 0;
-  DateTime updatedAt;
   int refetchCount = 0;
   bool enabled;
-
-  @protected
-  bool fetched = false;
 
   @protected
   final Set<QueryListener<T>> onDataListeners = Set<QueryListener<T>>();
@@ -60,32 +60,37 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
 
   Outside? _prevUsedExternalData;
 
-  /// used for keeping track of query activity. If the are no mounts &
-  /// the passed cached time is over than the query is removed from
-  /// storage/cache
-  Set<ValueKey<String>> _mounts = {};
+  Duration? refetchInterval;
+
+  Timer? _refetchIntervalTimer;
 
   Query({
     required this.queryKey,
     required this.task,
     required Duration staleTime,
-    required Duration cacheTime,
+    required super.cacheTime,
     required Outside externalData,
-    required this.retries,
-    required this.retryDelay,
-    T? initialData,
+    required super.retries,
+    required super.retryDelay,
+    this.refetchOnMount,
+    this.refetchInterval,
     this.enabled = true,
+    T? initialData,
     QueryListener<T>? onData,
     QueryListener<dynamic>? onError,
-  })  : status = QueryStatus.pending,
-        _staleTime = staleTime,
-        _cacheTime = cacheTime,
+  })  : _staleTime = staleTime,
         _initialData = initialData,
         _externalData = externalData,
-        data = initialData,
-        updatedAt = DateTime.now() {
+        super(
+          status: QueryStatus.idle,
+          data: initialData,
+        ) {
     if (onData != null) onDataListeners.add(onData);
     if (onError != null) onErrorListeners.add(onError);
+
+    if (refetchInterval != null && refetchInterval != Duration.zero) {
+      _refetchIntervalTimer = _createRefetchTimer();
+    }
   }
 
   Query.fromOptions(
@@ -96,50 +101,34 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
   })  : queryKey = options.queryKey,
         enabled = options.enabled ?? true,
         task = options.task,
-        retries = options.retries ?? 3,
-        retryDelay = options.retryDelay ?? const Duration(milliseconds: 200),
         _staleTime = options.staleTime ?? const Duration(milliseconds: 500),
-        _cacheTime = options.cacheTime ?? const Duration(minutes: 5),
         _initialData = options.initialData,
         _externalData = externalData,
-        data = options.initialData,
-        status = QueryStatus.pending,
-        updatedAt = DateTime.now() {
+        refetchInterval = options.refetchInterval,
+        refetchOnMount = options.refetchOnMount,
+        super(
+          status: QueryStatus.idle,
+          cacheTime: options.cacheTime ?? const Duration(minutes: 5),
+          retries: options.retries ?? 3,
+          retryDelay: options.retryDelay ?? const Duration(milliseconds: 200),
+          data: options.initialData,
+        ) {
     if (onData != null) onDataListeners.add(onData);
     if (onError != null) onErrorListeners.add(onError);
   }
 
   // all getters & setters
-  bool get hasData => data != null && error == null;
-  bool get hasError =>
-      status == QueryStatus.failed && error != null && data == null;
-  bool get isLoading =>
-      status == QueryStatus.pending && data == null && error == null;
-  bool get isRefetching =>
-      status == QueryStatus.refetching && (data != null || error != null);
-  bool get isSucceeded => status == QueryStatus.succeed && data != null;
-  bool get isIdle => isSucceeded && error == null;
-  bool get isInactive => _mounts.isEmpty;
+
   Outside get externalData => _externalData;
   Outside? get prevUsedExternalData => _prevUsedExternalData;
 
-  // all methods
-
-  void mount(ValueKey<String> uKey) {
-    _mounts.add(uKey);
-  }
-
-  void unmount(ValueKey<String> uKey) {
-    if (_mounts.length == 1) {
-      Future.delayed(_cacheTime, () {
-        _mounts.remove(uKey);
-        // for letting know QueryBowl that this one's time has come for
-        // getting crushed
-        notifyListeners();
-      });
-    } else {
-      _mounts.remove(uKey);
-    }
+  Timer _createRefetchTimer() {
+    return Timer.periodic(
+      refetchInterval!,
+      (_) async {
+        if (isStale) await refetch();
+      },
+    );
   }
 
   /// Calls the task function & doesn't check if there's already
@@ -150,14 +139,14 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
       data = await task(queryKey, _externalData);
       _prevUsedExternalData = _externalData;
       updatedAt = DateTime.now();
-      status = QueryStatus.succeed;
+      status = QueryStatus.success;
       for (final onData in onDataListeners) {
         onData(data!);
       }
       notifyListeners();
     } catch (e) {
       if (retries == 0) {
-        status = QueryStatus.failed;
+        status = QueryStatus.error;
         error = e;
         for (final onError in onErrorListeners) {
           onError(error);
@@ -170,18 +159,18 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
           try {
             data = await task(queryKey, _externalData);
             _prevUsedExternalData = _externalData;
-            status = QueryStatus.succeed;
+            status = QueryStatus.success;
             for (final onData in onDataListeners) {
-              onData(data!);
+              await onData(data!);
             }
             notifyListeners();
             break;
           } catch (e) {
             if (retryAttempts == retries) {
-              status = QueryStatus.failed;
+              status = QueryStatus.error;
               error = e;
               for (final onError in onErrorListeners) {
-                onError(error);
+                await onError(error);
               }
               notifyListeners();
             }
@@ -193,12 +182,12 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
   }
 
   Future<T?> fetch() async {
-    status = QueryStatus.pending;
-    notifyListeners();
     if (!enabled) return null;
-    if (!isStale && hasData) {
+    if (hasData) {
       return data;
     }
+    status = QueryStatus.loading;
+    notifyListeners();
     return _execute().then((_) {
       fetched = true;
       return data;
@@ -234,11 +223,12 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
           "[fl_query] new instance of data should be returned because of immutability");
     }
     data = newData;
-    status = QueryStatus.succeed;
+    status = QueryStatus.success;
     notifyListeners();
   }
 
   setExternalData(Outside externalData) {
+    _prevUsedExternalData = _externalData;
     _externalData = externalData;
   }
 
@@ -247,18 +237,57 @@ class Query<T extends Object, Outside> extends ChangeNotifier {
     data = _initialData;
     error = null;
     fetched = false;
-    status = QueryStatus.pending;
+    status = QueryStatus.idle;
     retryAttempts = 0;
     onDataListeners.clear();
     onErrorListeners.clear();
-    _mounts.clear();
+    mounts.clear();
+  }
+
+  /// Update configurations of the query after already creating the Query
+  /// instance
+  void updateDefaultOptions({
+    Duration? refetchInterval,
+    Duration? staleTime,
+    Duration? cacheTime,
+    bool? refetchOnMount,
+  }) {
+    if (this.refetchInterval == null &&
+        refetchInterval != null &&
+        refetchInterval != Duration.zero) {
+      this.refetchInterval = refetchInterval;
+      _refetchIntervalTimer?.cancel();
+      _refetchIntervalTimer = _createRefetchTimer();
+    }
+    if (this.cacheTime == Duration(minutes: 5) && cacheTime != null)
+      this.cacheTime = cacheTime;
+    if (this._staleTime == const Duration(milliseconds: 500) &&
+        staleTime != null) this._staleTime = staleTime;
+    if (this.refetchOnMount == null && refetchOnMount != null)
+      this.refetchOnMount = refetchOnMount;
+    notifyListeners();
   }
 
   bool get isStale {
+    /// when [_staleTime] is [Duration.zero], the query will always be
+    /// stale & will never refetch in the background. But can be inactive
+    /// if [mounts.length] become zero
+    if (_staleTime == Duration.zero) return false;
+
     // when current DateTime is after [update_at + stale_time] it means
     // the data has become stale
     return DateTime.now().isAfter(updatedAt.add(_staleTime));
   }
+
+  @override
+  bool get isError => status == QueryStatus.error;
+  @override
+  bool get isIdle => status == QueryStatus.idle;
+  @override
+  bool get isLoading => status == QueryStatus.loading;
+  bool get isRefetching => status == QueryStatus.refetching;
+  @override
+  bool get isSuccess => status == QueryStatus.success;
 
   A? cast<A>() => this is A ? this as A : null;
 

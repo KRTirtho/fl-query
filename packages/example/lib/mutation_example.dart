@@ -1,8 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:fl_query/models/mutation_job.dart';
-import 'package:fl_query/mutation_builder.dart';
+import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 

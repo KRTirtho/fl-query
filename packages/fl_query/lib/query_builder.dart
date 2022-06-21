@@ -51,13 +51,20 @@ class _QueryBuilderState<T extends Object, Outside>
         onData: widget.onData,
         onError: widget.onError,
       );
-      await query.fetch();
+      final hasExternalDataChanged = query.externalData != null &&
+          query.prevUsedExternalData != null &&
+          !isShallowEqual(query.externalData!, query.prevUsedExternalData!);
+      (query.fetched && query.refetchOnMount == true) || hasExternalDataChanged
+          ? await query.refetch()
+          : await query.fetch();
     });
   }
 
   @override
   void didUpdateWidget(covariant oldWidget) {
-    if (oldWidget.externalData != widget.externalData) {
+    if (oldWidget.externalData != null &&
+        widget.externalData != null &&
+        !isShallowEqual(oldWidget.externalData!, widget.externalData!)) {
       QueryBowl.of(context).fetchQuery(
         widget.job,
         externalData: widget.externalData,

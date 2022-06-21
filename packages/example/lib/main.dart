@@ -53,7 +53,25 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    print("LIFE CYCLE STATE: $state");
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,7 +86,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 job: successJob,
                 externalData: null,
                 builder: (context, query) {
-                  if (query.isLoading || query.isRefetching) {
+                  if (!query.hasData || query.isLoading || query.isRefetching) {
                     return const CircularProgressIndicator();
                   }
                   return TextButton(
@@ -83,7 +101,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 job: successJob,
                 externalData: null,
                 builder: (context, query) {
-                  if (query.isLoading || query.isRefetching) {
+                  if (!query.hasData || query.isLoading || query.isRefetching) {
                     return const CircularProgressIndicator();
                   }
                   return ElevatedButton(

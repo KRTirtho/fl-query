@@ -30,12 +30,12 @@ void main() {
       expect(query.retryAttempts, 0);
       expect(query.fetched, isFalse);
       expect(query.retryDelay, Duration(milliseconds: 200));
-      expect(query.status, QueryStatus.pending);
+      expect(query.status, QueryStatus.loading);
       expect(query.isStale, isFalse);
       expect(query.isIdle, isFalse);
       expect(query.isInactive, isTrue);
       expect(query.isLoading, isTrue);
-      expect(query.isSucceeded, isFalse);
+      expect(query.isSuccess, isFalse);
       expect(query.hasError, isFalse);
       expect(query.hasData, isFalse);
     });
