@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_query/src/base_operation.dart';
 import 'package:fl_query/src/models/query_job.dart';
 import 'package:fl_query/src/query_bowl.dart';
@@ -44,6 +45,7 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
   QueryTaskFunction<T, Outside> task;
 
   bool? refetchOnMount;
+  bool? refetchOnReconnect;
 
   final T? _initialData;
 
@@ -83,6 +85,7 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
     required super.retryDelay,
     required this.queryBowl,
     this.refetchOnMount,
+    this.refetchOnReconnect,
     this.refetchInterval,
     this.enabled = true,
     T? initialData,
@@ -117,6 +120,7 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
         _externalData = externalData,
         refetchInterval = options.refetchInterval,
         refetchOnMount = options.refetchOnMount,
+        refetchOnReconnect = options.refetchOnReconnect,
         super(
           status: QueryStatus.idle,
           cacheTime: options.cacheTime ?? const Duration(minutes: 5),
@@ -137,7 +141,11 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
     return Timer.periodic(
       refetchInterval!,
       (_) async {
-        if (isStale) await refetch();
+        // only refetch if its connected to the internet or refetch will
+        // always result in error while there's no internet
+        if (isStale &&
+            isConnectedToInternet(await Connectivity().checkConnectivity()))
+          await refetch();
       },
     );
   }
@@ -278,6 +286,7 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
     Duration? staleTime,
     Duration? cacheTime,
     bool? refetchOnMount,
+    bool? refetchOnReconnect,
   }) {
     if (this.refetchInterval == null &&
         refetchInterval != null &&
@@ -292,12 +301,14 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
         staleTime != null) this._staleTime = staleTime;
     if (this.refetchOnMount == null && refetchOnMount != null)
       this.refetchOnMount = refetchOnMount;
+    if (this.refetchOnReconnect == null && refetchOnReconnect != null)
+      this.refetchOnReconnect = refetchOnReconnect;
     notifyListeners();
   }
 
   Map<ValueKey<String>, Query> _dependencyQueries = {};
 
-  /// only usable inside any task method
+  /// only usable inside [QueryJob.task] method
   Query<T, Outside> dependOnQuery<T extends Object, Outside>(
     QueryJob<T, Outside> job, {
     required Outside externalData,

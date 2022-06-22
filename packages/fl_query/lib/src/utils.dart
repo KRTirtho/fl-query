@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_query/src/query.dart';
 import 'package:uuid/uuid.dart';
 
@@ -40,4 +41,12 @@ bool isShallowEqual(Object obj1, Object obj2) {
     // types. And primitives are always compared by value
     return obj1 == obj2;
   }
+}
+
+bool isConnectedToInternet(ConnectivityResult result) {
+  return [
+    ConnectivityResult.ethernet,
+    ConnectivityResult.mobile,
+    ConnectivityResult.wifi,
+  ].contains(result);
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_query/src/models/query_job.dart';
 import 'package:fl_query/src/mutation.dart';
 import 'package:fl_query/src/query.dart';
@@ -14,15 +15,27 @@ class QueryBowlScope extends StatefulWidget {
 
   // refetching options
 
-  // refetch query when new query instance mounts
+  /// refetch query when new query instance mounts
   final bool refetchOnMount;
-  // for desktop & web only
+
+  /// for desktop & web only
   final bool refetchOnWindowFocus;
-  // for mobile only
+
+  /// for mobile only
   final bool refetchOnApplicationResume;
-  // refetch when user's device reconnects to the internet after no being
-  // connected before
+
+  /// refetch when user's device reconnects to the internet after no being
+  /// connected before
   final bool refetchOnReconnect;
+
+  /// the delay to call each query when user device reconnects to the
+  /// internet. Using a delay after each refetch so refetching all the
+  /// queries at once won't create high CPU spikes & also wouldn't violate
+  /// rate-limit
+  ///
+  /// Though its recommended most of the time to use but it can be turned
+  /// off by setting passing [Duration.zero]
+  final Duration refetchOnReconnectDelay;
 
   /// used for periodically checking if any query got stale.
   /// If none is supplied then half of the value of staleTime is used
@@ -34,6 +47,7 @@ class QueryBowlScope extends StatefulWidget {
     this.refetchInterval = Duration.zero,
     this.refetchOnMount = false,
     this.refetchOnReconnect = true,
+    this.refetchOnReconnectDelay = const Duration(milliseconds: 100),
     this.refetchOnApplicationResume = true,
     this.refetchOnWindowFocus = true,
     Key? key,
@@ -47,16 +61,31 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
   late Set<Query> queries;
   late Set<Mutation> mutations;
 
+  StreamSubscription<ConnectivityResult>? _connectionStatusSubscription;
+
   @override
   void initState() {
     super.initState();
     queries = {};
     mutations = {};
+
+    _connectionStatusSubscription = Connectivity()
+        .onConnectivityChanged
+        .listen((ConnectivityResult result) async {
+      if (isConnectedToInternet(result)) {
+        for (final query in queries) {
+          if (query.refetchOnReconnect == false) continue;
+          await query.refetch();
+          await Future.delayed(widget.refetchOnReconnectDelay);
+        }
+      }
+    });
   }
 
   @override
   void dispose() {
     _disposeUpdateListeners();
+    _connectionStatusSubscription?.cancel();
     super.dispose();
   }
 
@@ -166,6 +195,7 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
       cacheTime: widget.cacheTime,
       refetchInterval: widget.refetchInterval,
       refetchOnMount: widget.refetchOnMount,
+      refetchOnReconnect: widget.refetchOnReconnect,
       child: widget.child,
     );
   }
@@ -181,6 +211,7 @@ class QueryBowl extends InheritedWidget {
 
   final Duration? refetchInterval;
   final bool refetchOnMount;
+  final bool refetchOnReconnect;
 
   final void Function<T extends Object, Outside>(Query<T, Outside> query)
       _addQuery;
@@ -206,6 +237,7 @@ class QueryBowl extends InheritedWidget {
     required this.removeQueries,
     required this.clear,
     required this.refetchOnMount,
+    required this.refetchOnReconnect,
     this.refetchInterval,
     Key? key,
   })  : _addQuery = addQuery,
@@ -251,6 +283,7 @@ class QueryBowl extends InheritedWidget {
     options.staleTime ??= staleTime;
     options.cacheTime ??= cacheTime;
     options.refetchOnMount ??= refetchOnMount;
+    options.refetchOnReconnect ??= refetchOnReconnect;
     final query = Query<T, Outside>.fromOptions(
       options,
       externalData: externalData,
@@ -296,6 +329,7 @@ class QueryBowl extends InheritedWidget {
       staleTime: staleTime,
       refetchInterval: refetchInterval,
       refetchOnMount: refetchOnMount,
+      refetchOnReconnect: refetchOnReconnect,
     );
     query.mount(key);
     _addQuery<T, Outside>(query);
