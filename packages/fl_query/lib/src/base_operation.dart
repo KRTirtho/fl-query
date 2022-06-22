@@ -60,6 +60,6 @@ abstract class BaseOperation<Data, StatusType> extends ChangeNotifier {
   bool get isLoading;
   bool get isIdle;
   bool get isInactive => mounts.isEmpty;
-  bool get hasData => isSuccess && data != null;
-  bool get hasError => isError && error != null;
+  bool get hasData => data != null;
+  bool get hasError => error != null;
 }

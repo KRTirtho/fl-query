@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:example/another_component.dart';
+import 'package:example/dependent_query_example.dart';
 import 'package:example/hooks_example.dart';
 import 'package:example/lazy_query.dart';
 import 'package:example/mutation_example.dart';
@@ -34,13 +35,13 @@ class MyApp extends StatelessWidget {
 
 final successJob = QueryJob<String, void>(
   queryKey: "greetings",
-  task: (queryKey, _) => Future.delayed(const Duration(seconds: 2),
+  task: (queryKey, _, __) => Future.delayed(const Duration(seconds: 2),
       () => "Welcome ($queryKey) ${Random.secure().nextInt(100)}"),
 );
 
 final failedJob = QueryJob<String, void>(
   queryKey: "failure",
-  task: (queryKey, _) => Random().nextBool()
+  task: (queryKey, _, __) => Random().nextBool()
       ? Future.error("[$queryKey] Failed for unknown reason")
       : Future.value(
           "Success, you'll get slowly ${Random().nextInt(100)}!",
@@ -174,6 +175,16 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => const HookExample(),
+                ),
+              );
+            },
+          ),
+          ElevatedButton(
+            child: const Text("Dependent Query Example"),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const DependentQueryExample(),
                 ),
               );
             },

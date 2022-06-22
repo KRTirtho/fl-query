@@ -34,29 +34,30 @@ class _QueryBuilderState<T extends Object, Outside>
     extends State<QueryBuilder<T, Outside>> {
   late QueryBowl queryBowl;
   late final ValueKey<String> uKey;
-  late Query<T, Outside> query;
+  Query<T, Outside>? query;
 
   @override
   void initState() {
     super.initState();
     uKey = ValueKey<String>(uuid.v4());
-    query = Query<T, Outside>.fromOptions(
-      widget.job,
-      externalData: widget.externalData,
-    );
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       query = QueryBowl.of(context).addQuery<T, Outside>(
-        query,
+        Query<T, Outside>.fromOptions(
+          widget.job,
+          externalData: widget.externalData,
+          queryBowl: QueryBowl.of(context),
+        ),
         key: uKey,
         onData: widget.onData,
         onError: widget.onError,
       );
-      final hasExternalDataChanged = query.externalData != null &&
-          query.prevUsedExternalData != null &&
-          !isShallowEqual(query.externalData!, query.prevUsedExternalData!);
-      (query.fetched && query.refetchOnMount == true) || hasExternalDataChanged
-          ? await query.refetch()
-          : await query.fetch();
+      final hasExternalDataChanged = query!.externalData != null &&
+          query!.prevUsedExternalData != null &&
+          !isShallowEqual(query!.externalData!, query!.prevUsedExternalData!);
+      (query!.fetched && query!.refetchOnMount == true) ||
+              hasExternalDataChanged
+          ? await query!.refetch()
+          : await query!.fetch();
     });
   }
 
@@ -74,12 +75,13 @@ class _QueryBuilderState<T extends Object, Outside>
       );
     } else {
       if (oldWidget.onData != widget.onData && oldWidget.onData != null) {
-        query.onDataListeners.remove(oldWidget.onData);
-        if (widget.onData != null) query.onDataListeners.add(widget.onData!);
+        query?.onDataListeners.remove(oldWidget.onData);
+        if (widget.onData != null) query?.onDataListeners.add(widget.onData!);
       }
       if (oldWidget.onError != widget.onError && oldWidget.onError != null) {
-        query.onErrorListeners.remove(oldWidget.onError);
-        if (widget.onError != null) query.onErrorListeners.add(widget.onError!);
+        query?.onErrorListeners.remove(oldWidget.onError);
+        if (widget.onError != null)
+          query?.onErrorListeners.add(widget.onError!);
       }
     }
     super.didUpdateWidget(oldWidget);
@@ -87,16 +89,18 @@ class _QueryBuilderState<T extends Object, Outside>
 
   @override
   void dispose() {
-    query.unmount(uKey);
-    if (widget.onData != null) query.onDataListeners.remove(widget.onData);
-    if (widget.onError != null) query.onErrorListeners.remove(widget.onError);
+    query?.unmount(uKey);
+    if (widget.onData != null) query?.onDataListeners.remove(widget.onData);
+    if (widget.onError != null) query?.onErrorListeners.remove(widget.onError);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     queryBowl = QueryBowl.of(context);
-    final latestQuery = queryBowl.getQuery<T, Outside>(query.queryKey) ?? query;
+    final latestQuery =
+        queryBowl.getQuery<T, Outside>(widget.job.queryKey) ?? query;
+    if (latestQuery == null) return Container();
     return widget.builder(context, latestQuery);
   }
 }

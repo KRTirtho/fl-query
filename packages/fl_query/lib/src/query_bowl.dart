@@ -30,7 +30,7 @@ class QueryBowlScope extends StatefulWidget {
   const QueryBowlScope({
     required this.child,
     this.staleTime = Duration.zero,
-    this.cacheTime = const Duration(minutes: 5),
+    this.cacheTime = const Duration(seconds: 5),
     this.refetchInterval = Duration.zero,
     this.refetchOnMount = false,
     this.refetchOnReconnect = true,
@@ -79,9 +79,23 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
   }
 
   void updateQueries(Query query) {
+    // checking & not including inactive queries
+    // basically garbage collecting queries
+    if (query.isInactive) {
+      /// there's a bug currently,
+      /// where if somehow a [Query] (queryA) is depending on another
+      /// [Query] (queryB) & queryA has become inactive so its getting
+      /// disposed but at the same moment queryB got refetched will make
+      /// queryB's [BaseOperation.unmount] to throw [RangeError] for
+      /// calling [ChangeNotifier.notifyListener] after [cacheDelay]
+      /// inside [Timer.periodic] callback
+      ///
+      /// To mitigate this, [Query.reset] is used instead of using
+      /// [Query.dispose] as it doesn't call [super.dispose]
+      query.reset();
+    }
+
     setState(() {
-      // checking & not including inactive queries
-      // basically garbage collecting queries
       queries = Set.from(
         query.isInactive
             ? queries.where((el) => el.queryKey != query.queryKey)
@@ -240,6 +254,7 @@ class QueryBowl extends InheritedWidget {
     final query = Query<T, Outside>.fromOptions(
       options,
       externalData: externalData,
+      queryBowl: this,
       onData: onData,
       onError: onError,
     );

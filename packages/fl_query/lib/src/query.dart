@@ -2,7 +2,10 @@ import 'dart:async';
 
 import 'package:fl_query/src/base_operation.dart';
 import 'package:fl_query/src/models/query_job.dart';
+import 'package:fl_query/src/query_bowl.dart';
+import 'package:fl_query/src/utils.dart';
 import 'package:flutter/widgets.dart';
+import 'package:collection/collection.dart';
 
 enum QueryStatus {
   /// in times when an error occurs
@@ -23,7 +26,11 @@ enum QueryStatus {
   refetching;
 }
 
-typedef QueryTaskFunction<T, Outside> = FutureOr<T> Function(String, Outside);
+typedef QueryTaskFunction<T extends Object, Outside> = FutureOr<T> Function(
+  String queryKey,
+  Outside externalData,
+  Query<T, Outside> self,
+);
 
 typedef QueryListener<T> = FutureOr<void> Function(T);
 
@@ -64,6 +71,8 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
 
   Timer? _refetchIntervalTimer;
 
+  final QueryBowl queryBowl;
+
   Query({
     required this.queryKey,
     required this.task,
@@ -72,6 +81,7 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
     required Outside externalData,
     required super.retries,
     required super.retryDelay,
+    required this.queryBowl,
     this.refetchOnMount,
     this.refetchInterval,
     this.enabled = true,
@@ -95,6 +105,7 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
 
   Query.fromOptions(
     QueryJob<T, Outside> options, {
+    required this.queryBowl,
     required Outside externalData,
     QueryListener<T>? onData,
     QueryListener<dynamic>? onError,
@@ -136,7 +147,11 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
   Future<void> _execute() async {
     try {
       retryAttempts = 0;
-      data = await task(queryKey, _externalData);
+      data = await task(
+        queryKey,
+        _externalData,
+        this,
+      );
       _prevUsedExternalData = _externalData;
       updatedAt = DateTime.now();
       status = QueryStatus.success;
@@ -157,7 +172,11 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
         while (retryAttempts <= retries) {
           await Future.delayed(retryDelay);
           try {
-            data = await task(queryKey, _externalData);
+            data = await task(
+              queryKey,
+              _externalData,
+              this,
+            );
             _prevUsedExternalData = _externalData;
             status = QueryStatus.success;
             for (final onData in onDataListeners) {
@@ -182,7 +201,9 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
   }
 
   Future<T?> fetch() async {
-    if (!enabled) return null;
+    /// if isLoading/isRefetching is true that means its already fetching/
+    /// refetching. So [_execute] again can create a race condition
+    if (!enabled || isLoading || isRefetching) return null;
     if (hasData) {
       return data;
     }
@@ -195,13 +216,14 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
   }
 
   Future<T?> refetch() async {
-    // cannot let run multiple refetch at the same time. It can cause
-    // race-condition
-    if (isRefetching) return null;
+    /// if isLoading/isRefetching is true that means its already fetching/
+    /// refetching. So [_execute] again can create a race condition
+    if (isRefetching || isLoading) return null;
     status = QueryStatus.refetching;
     refetchCount++;
     // disabling the lazy query bound when query was actually called
-    if (!enabled) enabled = false;
+    if (!enabled) enabled = true;
+    if (enabled && !fetched) await fetch();
     notifyListeners();
     return await _execute().then((_) => data);
   }
@@ -239,6 +261,11 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
     fetched = false;
     status = QueryStatus.idle;
     retryAttempts = 0;
+    for (final queryEntry in _dependencyQueries.entries) {
+      queryEntry.value.unmount(queryEntry.key);
+      queryEntry.value.removeListener(refetch);
+    }
+    _dependencyQueries = {};
     onDataListeners.clear();
     onErrorListeners.clear();
     mounts.clear();
@@ -266,6 +293,42 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
     if (this.refetchOnMount == null && refetchOnMount != null)
       this.refetchOnMount = refetchOnMount;
     notifyListeners();
+  }
+
+  Map<ValueKey<String>, Query> _dependencyQueries = {};
+
+  /// only usable inside any task method
+  Query<T, Outside> dependOnQuery<T extends Object, Outside>(
+    QueryJob<T, Outside> job, {
+    required Outside externalData,
+  }) {
+    final key = ValueKey(uuid.v4());
+    final query = queryBowl.addQuery(
+      Query<T, Outside>.fromOptions(
+        job,
+        externalData: externalData,
+        queryBowl: queryBowl,
+      ),
+      key: key,
+    );
+    // removing listener if it was already hooked to it previously
+    query.removeListener(refetch);
+    query.addListener(refetch);
+    final uKey =
+        _dependencyQueries.keys.firstWhereOrNull((k) => k.value == key.value) ??
+            key;
+    _dependencyQueries[uKey] = query;
+    if (!query.fetched) query.fetch();
+    return query;
+  }
+
+  @override
+  void dispose() {
+    for (final queryEntry in _dependencyQueries.entries) {
+      queryEntry.value.unmount(queryEntry.key);
+      queryEntry.value.removeListener(refetch);
+    }
+    super.dispose();
   }
 
   bool get isStale {

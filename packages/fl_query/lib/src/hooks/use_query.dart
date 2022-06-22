@@ -17,106 +17,67 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
   QueryListener<dynamic>? onError,
   List<Object?>? keys,
 }) {
-  return use(_UseQuery<T, Outside>(
-    externalData: externalData,
-    job: job,
-    onData: onData,
-    onError: onError,
-    keys: keys,
-  ));
-}
+  final context = useContext();
+  QueryBowl queryBowl = QueryBowl.of(context);
+  final ValueKey<String> uKey = useMemoized(() => ValueKey(uuid.v4()), []);
+  Query<T, Outside> query = useMemoized(
+      () => Query.fromOptions(
+            job,
+            externalData: externalData,
+            queryBowl: queryBowl,
+            onData: onData,
+            onError: onError,
+          ),
+      []);
 
-class _UseQuery<T extends Object, Outside> extends Hook<Query<T, Outside>> {
-  final QueryJob<T, Outside> job;
-  final Outside externalData;
+  final oldExternalData = usePrevious(externalData);
+  final oldOnData = usePrevious(onData);
+  final oldOnError = usePrevious(onError);
 
-  /// Called when the query returns new data, on query
-  /// refetch or query gets expired
-  final QueryListener<T>? onData;
-
-  /// Called when the query returns error
-  final QueryListener<dynamic>? onError;
-  const _UseQuery({
-    required this.job,
-    required this.externalData,
-    this.onData,
-    this.onError,
-    super.keys,
-  });
-
-  @override
-  HookState<Query<T, Outside>, Hook<Query<T, Outside>>> createState() =>
-      _UseQueryHookState();
-}
-
-class _UseQueryHookState<T extends Object, Outside>
-    extends HookState<Query<T, Outside>, _UseQuery<T, Outside>> {
-  late QueryBowl queryBowl;
-  late final ValueKey<String> uKey;
-  late Query<T, Outside> query;
-
-  @override
-  void initHook() {
-    super.initHook();
-    uKey = ValueKey<String>(uuid.v4());
-    query = Query<T, Outside>.fromOptions(
-      hook.job,
-      externalData: hook.externalData,
+  useEffect(() {
+    queryBowl.addQuery<T, Outside>(
+      query,
+      key: uKey,
+      onData: onData,
+      onError: onError,
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      query = QueryBowl.of(context).addQuery<T, Outside>(
-        query,
-        key: uKey,
-        onData: hook.onData,
-        onError: hook.onError,
-      );
-      final hasExternalDataChanged = query.externalData != null &&
-          query.prevUsedExternalData != null &&
-          !isShallowEqual(query.externalData!, query.prevUsedExternalData!);
-      (query.fetched && query.refetchOnMount == true) || hasExternalDataChanged
-          ? await query.refetch()
-          : await query.fetch();
-    });
-  }
+    final hasExternalDataChanged = query.externalData != null &&
+        query.prevUsedExternalData != null &&
+        !isShallowEqual(query.externalData!, query.prevUsedExternalData!);
+    (query.fetched && query.refetchOnMount == true) || hasExternalDataChanged
+        ? query.refetch()
+        : query.fetch();
 
-  @override
-  void didUpdateHook(_UseQuery<T, Outside> oldHook) {
-    if (oldHook.externalData != null &&
-        hook.externalData != null &&
-        !isShallowEqual(oldHook.externalData!, hook.externalData!)) {
+    return () {
+      query.unmount(uKey);
+      if (onData != null) query.onDataListeners.remove(onData);
+      if (onError != null) query.onErrorListeners.remove(onError);
+    };
+  }, []);
+
+  useEffect(() {
+    if (oldExternalData != null &&
+        externalData != null &&
+        !isShallowEqual(oldExternalData, externalData)) {
       QueryBowl.of(context).fetchQuery(
-        hook.job,
-        externalData: hook.externalData,
-        onData: hook.onData,
-        onError: hook.onError,
+        job,
+        externalData: externalData,
+        onData: onData,
+        onError: onError,
         key: uKey,
       );
     } else {
-      if (oldHook.onData != hook.onData && oldHook.onData != null) {
-        query.onDataListeners.remove(oldHook.onData);
-        if (hook.onData != null) query.onDataListeners.add(hook.onData!);
+      if (oldOnData != onData && oldOnData != null) {
+        query.onDataListeners.remove(oldOnData);
+        if (onData != null) query.onDataListeners.add(onData);
       }
-      if (oldHook.onError != hook.onError && oldHook.onError != null) {
-        query.onErrorListeners.remove(oldHook.onError);
-        if (hook.onError != null) query.onErrorListeners.add(hook.onError!);
+      if (oldOnError != onError && oldOnError != null) {
+        query.onErrorListeners.remove(oldOnError);
+        if (onError != null) query.onErrorListeners.add(onError);
       }
     }
-    super.didUpdateHook(oldHook);
-  }
+    return null;
+  });
 
-  @override
-  void dispose() {
-    query.unmount(uKey);
-    if (hook.onData != null) query.onDataListeners.remove(hook.onData);
-    if (hook.onError != null) query.onErrorListeners.remove(hook.onError);
-  }
-
-  @override
-  Query<T, Outside> build(BuildContext context) {
-    queryBowl = QueryBowl.of(context);
-    return queryBowl.getQuery<T, Outside>(query.queryKey) ?? query;
-  }
-
-  @override
-  String get debugLabel => 'useQuery';
+  return queryBowl.getQuery<T, Outside>(job.queryKey) ?? query;
 }
