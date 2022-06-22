@@ -1,7 +1,7 @@
-import 'package:fl_query/models/mutation_job.dart';
-import 'package:fl_query/mutation.dart';
-import 'package:fl_query/query_bowl.dart';
-import 'package:fl_query/utils.dart';
+import 'package:fl_query/src/models/mutation_job.dart';
+import 'package:fl_query/src/mutation.dart';
+import 'package:fl_query/src/query_bowl.dart';
+import 'package:fl_query/src/utils.dart';
 import 'package:flutter/widgets.dart';
 
 class MutationBuilder<T extends Object, V> extends StatefulWidget {

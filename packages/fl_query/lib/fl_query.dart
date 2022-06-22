@@ -1,9 +1,9 @@
 library fl_query;
 
-export 'query.dart';
-export 'query_bowl.dart';
-export 'query_builder.dart';
-export 'mutation.dart';
-export 'mutation_builder.dart';
-export 'models/query_job.dart';
-export 'models/mutation_job.dart';
+export 'src/query.dart';
+export 'src/query_bowl.dart';
+export 'src/query_builder.dart';
+export 'src/mutation.dart';
+export 'src/mutation_builder.dart';
+export 'src/models/query_job.dart';
+export 'src/models/mutation_job.dart';

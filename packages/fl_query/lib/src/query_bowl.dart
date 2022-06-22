@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:fl_query/models/query_job.dart';
-import 'package:fl_query/mutation.dart';
-import 'package:fl_query/query.dart';
+import 'package:fl_query/src/models/query_job.dart';
+import 'package:fl_query/src/mutation.dart';
+import 'package:fl_query/src/query.dart';
+import 'package:fl_query/src/utils.dart';
 import 'package:collection/collection.dart';
-import 'package:fl_query/utils.dart';
 import 'package:flutter/widgets.dart';
 
 class QueryBowlScope extends StatefulWidget {

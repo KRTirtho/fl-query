@@ -36,6 +36,7 @@ dependencies:
   fl_query:
     path: ../fl_query
   http: ^0.13.4
+  flutter_hooks: ^0.18.5
 
 dev_dependencies:
   flutter_test:

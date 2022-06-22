@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:fl_query/base_operation.dart';
-import 'package:fl_query/models/query_job.dart';
+import 'package:fl_query/src/base_operation.dart';
+import 'package:fl_query/src/models/query_job.dart';
 import 'package:flutter/widgets.dart';
 
 enum QueryStatus {

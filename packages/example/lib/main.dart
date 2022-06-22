@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:example/another_component.dart';
+import 'package:example/hooks_example.dart';
 import 'package:example/lazy_query.dart';
 import 'package:example/mutation_example.dart';
 import 'package:example/query_with_external_data.dart';
@@ -163,6 +164,16 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => const MutationExample(),
+                ),
+              );
+            },
+          ),
+          ElevatedButton(
+            child: const Text("flutter_hooks Example"),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const HookExample(),
                 ),
               );
             },

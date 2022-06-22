@@ -1,7 +1,7 @@
 import 'dart:math';
 
-import 'package:fl_query/models/query_job.dart';
-import 'package:fl_query/query.dart';
+import 'package:fl_query/src/models/query_job.dart';
+import 'package:fl_query/src/query.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 

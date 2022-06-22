@@ -1,4 +1,4 @@
-import 'package:fl_query/query.dart';
+import 'package:fl_query/src/query.dart';
 import 'package:uuid/uuid.dart';
 
 Future<void> callQueryListeners<T>(Set<QueryListener<T>> listeners, T data) {

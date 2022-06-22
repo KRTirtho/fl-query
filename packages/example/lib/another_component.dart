@@ -1,4 +1,4 @@
-import 'package:fl_query/query_bowl.dart';
+import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';
 
 class AnotherComponent extends StatelessWidget {

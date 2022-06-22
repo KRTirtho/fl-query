@@ -1,4 +1,4 @@
-import 'package:fl_query/mutation.dart';
+import 'package:fl_query/fl_query.dart';
 
 class MutationJob<T extends Object, V> {
   String _mutationKey;

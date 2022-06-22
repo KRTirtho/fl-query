@@ -1,4 +1,4 @@
-import 'package:fl_query/query.dart';
+import 'package:fl_query/src/query.dart';
 
 class QueryJob<T extends Object, Outside> {
   // all params
