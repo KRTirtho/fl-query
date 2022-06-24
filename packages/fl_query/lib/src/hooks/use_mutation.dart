@@ -21,96 +21,63 @@ Mutation<T, V> useMutation<T extends Object, V>({
   MutationListener<V>? onMutate,
   List<Object?>? keys,
 }) {
-  return use(_UseMutation<T, V>(
-    job: job,
-    onData: onData,
-    onError: onError,
-    onMutate: onMutate,
-    keys: keys,
-  ));
-}
+  final context = useContext();
+  final QueryBowl queryBowl = QueryBowl.of(context);
+  final ValueKey<String> uKey = useMemoized(() => ValueKey(uuid.v4()), []);
+  final mutation =
+      useRef(Mutation<T, V>.fromOptions(job, queryBowl: queryBowl));
 
-class _UseMutation<T extends Object, V> extends Hook<Mutation<T, V>> {
-  final MutationJob<T, V> job;
+  final init = useCallback(() {
+    mutation.value = queryBowl.addMutation<T, V>(
+      mutation.value,
+      onData: onData,
+      onError: onError,
+      onMutate: onMutate,
+      key: uKey,
+    );
+  }, [mutation.value, job, onData, onError, onMutate, uKey]);
 
-  /// Called when the query returns new data, on query
-  /// refetch or query gets expired
-  final MutationListener<T>? onData;
+  final disposeMutation = useCallback(() {
+    mutation.value.unmount(uKey);
+    if (onData != null) mutation.value.onDataListeners.remove(onData);
+    if (onError != null) mutation.value.onErrorListeners.remove(onError);
+    if (onMutate != null) mutation.value.onMutateListeners.remove(onMutate);
+  }, [mutation.value, onData, onError, onMutate]);
 
-  /// Called when the query returns error
-  final MutationListener<dynamic>? onError;
+  final oldJob = usePrevious(job);
+  final oldOnData = usePrevious(onData);
+  final oldOnError = usePrevious(onError);
+  final oldOnMutate = usePrevious(onMutate);
 
-  /// called right before the mutation is about to run
-  ///
-  /// perfect scenario for doing optimistic updates
-  final MutationListener<V>? onMutate;
-  const _UseMutation({
-    required this.job,
-    this.onData,
-    this.onError,
-    this.onMutate,
-    super.keys,
+  useEffect(() {
+    init();
+    return disposeMutation;
+  }, []);
+
+  useEffect(() {
+    if (oldJob != null && oldJob.mutationKey != job.mutationKey) {
+      disposeMutation();
+      mutation.value = Mutation<T, V>.fromOptions(
+        job,
+        queryBowl: queryBowl,
+      );
+      init();
+    } else {
+      if (oldOnData != onData && oldOnData != null) {
+        mutation.value.onDataListeners.remove(oldOnData);
+        if (onData != null) mutation.value.onDataListeners.add(onData);
+      }
+      if (oldOnError != onError && oldOnError != null) {
+        mutation.value.onErrorListeners.remove(oldOnError);
+        if (onError != null) mutation.value.onErrorListeners.add(onError);
+      }
+      if (oldOnMutate != onMutate && oldOnMutate != null) {
+        mutation.value.onMutateListeners.remove(oldOnMutate);
+        if (onMutate != null) mutation.value.onMutateListeners.add(onMutate);
+      }
+    }
+    return null;
   });
 
-  @override
-  HookState<Mutation<T, V>, Hook<Mutation<T, V>>> createState() =>
-      _UseMutationHookState();
-}
-
-class _UseMutationHookState<T extends Object, V>
-    extends HookState<Mutation<T, V>, _UseMutation<T, V>> {
-  late QueryBowl queryBowl;
-  late final ValueKey<String> uKey;
-  late Mutation<T, V> mutation;
-
-  @override
-  void initHook() {
-    super.initHook();
-    uKey = ValueKey<String>(uuid.v4());
-    mutation = Mutation<T, V>.fromOptions(hook.job);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      queryBowl = QueryBowl.of(context);
-      mutation = queryBowl.addMutation<T, V>(
-        mutation,
-        onData: hook.onData,
-        onError: hook.onError,
-        onMutate: hook.onMutate,
-        key: uKey,
-      );
-    });
-  }
-
-  @override
-  void didUpdateHook(_UseMutation<T, V> oldHook) {
-    if (oldHook.onData != hook.onData && oldHook.onData != null) {
-      mutation.onDataListeners.remove(oldHook.onData);
-      if (hook.onData != null) mutation.onDataListeners.add(hook.onData!);
-    }
-    if (oldHook.onError != hook.onError && oldHook.onError != null) {
-      mutation.onErrorListeners.remove(oldHook.onError);
-      if (hook.onError != null) mutation.onErrorListeners.add(hook.onError!);
-    }
-    if (oldHook.onMutate != hook.onMutate && oldHook.onMutate != null) {
-      mutation.onMutateListeners.remove(oldHook.onMutate);
-      if (hook.onMutate != null) mutation.onMutateListeners.add(hook.onMutate!);
-    }
-    super.didUpdateHook(oldHook);
-  }
-
-  @override
-  void dispose() {
-    mutation.unmount(uKey);
-    if (hook.onData != null) mutation.onDataListeners.remove(hook.onData);
-    if (hook.onError != null) mutation.onErrorListeners.remove(hook.onError);
-    if (hook.onMutate != null) mutation.onMutateListeners.remove(hook.onMutate);
-  }
-
-  @override
-  Mutation<T, V> build(BuildContext context) {
-    queryBowl = QueryBowl.of(context);
-    return queryBowl.getMutation<T, V>(mutation.mutationKey) ?? mutation;
-  }
-
-  @override
-  String get debugLabel => 'useQuery';
+  return queryBowl.getMutation<T, V>(job.mutationKey) ?? mutation.value;
 }

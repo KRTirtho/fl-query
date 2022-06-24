@@ -18,45 +18,59 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
   List<Object?>? keys,
 }) {
   final context = useContext();
-  QueryBowl queryBowl = QueryBowl.of(context);
+  final QueryBowl queryBowl = QueryBowl.of(context);
   final ValueKey<String> uKey = useMemoized(() => ValueKey(uuid.v4()), []);
-  Query<T, Outside> query = useMemoized(
-      () => Query.fromOptions(
-            job,
-            externalData: externalData,
-            queryBowl: queryBowl,
-            onData: onData,
-            onError: onError,
-          ),
-      []);
+  final query = useRef(
+    Query.fromOptions(
+      job,
+      externalData: externalData,
+      queryBowl: queryBowl,
+    ),
+  );
 
+  final oldJob = usePrevious(job);
   final oldExternalData = usePrevious(externalData);
   final oldOnData = usePrevious(onData);
   final oldOnError = usePrevious(onError);
 
-  useEffect(() {
-    queryBowl.addQuery<T, Outside>(
-      query,
+  final init = useCallback(() {
+    query.value = queryBowl.addQuery<T, Outside>(
+      query.value,
       key: uKey,
       onData: onData,
       onError: onError,
     );
-    final hasExternalDataChanged = query.externalData != null &&
-        query.prevUsedExternalData != null &&
-        !isShallowEqual(query.externalData!, query.prevUsedExternalData!);
-    (query.fetched && query.refetchOnMount == true) || hasExternalDataChanged
-        ? query.refetch()
-        : query.fetch();
+    final hasExternalDataChanged = query.value.externalData != null &&
+        query.value.prevUsedExternalData != null &&
+        !isShallowEqual(
+            query.value.externalData!, query.value.prevUsedExternalData!);
+    (query.value.fetched && query.value.refetchOnMount == true) ||
+            hasExternalDataChanged
+        ? query.value.refetch()
+        : query.value.fetch();
+  }, [queryBowl, query.value, uKey, onData, onError, job]);
 
-    return () {
-      query.unmount(uKey);
-      if (onData != null) query.onDataListeners.remove(onData);
-      if (onError != null) query.onErrorListeners.remove(onError);
-    };
+  final disposeQuery = useCallback(() {
+    query.value.unmount(uKey);
+    if (onData != null) query.value.onDataListeners.remove(onData);
+    if (onError != null) query.value.onErrorListeners.remove(onError);
+  }, [query.value, onData, onError, uKey]);
+
+  useEffect(() {
+    init();
+    return disposeQuery;
   }, []);
 
   useEffect(() {
-    if (oldExternalData != null &&
+    if (oldJob != null && oldJob.queryKey != job.queryKey) {
+      disposeQuery();
+      query.value = Query.fromOptions(
+        job,
+        externalData: externalData,
+        queryBowl: queryBowl,
+      );
+      init();
+    } else if (oldExternalData != null &&
         externalData != null &&
         !isShallowEqual(oldExternalData, externalData)) {
       QueryBowl.of(context).fetchQuery(
@@ -68,16 +82,16 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
       );
     } else {
       if (oldOnData != onData && oldOnData != null) {
-        query.onDataListeners.remove(oldOnData);
-        if (onData != null) query.onDataListeners.add(onData);
+        query.value.onDataListeners.remove(oldOnData);
+        if (onData != null) query.value.onDataListeners.add(onData);
       }
       if (oldOnError != onError && oldOnError != null) {
-        query.onErrorListeners.remove(oldOnError);
-        if (onError != null) query.onErrorListeners.add(onError);
+        query.value.onErrorListeners.remove(oldOnError);
+        if (onError != null) query.value.onErrorListeners.add(onError);
       }
     }
     return null;
   });
 
-  return queryBowl.getQuery<T, Outside>(job.queryKey) ?? query;
+  return queryBowl.getQuery<T, Outside>(job.queryKey) ?? query.value;
 }

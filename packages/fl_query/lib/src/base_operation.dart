@@ -1,3 +1,4 @@
+import 'package:fl_query/src/query_bowl.dart';
 import 'package:flutter/widgets.dart';
 
 abstract class BaseOperation<Data, StatusType> extends ChangeNotifier {
@@ -28,11 +29,14 @@ abstract class BaseOperation<Data, StatusType> extends ChangeNotifier {
   /// storage/cache
   Set<ValueKey<String>> _mounts = {};
 
+  final QueryBowl queryBowl;
+
   BaseOperation({
     required this.cacheTime,
     required this.retries,
     required this.retryDelay,
     required this.status,
+    required this.queryBowl,
     this.data,
   }) : updatedAt = DateTime.now();
 

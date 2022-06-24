@@ -74,7 +74,7 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
         .listen((ConnectivityResult result) async {
       if (isConnectedToInternet(result)) {
         for (final query in queries) {
-          if (query.refetchOnReconnect == false) continue;
+          if (query.refetchOnReconnect == false || !query.enabled) continue;
           await query.refetch();
           await Future.delayed(widget.refetchOnReconnectDelay);
         }
@@ -108,75 +108,73 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
   }
 
   void updateQueries(Query query) {
-    // checking & not including inactive queries
-    // basically garbage collecting queries
-    if (query.isInactive) {
-      /// there's a bug currently,
-      /// where if somehow a [Query] (queryA) is depending on another
-      /// [Query] (queryB) & queryA has become inactive so its getting
-      /// disposed but at the same moment queryB got refetched will make
-      /// queryB's [BaseOperation.unmount] to throw [RangeError] for
-      /// calling [ChangeNotifier.notifyListener] after [cacheDelay]
-      /// inside [Timer.periodic] callback
-      ///
-      /// To mitigate this, [Query.reset] is used instead of using
-      /// [Query.dispose] as it doesn't call [super.dispose]
-      query.reset();
-    }
-
-    setState(() {
-      queries = Set.from(
-        query.isInactive
-            ? queries.where((el) => el.queryKey != query.queryKey)
-            : queries,
-      );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // checking & not including inactive queries
+      // basically garbage collecting queries
+      setState(() {
+        queries = Set.from(
+          query.isInactive
+              ? queries.where((el) => el.queryKey != query.queryKey)
+              : queries,
+        );
+      });
     });
   }
 
   void updateMutations(Mutation mutation) {
-    setState(() {
-      // checking & not including inactive mutations
-      // basically garbage collecting mutations
-      mutations = Set.from(
-        mutation.isInactive
-            ? mutations.where(
-                (el) => el.mutationKey != mutation.mutationKey,
-              )
-            : mutations,
-      );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        // checking & not including inactive mutations
+        // basically garbage collecting mutations
+        mutations = Set.from(
+          mutation.isInactive
+              ? mutations.where(
+                  (el) => el.mutationKey != mutation.mutationKey,
+                )
+              : mutations,
+        );
+      });
     });
   }
 
   void addQuery<T extends Object, Outside>(Query<T, Outside> query) {
-    setState(() {
-      queries = Set.from({...queries, query});
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        queries = Set.from({...queries, query});
+      });
     });
   }
 
   void addMutation<T extends Object, V>(Mutation<T, V> mutation) {
-    setState(() {
-      mutations = Set.from({...mutations, mutation});
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        mutations = Set.from({...mutations, mutation});
+      });
     });
   }
 
   int removeQueries(List<String> queryKeys) {
     int count = 0;
-    setState(() {
-      mutations = Set.from(
-        queries.whereNot((query) {
-          final isAboutToRip = queryKeys.contains(query.queryKey);
-          if (isAboutToRip) count++;
-          return isAboutToRip;
-        }),
-      );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        mutations = Set.from(
+          queries.whereNot((query) {
+            final isAboutToRip = queryKeys.contains(query.queryKey);
+            if (isAboutToRip) count++;
+            return isAboutToRip;
+          }),
+        );
+      });
     });
     return count;
   }
 
   void clear() {
-    setState(() {
-      queries = Set<Query>();
-      mutations = Set<Mutation>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        queries = Set<Query>();
+        mutations = Set<Mutation>();
+      });
     });
   }
 
@@ -270,9 +268,7 @@ class QueryBowl extends InheritedWidget {
       if (onError != null) prevQuery.onErrorListeners.add(onError);
       if (!prevQuery.hasData || hasExternalDataChanged) {
         if (hasExternalDataChanged) prevQuery.setExternalData(externalData);
-        return prevQuery.fetched
-            ? await prevQuery.refetch()
-            : await prevQuery.fetch();
+        return await prevQuery.refetch();
       }
       // mounting the widget that is using the query in the prevQuery
       return prevQuery.data;
@@ -353,6 +349,9 @@ class QueryBowl extends InheritedWidget {
       prevMutation.mount(key);
       return prevMutation;
     } else {
+      if (onData != null) mutation.onDataListeners.add(onData);
+      if (onError != null) mutation.onErrorListeners.add(onError);
+      if (onMutate != null) mutation.onMutateListeners.add(onMutate);
       mutation.updateDefaultOptions(cacheTime: cacheTime);
       mutation.mount(key);
       _addMutation(mutation);
@@ -413,8 +412,9 @@ class QueryBowl extends InheritedWidget {
 
   Future<void> refetchQueries(List<String> queryKeys) async {
     for (final query in _queries) {
-      if (!queryKeys.contains(query.queryKey)) continue;
-      await query.refetch();
+      if (queryKeys.contains(query.queryKey)) {
+        await query.refetch();
+      }
     }
   }
 

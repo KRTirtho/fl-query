@@ -2,7 +2,11 @@ import 'dart:async';
 
 import 'package:fl_query/src/base_operation.dart';
 import 'package:fl_query/src/models/mutation_job.dart';
+import 'package:fl_query/src/models/query_job.dart';
+import 'package:fl_query/src/query.dart';
+import 'package:fl_query/src/utils.dart';
 import 'package:flutter/widgets.dart';
+import 'package:collection/collection.dart';
 
 enum MutationStatus {
   error,
@@ -13,7 +17,8 @@ enum MutationStatus {
 
 typedef MutationListener<T> = FutureOr<void> Function(T);
 
-typedef MutationTaskFunction<T, V> = FutureOr<T> Function(String, V);
+typedef MutationTaskFunction<T, V> = FutureOr<T> Function(
+    String queryKey, V variables);
 
 class Mutation<T extends Object, V> extends BaseOperation<T, MutationStatus> {
   // all params
@@ -32,6 +37,7 @@ class Mutation<T extends Object, V> extends BaseOperation<T, MutationStatus> {
     required this.task,
     required super.retries,
     required super.retryDelay,
+    required super.queryBowl,
     required Duration cacheTime,
     MutationListener<T>? onData,
     MutationListener<dynamic>? onError,
@@ -47,6 +53,7 @@ class Mutation<T extends Object, V> extends BaseOperation<T, MutationStatus> {
     MutationListener<T>? onData,
     MutationListener<dynamic>? onError,
     MutationListener<V>? onMutate,
+    required super.queryBowl,
   })  : mutationKey = options.mutationKey,
         task = options.task,
         super(

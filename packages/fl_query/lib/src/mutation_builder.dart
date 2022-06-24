@@ -5,7 +5,7 @@ import 'package:fl_query/src/utils.dart';
 import 'package:flutter/widgets.dart';
 
 class MutationBuilder<T extends Object, V> extends StatefulWidget {
-  final Function(BuildContext, Mutation<T, V>) builder;
+  final Function(BuildContext context, Mutation<T, V> mutation) builder;
   final MutationJob<T, V> job;
 
   /// Called when the query returns new data, on query
@@ -39,60 +39,72 @@ class _MutationBuilderState<T extends Object, V>
 
   late ValueKey<String> uKey;
 
-  late Mutation<T, V> mutation;
+  Mutation<T, V>? mutation;
 
   @override
   void initState() {
     super.initState();
     uKey = ValueKey<String>(uuid.v4());
-    mutation = Mutation<T, V>.fromOptions(widget.job);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      queryBowl = QueryBowl.of(context);
-      mutation = queryBowl.addMutation<T, V>(
-        mutation,
-        onData: widget.onData,
-        onError: widget.onError,
-        onMutate: widget.onMutate,
-        key: uKey,
-      );
-    });
+    WidgetsBinding.instance.addPostFrameCallback(init);
+  }
+
+  void init([_]) {
+    queryBowl = QueryBowl.of(context);
+    mutation = queryBowl.addMutation<T, V>(
+      Mutation<T, V>.fromOptions(widget.job, queryBowl: queryBowl),
+      onData: widget.onData,
+      onError: widget.onError,
+      onMutate: widget.onMutate,
+      key: uKey,
+    );
   }
 
   @override
   void didUpdateWidget(covariant MutationBuilder<T, V> oldWidget) {
-    if (oldWidget.onData != widget.onData && oldWidget.onData != null) {
-      mutation.onDataListeners.remove(oldWidget.onData);
-      if (widget.onData != null) mutation.onDataListeners.add(widget.onData!);
-    }
-    if (oldWidget.onError != widget.onError && oldWidget.onError != null) {
-      mutation.onErrorListeners.remove(oldWidget.onError);
-      if (widget.onError != null)
-        mutation.onErrorListeners.add(widget.onError!);
-    }
-    if (oldWidget.onMutate != widget.onMutate && oldWidget.onMutate != null) {
-      mutation.onMutateListeners.remove(oldWidget.onMutate);
-      if (widget.onMutate != null)
-        mutation.onMutateListeners.add(widget.onMutate!);
+    if (oldWidget.job.mutationKey != widget.job.mutationKey) {
+      _mutationDispose();
+      init();
+    } else {
+      if (oldWidget.onData != widget.onData && oldWidget.onData != null) {
+        mutation?.onDataListeners.remove(oldWidget.onData);
+        if (widget.onData != null)
+          mutation?.onDataListeners.add(widget.onData!);
+      }
+      if (oldWidget.onError != widget.onError && oldWidget.onError != null) {
+        mutation?.onErrorListeners.remove(oldWidget.onError);
+        if (widget.onError != null)
+          mutation?.onErrorListeners.add(widget.onError!);
+      }
+      if (oldWidget.onMutate != widget.onMutate && oldWidget.onMutate != null) {
+        mutation?.onMutateListeners.remove(oldWidget.onMutate);
+        if (widget.onMutate != null)
+          mutation?.onMutateListeners.add(widget.onMutate!);
+      }
     }
     super.didUpdateWidget(oldWidget);
   }
 
   @override
   void dispose() {
-    mutation.unmount(uKey);
-    if (widget.onData != null) mutation.onDataListeners.remove(widget.onData);
-    if (widget.onError != null)
-      mutation.onErrorListeners.remove(widget.onError);
-    if (widget.onMutate != null)
-      mutation.onMutateListeners.remove(widget.onMutate);
+    _mutationDispose();
     super.dispose();
+  }
+
+  void _mutationDispose() {
+    mutation?.unmount(uKey);
+    if (widget.onData != null) mutation?.onDataListeners.remove(widget.onData);
+    if (widget.onError != null)
+      mutation?.onErrorListeners.remove(widget.onError);
+    if (widget.onMutate != null)
+      mutation?.onMutateListeners.remove(widget.onMutate);
   }
 
   @override
   Widget build(BuildContext context) {
     queryBowl = QueryBowl.of(context);
     final latestMutation =
-        queryBowl.getMutation<T, V>(mutation.mutationKey) ?? mutation;
+        queryBowl.getMutation<T, V>(widget.job.mutationKey) ?? mutation;
+    if (latestMutation == null) return Container();
     return widget.builder(context, latestMutation);
   }
 }

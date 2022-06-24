@@ -5,7 +5,7 @@ import 'package:fl_query/src/utils.dart';
 import 'package:flutter/widgets.dart';
 
 class QueryBuilder<T extends Object, Outside> extends StatefulWidget {
-  final Function(BuildContext, Query<T, Outside>) builder;
+  final Function(BuildContext context, Query<T, Outside> query) builder;
   final QueryJob<T, Outside> job;
   final Outside externalData;
 
@@ -40,30 +40,36 @@ class _QueryBuilderState<T extends Object, Outside>
   void initState() {
     super.initState();
     uKey = ValueKey<String>(uuid.v4());
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      query = QueryBowl.of(context).addQuery<T, Outside>(
-        Query<T, Outside>.fromOptions(
-          widget.job,
-          externalData: widget.externalData,
-          queryBowl: QueryBowl.of(context),
-        ),
-        key: uKey,
-        onData: widget.onData,
-        onError: widget.onError,
-      );
-      final hasExternalDataChanged = query!.externalData != null &&
-          query!.prevUsedExternalData != null &&
-          !isShallowEqual(query!.externalData!, query!.prevUsedExternalData!);
-      (query!.fetched && query!.refetchOnMount == true) ||
-              hasExternalDataChanged
-          ? await query!.refetch()
-          : await query!.fetch();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => init());
+  }
+
+  void init([QueryBowl? bowl]) async {
+    bowl ??= QueryBowl.of(context);
+    query = bowl.addQuery<T, Outside>(
+      Query<T, Outside>.fromOptions(
+        widget.job,
+        externalData: widget.externalData,
+        queryBowl: QueryBowl.of(context),
+      ),
+      key: uKey,
+      onData: widget.onData,
+      onError: widget.onError,
+    );
+    final hasExternalDataChanged = query!.externalData != null &&
+        query!.prevUsedExternalData != null &&
+        !isShallowEqual(query!.externalData!, query!.prevUsedExternalData!);
+    (query!.fetched && query!.refetchOnMount == true) || hasExternalDataChanged
+        ? await query!.refetch()
+        : await query!.fetch();
   }
 
   @override
   void didUpdateWidget(covariant oldWidget) {
-    if (oldWidget.externalData != null &&
+    // re-init the query-builder when new queryJob is appended
+    if (oldWidget.job.queryKey != widget.job.queryKey) {
+      _queryDispose();
+      init();
+    } else if (oldWidget.externalData != null &&
         widget.externalData != null &&
         !isShallowEqual(oldWidget.externalData!, widget.externalData!)) {
       QueryBowl.of(context).fetchQuery(
@@ -87,11 +93,15 @@ class _QueryBuilderState<T extends Object, Outside>
     super.didUpdateWidget(oldWidget);
   }
 
-  @override
-  void dispose() {
+  _queryDispose() {
     query?.unmount(uKey);
     if (widget.onData != null) query?.onDataListeners.remove(widget.onData);
     if (widget.onError != null) query?.onErrorListeners.remove(widget.onError);
+  }
+
+  @override
+  void dispose() {
+    _queryDispose();
     super.dispose();
   }
 
