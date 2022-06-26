@@ -1,16 +1,39 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:fl_query/fl_query_hooks.dart';
 import 'package:fl_query/src/models/query_job.dart';
 import 'package:fl_query/src/mutation.dart';
+import 'package:fl_query/src/mutation_builder.dart';
 import 'package:fl_query/src/query.dart';
 import 'package:fl_query/src/utils.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/widgets.dart';
 
+/// The widget that holds & provides every [Query] & [Mutation] to your
+/// entire Flutter application in anywhere
+/// This must be used on the above any other widget
+///
+/// ```dart
+///  Widget build(BuildContext context) {
+///    return QueryBowlScope(
+///      child: MaterialApp(/*...other stuff...*/),
+///    );
+///  }
+/// ```
+///
 class QueryBowlScope extends StatefulWidget {
   final Widget child;
+
+  /// global stale time
+  ///
+  /// Makes [Query.data] stale after crossing the duration of provided
+  /// [staleTime]
   final Duration staleTime;
+
+  /// global cache time
+  ///
+  /// Removes inactive queries after provided duration of [cacheTime]
   final Duration cacheTime;
 
   // refetching options
@@ -34,16 +57,17 @@ class QueryBowlScope extends StatefulWidget {
   /// rate-limit
   ///
   /// Though its recommended most of the time to use but it can be turned
-  /// off by setting passing [Duration.zero]
+  /// off by passing [Duration.zero]
   final Duration refetchOnReconnectDelay;
 
   /// used for periodically checking if any query got stale.
   /// If none is supplied then half of the value of staleTime is used
   final Duration refetchInterval;
+
   const QueryBowlScope({
     required this.child,
     this.staleTime = Duration.zero,
-    this.cacheTime = const Duration(seconds: 5),
+    this.cacheTime = const Duration(minutes: 5),
     this.refetchInterval = Duration.zero,
     this.refetchOnMount = false,
     this.refetchOnReconnect = true,
@@ -199,8 +223,11 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
   }
 }
 
-/// QueryBowl holds all the query related methods & properties.
-/// Its responsible for creating/updating/delete queries
+/// QueryBowl provides an imperative way to handle all the query &
+/// mutation related methods & properties.
+///
+/// Its responsible or can be used for (not recommended) creating,
+/// updating & deleting queries & mutations
 class QueryBowl extends InheritedWidget {
   final Set<Query> _queries;
   final Set<Mutation> _mutations;
@@ -244,6 +271,7 @@ class QueryBowl extends InheritedWidget {
         _addMutation = addMutation,
         super(child: child, key: key);
 
+  /// !⚠️**Warning** only for internal library usage
   @protected
   Future<T?> fetchQuery<T extends Object, Outside>(
     QueryJob<T, Outside> options, {
@@ -292,6 +320,7 @@ class QueryBowl extends InheritedWidget {
     return await query.fetch();
   }
 
+  /// !⚠️**Warning** only for internal library usage
   @protected
   Query<T, Outside> addQuery<T extends Object, Outside>(
     Query<T, Outside> query, {
@@ -332,6 +361,7 @@ class QueryBowl extends InheritedWidget {
     return query;
   }
 
+  /// !⚠️**Warning** only for internal library usage
   @protected
   Mutation<T, V> addMutation<T extends Object, V>(
     Mutation<T, V> mutation, {
@@ -359,18 +389,25 @@ class QueryBowl extends InheritedWidget {
     }
   }
 
+  /// Get a query by providing queryKey only
+  ///
+  /// Useful for optimistic update or single query refetch
   Query<T, Outside>? getQuery<T extends Object, Outside>(String queryKey) {
     return _queries.firstWhereOrNull((query) {
       return query.queryKey == queryKey && query is Query<T, Outside>;
     })?.cast<Query<T, Outside>>();
   }
 
+  /// Get a mutation by providing mutationKey only
+  ///
+  /// Useful for mutation resets
   Mutation<T, V>? getMutation<T extends Object, V>(String mutationKey) {
     return _mutations.firstWhereOrNull((mutation) {
       return mutation.mutationKey == mutationKey && mutation is Mutation<T, V>;
     })?.cast<Mutation<T, V>>();
   }
 
+  /// Returns the number of query is currently fetching or refetching
   int get isFetching {
     return _queries.fold<int>(
       0,
@@ -381,6 +418,7 @@ class QueryBowl extends InheritedWidget {
     );
   }
 
+  /// Provides the number of mutations that are running at the moment
   int get isMutating {
     return _mutations.fold<int>(
       0,
@@ -391,11 +429,16 @@ class QueryBowl extends InheritedWidget {
     );
   }
 
+  /// Sets [Query]'s data manually
+  ///
+  /// Mostly used in combination with [onMutate] callback of
+  /// [MutationBuilder] & [useMutation] for optimistic updates
   void setQueryData<T extends Object, Outside>(
       String queryKey, QueryUpdateFunction<T> updateCb) {
     getQuery<T, Outside>(queryKey)?.setQueryData(updateCb);
   }
 
+  /// resets all the queries matching the passed List of queryKeys
   void resetQueries(List<String> queryKeys) {
     for (final query in _queries) {
       if (!queryKeys.contains(query.queryKey)) continue;
@@ -403,6 +446,7 @@ class QueryBowl extends InheritedWidget {
     }
   }
 
+  /// makes all the queries matching the passed List of queryKeys stale
   void invalidateQueries(List<String> queryKeys) {
     for (final query in _queries) {
       if (!queryKeys.contains(query.queryKey)) continue;
@@ -410,6 +454,7 @@ class QueryBowl extends InheritedWidget {
     }
   }
 
+  /// refetches all the queries matching the passed List of queryKeys
   Future<void> refetchQueries(List<String> queryKeys) async {
     for (final query in _queries) {
       if (queryKeys.contains(query.queryKey)) {
@@ -421,7 +466,9 @@ class QueryBowl extends InheritedWidget {
   static QueryBowl of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<QueryBowl>()!;
 
+  /// !⚠️**Warning** only for internal library usage
   @override
+  @protected
   bool updateShouldNotify(QueryBowl oldWidget) {
     return oldWidget.staleTime != staleTime ||
         oldWidget._queries != _queries ||

@@ -1,24 +1,41 @@
 # FL-Query
 
-Asynchronous data caching, refetching & invalidation library for Flutter. FL-Query lets you manage & distribute your data async data without touching any global state
+Asynchronous data caching, refetching & invalidation library for Flutter. FL-Query lets you manage & distribute your async data without touching any global state
 
-# Examples
-All examples of fl-query can be found in the [packages/example/lib](https://github.com/KRTirtho/fl-query/tree/main/packages/example/lib) directory
+Fl-Query makes asynchronous server state management a breeze in flutter
 
-Here's a basic example:
+# Features
+
+- Async data caching & management
+- Smart + effective refetching
+- Optimistic updates
+- Automatically cached data invalidation & unneeded query/mutation garbage collection
+- Easy to write & understand code. Follows DRY (Don't repeat yourself) convention
+- Compatible with both vanilla Flutter & elite [flutter_hooks](https://pub.dev/packages/flutter_hooks)
+
+# Installation
+
+Regular installation:
+
+```bash
+$ flutter pub add fl_query
+```
+
+For elite flutter_hooks user:
+
+```bash
+$ flutter pub add flutter_hooks
+```
+
+# Basic Usage
+
+First wrap your `MaterialApp` with with `QueryBowlScope` widget
+
 ```dart
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  @override
   Widget build(BuildContext context) {
     return QueryBowlScope(
       child: MaterialApp(
-        title: 'FL-Query Demo',
+        title: 'Fl-Query Example App',
         theme: ThemeData(
           useMaterial3: true,
           primarySwatch: Colors.blue,
@@ -27,97 +44,65 @@ class MyApp extends StatelessWidget {
       ),
     );
   }
-}
-
-
-// defining jobs that'll return results
-
-// this query resolve successfully with expected Data
-final successJob = QueryJob<String, void>(
-  queryKey: "success",
-  task: (queryKey, externalData) => Future.delayed(const Duration(seconds: 2),
-      () => "Welcome ($queryKey) ${Random.secure().nextInt(100)}"),
-);
-
-// this query can fail or can be successful
-final failedJob = QueryJob<String, void>(
-  queryKey: "failure",
-  task: (queryKey, externalData) => Random().nextBool()
-      ? Future.error("[$queryKey] Failed for unknown reason")
-      : Future.value(
-          "Success, you'll get slowly ${Random().nextInt(100)}!",
-        ),
-);
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key}) : super(key: key);
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Fl Query Example"),
-      ),
-      body: Column(
-        children: [
-          Row(
-            children: [
-              QueryBuilder<String, void>(
-                job: successJob,
-                // if you want to pass any external data or variable to the
-                // query/task function or just pass null
-                externalData: null,
-                builder: (context, query) {
-                  // returning based on the status of the query
-                  if (query.isLoading || query.isRefetching) {
-                    return const CircularProgressIndicator();
-                  }
-                  return TextButton(
-                    child: Text(query.data!),
-                    onPressed: () async {
-                      // refetching data forcibly
-                      await query.refetch();
-                    },
-                  );
-                },
-              ),
-              QueryBuilder<String, void>(
-                job: failedJob,
-                externalData: null,
-                builder: (context, query) {
-                  return Row(
-                    children: [
-                      if (query.hasError)
-                        Text(
-                          "${query.error}. Retrying: ${query.retryAttempts}",
-                        ),
-                      if (query.hasData)
-                        Text(
-                            "Success after ${query.retryAttempts}. Data: ${query.data}"),
-                      ElevatedButton(
-                        child: Text("Refetch ${query.queryKey}"),
-                        onPressed: () => query.refetch(),
-                      )
-                    ],
-                  );
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 ```
 
-# TODO
+Fl-Query has two types of jobs
+  - `QueryJob`: Used for storing GET requests or for storing changeable yet readonly async data
+  - `MutationJob`: Used for POST/PUT/DELETE requests or for mutating/changing data in services or a store asynchronously
 
-- Invalidate Queries when Window Focus Lost
-- Invalidate Queries when Connection Lose based configure network behavior
+You can write all your query or mutation logic a method parameter named `task` & identify the query uniquely by passing a unique `queryKey`
+
+Example of a QueryJob:
+
+```dart
+final exampleQueryJob = QueryJob<Map, void>(
+  queryKey: "example", // have to be unique
+  task: (queryKey, externalData) async {
+    final res = await http.get("/api/example-data");
+    return jsonDecode(res.body);
+  }
+);
+```
+
+Store the `QueryJob` somewhere globally accessible in your project so you can reuse it later
+
+Now you can use this `QueryJob` anywhere inside your flutter app inside the build method using a `QueryBuilder` widget
+
+```dart
+Widget build(BuildContext context){
+  return QueryBuilder<String, void>(
+      job: exampleQueryJob,
+      externalData: null,
+      builder: (context, query) {
+        if (!query.hasData || query.isLoading) {
+          return const CircularProgressIndicator();
+        }
+        return Row(
+          children: [
+            Text(query.data!),
+            ElevatedButton(
+              child: const Text("Refetch"),
+              onPressed: () async {
+                // refetches the query
+                await query.refetch();
+              },
+            ),
+          ],
+        );
+      },
+    );
+}
+```
+
+# Why?
+![The hell, why?](https://media.giphy.com/media/1M9fmo1WAFVK0/giphy.gif)
+
+The main purpose of Fl-Query is providing the easiest way to manage the messy server-state part requiring the least amount of code with code reusability & performance
+
+**Isn't `FutureBuilder` good?**
+Yes but it is only if your commercial server has huge load of power & you're made of money or your app is simple or mostly offline & barely requires internet connection
+`FutureBuilder` isn't good for data persistency & its impossible to share data across the entire application using it
+
+**So `FutureProvider` from riverpod or provider not enough?**
+Yeah, indeed its more than enough for many applications but what if your app needs Optimistic Updates & proper server-state synchronization or simply want a custom `cacheTime`? Although `FutureProvider` is a viable solution most of the `Future` related stuff, why not kick it up a notch with smart refetching capabilities with proper server-state synchronization?
+Riverpod is definitely a inspiration for Fl-Query & the `QueryJob` is actually inspired by riverpod & imo is the best state management solution any library has ever provided but that's still a client state manager just like other client state manager or synchronous data manager
