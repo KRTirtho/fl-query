@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 final lazyQueryJob = QueryJob<String, String>(
   queryKey: "lazy-query",
   enabled: false,
-  task: (queryKey, data, _) {
+  task: (
+    queryKey,
+    data,
+  ) {
     return Future.delayed(const Duration(milliseconds: 500),
         () => "Result: key=$queryKey value=$data");
   },

@@ -7,7 +7,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 
 final successHookJob = QueryJob<String, void>(
   queryKey: "greetings-hook-example",
-  task: (queryKey, _, __) => Future.delayed(
+  task: (queryKey, _) => Future.delayed(
     const Duration(seconds: 2),
     () =>
         "The work successfully executed. Data: key=($queryKey) value=${Random.secure().nextInt(100)}",
@@ -16,7 +16,7 @@ final successHookJob = QueryJob<String, void>(
 
 final canFailHookJob = QueryJob<String, void>(
   queryKey: "failure-hook-example",
-  task: (queryKey, _, __) => Random().nextBool()
+  task: (queryKey, _) => Random().nextBool()
       ? Future.error("$queryKey operation failed for unknown reason")
       : Future.value(
           "Successful execution. Result: $queryKey=${Random().nextInt(100)}",

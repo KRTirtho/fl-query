@@ -3,8 +3,8 @@ import 'dart:math';
 import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';
 
-final queryVariableKeyJob = QueryJob.withVariableKey<String, void>(
-    task: (queryKey, externalData, query) {
+final queryVariableKeyJob =
+    QueryJob.withVariableKey<String, void>(task: (queryKey, externalData) {
   return Future.delayed(
     const Duration(milliseconds: 500),
     () => "QueryKey:${queryKey.split("#").last}",

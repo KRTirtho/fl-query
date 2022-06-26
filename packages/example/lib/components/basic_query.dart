@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 final successJob = QueryJob<String, void>(
   queryKey: "greetings-example",
-  task: (queryKey, _, __) => Future.delayed(
+  task: (queryKey, _) => Future.delayed(
     const Duration(seconds: 2),
     () =>
         "The work successfully executed. Data: key=($queryKey) value=${Random.secure().nextInt(100)}",
@@ -14,7 +14,7 @@ final successJob = QueryJob<String, void>(
 
 final canFailJob = QueryJob<String, void>(
   queryKey: "failure-example",
-  task: (queryKey, _, __) => Random().nextBool()
+  task: (queryKey, _) => Random().nextBool()
       ? Future.error("$queryKey operation failed for unknown reason")
       : Future.value(
           "Successful execution. Result: $queryKey=${Random().nextInt(100)}",

@@ -8,7 +8,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 final queryHookExternalDataJob = QueryJob<String, double>(
   queryKey: "query-hook-external-data",
   cacheTime: const Duration(seconds: 10),
-  task: (queryKey, data, _) {
+  task: (queryKey, data) {
     return Future.delayed(const Duration(milliseconds: 500),
         () => "Hello from $queryKey with $data");
   },

@@ -3,10 +3,8 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_query/src/base_operation.dart';
 import 'package:fl_query/src/models/query_job.dart';
-import 'package:fl_query/src/query_bowl.dart';
 import 'package:fl_query/src/utils.dart';
 import 'package:flutter/widgets.dart';
-import 'package:collection/collection.dart';
 
 enum QueryStatus {
   /// in times when an error occurs
@@ -30,7 +28,6 @@ enum QueryStatus {
 typedef QueryTaskFunction<T extends Object, Outside> = FutureOr<T> Function(
   String queryKey,
   Outside externalData,
-  Query<T, Outside> self,
 );
 
 typedef QueryListener<T> = FutureOr<void> Function(T);
@@ -156,7 +153,6 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
       data = await task(
         queryKey,
         _externalData,
-        this,
       );
       _prevUsedExternalData = _externalData;
       updatedAt = DateTime.now();
@@ -181,7 +177,6 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
             data = await task(
               queryKey,
               _externalData,
-              this,
             );
             _prevUsedExternalData = _externalData;
             status = QueryStatus.success;
