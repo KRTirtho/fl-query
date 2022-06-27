@@ -1,4 +1,12 @@
-# FL-Query
+<p align="center">
+<image alt="Fl-Query Logo" width=300 src="assets/fl-query-logo.svg"/>
+</p>
+<h1>
+  <p align="center">
+    Fl-Query
+  </p>
+</h1>
+
 
 Asynchronous data caching, refetching & invalidation library for Flutter. FL-Query lets you manage & distribute your async data without touching any global state
 

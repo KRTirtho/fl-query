@@ -10,38 +10,35 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Easy to Use',
+    title: 'No boilerplate & high code reusability',
     Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        Fl-Query is designed to be less cluttering + reusable and lets you focus on only the logic you actually want to implement without handling hazard of cached data management
       </>
     ),
   },
   {
-    title: 'Focus on What Matters',
+    title: 'Declarative & Easy to use',
     Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
     description: (
       <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
+        Define your logic once and distribute it thousand times. By using Fl-Query you never have to write the same logic twice. It has an easy to understand API that you can learn in only 2-4 hours
       </>
     ),
   },
   {
-    title: 'Powered by React',
+    title: 'Optimistic data with smart refetching',
     Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
     description: (
       <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
+        The days of Loading Screen is over. Fetch and update your data transparently without disturbing the user with a Loading Indicator. Update your Data even before a data updates on the server and after finally getting the actual data, replace the predicted data with the real one
       </>
     ),
   },
 ];
 
-function Feature({title, Svg, description}: FeatureItem) {
+function Feature({ title, Svg, description }: FeatureItem) {
   return (
     <div className={clsx('col col--4')}>
       <div className="text--center">
