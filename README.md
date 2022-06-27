@@ -94,6 +94,38 @@ Widget build(BuildContext context){
 }
 ```
 
+Or if you're an elite **flutter_hooks** user you can use the `useQuery` hook which is exported from the `package:fl_query/fl_query_hooks.dart` to do the same thing as above 
+
+```dart
+/* other imports */
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:fl_query/fl_query_hooks.dart'; // importing the fl-query hook package
+
+class Example extends HookWidget{
+  Example(super.key);
+
+  Widget build(BuildContext context) {
+    final query = useQuery(job: exampleQueryJob, externalData: null);
+
+    if (!query.hasData || query.isLoading) {
+      return const CircularProgressIndicator();
+    }
+    return Row(
+      children: [
+        Text(query.data!),
+        ElevatedButton(
+          child: const Text("Refetch"),
+          onPressed: () async {
+            // refetches the query
+            await query.refetch();
+          },
+        ),
+      ],
+    );
+  }
+}
+```
+
 # Why?
 ![The hell, why?](https://media.giphy.com/media/1M9fmo1WAFVK0/giphy.gif)
 
