@@ -62,6 +62,8 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
   }, []);
 
   useEffect(() {
+    final hasOnErrorChanged = oldOnError != onError && oldOnError != null;
+    final hasOnDataChanged = oldOnData != onData && oldOnData != null;
     if (oldJob != null && oldJob.queryKey != job.queryKey) {
       disposeQuery();
       query.value = Query.fromOptions(
@@ -80,12 +82,14 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
         onError: onError,
         key: uKey,
       );
+      if (hasOnDataChanged) query.value.onDataListeners.remove(oldOnData);
+      if (hasOnErrorChanged) query.value.onErrorListeners.remove(oldOnError);
     } else {
-      if (oldOnData != onData && oldOnData != null) {
+      if (hasOnDataChanged) {
         query.value.onDataListeners.remove(oldOnData);
         if (onData != null) query.value.onDataListeners.add(onData);
       }
-      if (oldOnError != onError && oldOnError != null) {
+      if (hasOnErrorChanged) {
         query.value.onErrorListeners.remove(oldOnError);
         if (onError != null) query.value.onErrorListeners.add(onError);
       }

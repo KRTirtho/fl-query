@@ -65,6 +65,11 @@ class _QueryBuilderState<T extends Object, Outside>
 
   @override
   void didUpdateWidget(covariant oldWidget) {
+    final hasOnErrorChanged =
+        oldWidget.onError != widget.onError && oldWidget.onError != null;
+    final hasOnDataChanged =
+        oldWidget.onData != widget.onData && oldWidget.onData != null;
+
     // re-init the query-builder when new queryJob is appended
     if (oldWidget.job.queryKey != widget.job.queryKey) {
       _queryDispose();
@@ -79,12 +84,14 @@ class _QueryBuilderState<T extends Object, Outside>
         onError: widget.onError,
         key: uKey,
       );
+      if (hasOnDataChanged) query?.onDataListeners.remove(oldWidget.onData);
+      if (hasOnErrorChanged) query?.onErrorListeners.remove(oldWidget.onError);
     } else {
-      if (oldWidget.onData != widget.onData && oldWidget.onData != null) {
+      if (hasOnDataChanged) {
         query?.onDataListeners.remove(oldWidget.onData);
         if (widget.onData != null) query?.onDataListeners.add(widget.onData!);
       }
-      if (oldWidget.onError != widget.onError && oldWidget.onError != null) {
+      if (hasOnErrorChanged) {
         query?.onErrorListeners.remove(oldWidget.onError);
         if (widget.onError != null)
           query?.onErrorListeners.add(widget.onError!);

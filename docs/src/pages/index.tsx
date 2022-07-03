@@ -8,9 +8,9 @@ import { FiGithub } from "react-icons/fi"
 function HomepageHeader() {
   const { siteConfig } = useDocusaurusContext();
   return (
-    <header className='flex flex-col space-y-5 h-[65vh] md:p-20' style={{ backgroundImage: "url('img/logo.svg')", backgroundSize: "60% auto", backgroundRepeat: "no-repeat", backgroundPosition: "125%" }}>
+    <header className='flex flex-col space-y-5 h-[65vh] md:p-20' style={{ backgroundImage: "url('img/logo.svg')", backgroundSize: "50% auto", backgroundRepeat: "no-repeat", backgroundPosition: "105%" }}>
       <h1 className="text-4xl flex items-center">
-        <img src="img/logo.svg" className='mt-2' width="40" alt="" />
+        <img src="img/logo.svg" className='mr-2' width="40" alt="" />
         {siteConfig.title}
       </h1>
       <p className="text-2xl max-w-[40%]">{siteConfig.tagline}</p>
@@ -36,7 +36,7 @@ export default function Home(): JSX.Element {
   const { siteConfig } = useDocusaurusContext();
   return (
     <Layout
-      title={`${siteConfig.title} - Flutter async data management couldn't anymore easier`}
+      title={`${siteConfig.title} - Flutter async data management couldn't be anymore easier`}
       description="Flutter Asynchronous data caching, invalidation, refetching library. React-Query for Flutter. swr for Flutter">
       <HomepageHeader />
       <main>

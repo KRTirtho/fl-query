@@ -1,17 +1,18 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 import clsx from 'clsx';
 import styles from './styles.module.css';
 
 type FeatureItem = {
   title: string;
-  Svg: React.ComponentType<React.ComponentProps<'svg'>>;
+  Svg?: React.ComponentType<React.ComponentProps<'svg'>>;
+  Png?: string;
   description: JSX.Element;
 };
 
 const FeatureList: FeatureItem[] = [
   {
     title: 'No boilerplate & high code reusability',
-    Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
+    Png: 'img/no_boilerplate_code.png',
     description: (
       <>
         Fl-Query is designed to be less cluttering + reusable and lets you focus on only the logic you actually want to implement without handling hazard of cached data management
@@ -20,7 +21,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'Declarative & Easy to use',
-    Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
+    Svg: require('@site/static/img/declarative_ui_icon.svg').default,
     description: (
       <>
         Define your logic once and distribute it thousand times. By using Fl-Query you never have to write the same logic twice. It has an easy to understand API that you can learn in only 2-4 hours
@@ -29,7 +30,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'Optimistic data with smart refetching',
-    Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
+    Svg: require('@site/static/img/optimistic_data.svg').default,
     description: (
       <>
         The days of Loading Screen is over. Fetch and update your data transparently without disturbing the user with a Loading Indicator. Update your Data even before a data updates on the server and after finally getting the actual data, replace the predicted data with the real one
@@ -38,11 +39,12 @@ const FeatureList: FeatureItem[] = [
   },
 ];
 
-function Feature({ title, Svg, description }: FeatureItem) {
+function Feature({ title, Svg, description, Png }: FeatureItem) {
   return (
     <div className={clsx('col col--4')}>
       <div className="text--center">
-        <Svg className={styles.featureSvg} role="img" />
+        {Svg && <Svg className={styles.featureSvg} role="img" />}
+        {Png && <img src={Png} />}
       </div>
       <div className="text--center padding-horiz--md">
         <h3>{title}</h3>
