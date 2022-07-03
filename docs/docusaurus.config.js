@@ -79,7 +79,7 @@ const config = {
         items: [
           {
             type: 'doc',
-            docId: 'intro',
+            docId: 'getting-started/overview',
             position: 'left',
             label: 'Documentation',
           },
@@ -135,6 +135,7 @@ const config = {
       prism: {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
+        additionalLanguages: ["dart"]
       },
     }),
 };

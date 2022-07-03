@@ -17,7 +17,7 @@ function HomepageHeader() {
       <div className='space-x-5'>
         <Link
           className="button button--primary button--lg"
-          to="/docs/intro">
+          to="/docs/getting-started/overview">
           Get Started
         </Link>
         <Link
