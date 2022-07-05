@@ -60,6 +60,13 @@ class QueryBowlScope extends StatefulWidget {
   /// off by passing [Duration.zero]
   final Duration refetchOnReconnectDelay;
 
+  /// Refetch the query whenever the data passed as [externalData] to any
+  /// [QueryBuilder] or [useQuery] changes
+  ///
+  /// If set to false than the [externalData] will get updated but there
+  /// won't be any query update
+  final bool refetchOnExternalDataChange;
+
   /// used for periodically checking if any query got stale.
   /// If none is supplied then half of the value of staleTime is used
   final Duration refetchInterval;
@@ -74,6 +81,7 @@ class QueryBowlScope extends StatefulWidget {
     this.refetchOnReconnectDelay = const Duration(milliseconds: 100),
     this.refetchOnApplicationResume = true,
     this.refetchOnWindowFocus = true,
+    this.refetchOnExternalDataChange = false,
     Key? key,
   }) : super(key: key);
 
@@ -218,6 +226,7 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
       refetchInterval: widget.refetchInterval,
       refetchOnMount: widget.refetchOnMount,
       refetchOnReconnect: widget.refetchOnReconnect,
+      refetchOnExternalDataChange: widget.refetchOnExternalDataChange,
       child: widget.child,
     );
   }
@@ -237,6 +246,7 @@ class QueryBowl extends InheritedWidget {
   final Duration? refetchInterval;
   final bool refetchOnMount;
   final bool refetchOnReconnect;
+  final bool refetchOnExternalDataChange;
 
   final void Function<T extends Object, Outside>(Query<T, Outside> query)
       _addQuery;
@@ -263,6 +273,7 @@ class QueryBowl extends InheritedWidget {
     required this.clear,
     required this.refetchOnMount,
     required this.refetchOnReconnect,
+    required this.refetchOnExternalDataChange,
     this.refetchInterval,
     Key? key,
   })  : _addQuery = addQuery,
@@ -296,6 +307,7 @@ class QueryBowl extends InheritedWidget {
       if (onError != null) prevQuery.onErrorListeners.add(onError);
       if (!prevQuery.hasData || hasExternalDataChanged) {
         if (hasExternalDataChanged) prevQuery.setExternalData(externalData);
+
         return await prevQuery.refetch();
       }
       // mounting the widget that is using the query in the prevQuery

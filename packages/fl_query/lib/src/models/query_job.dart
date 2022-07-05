@@ -32,6 +32,7 @@ class QueryJob<T extends Object, Outside> {
   // got from global options
   bool? refetchOnMount;
   bool? refetchOnReconnect;
+  bool? refetchOnExternalDataChange;
   Duration? staleTime;
   Duration? cacheTime;
 
@@ -49,6 +50,7 @@ class QueryJob<T extends Object, Outside> {
     this.refetchInterval,
     this.refetchOnMount,
     this.refetchOnReconnect,
+    this.refetchOnExternalDataChange,
   }) : _queryKey = queryKey;
 
   String get queryKey => _queryKey;
@@ -70,6 +72,7 @@ class QueryJob<T extends Object, Outside> {
     Duration? refetchInterval,
     bool? refetchOnMount,
     bool? refetchOnReconnect,
+    bool? refetchOnExternalDataChange,
   }) {
     return (String queryKey) {
       if (preQueryKey != null) queryKey = "$preQueryKey#$queryKey";
@@ -85,6 +88,7 @@ class QueryJob<T extends Object, Outside> {
         refetchInterval: refetchInterval,
         refetchOnMount: refetchOnMount,
         refetchOnReconnect: refetchOnReconnect,
+        refetchOnExternalDataChange: refetchOnExternalDataChange,
       );
     };
   }

@@ -77,13 +77,20 @@ class _QueryBuilderState<T extends Object, Outside>
     } else if (oldWidget.externalData != null &&
         widget.externalData != null &&
         !isShallowEqual(oldWidget.externalData!, widget.externalData!)) {
-      QueryBowl.of(context).fetchQuery(
-        widget.job,
-        externalData: widget.externalData,
-        onData: widget.onData,
-        onError: widget.onError,
-        key: uKey,
-      );
+      if (widget.job.refetchOnExternalDataChange ??
+          queryBowl.refetchOnExternalDataChange) {
+        QueryBowl.of(context).fetchQuery(
+          widget.job,
+          externalData: widget.externalData,
+          onData: widget.onData,
+          onError: widget.onError,
+          key: uKey,
+        );
+      } else {
+        QueryBowl.of(context)
+            .getQuery(widget.job.queryKey)
+            ?.setExternalData(widget.externalData);
+      }
       if (hasOnDataChanged) query?.onDataListeners.remove(oldWidget.onData);
       if (hasOnErrorChanged) query?.onErrorListeners.remove(oldWidget.onError);
     } else {

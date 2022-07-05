@@ -75,13 +75,21 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
     } else if (oldExternalData != null &&
         externalData != null &&
         !isShallowEqual(oldExternalData, externalData)) {
-      QueryBowl.of(context).fetchQuery(
-        job,
-        externalData: externalData,
-        onData: onData,
-        onError: onError,
-        key: uKey,
-      );
+      if (job.refetchOnExternalDataChange ??
+          queryBowl.refetchOnExternalDataChange) {
+        QueryBowl.of(context).fetchQuery(
+          job,
+          externalData: externalData,
+          onData: onData,
+          onError: onError,
+          key: uKey,
+        );
+      } else {
+        QueryBowl.of(context)
+            .getQuery(job.queryKey)
+            ?.setExternalData(externalData);
+      }
+
       if (hasOnDataChanged) query.value.onDataListeners.remove(oldOnData);
       if (hasOnErrorChanged) query.value.onErrorListeners.remove(oldOnError);
     } else {
