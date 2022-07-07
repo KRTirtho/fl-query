@@ -1,5 +1,5 @@
 <p align="center">
-<image alt="Fl-Query Logo" width=300 src="../../assets/fl-query-logo.svg"/>
+<image alt="Fl-Query Logo" width=300 src="https://user-images.githubusercontent.com/61944859/177823630-c4e885c2-29c5-4549-af79-3e5d87c06be9.svg"/>
 </p>
 <h1>
   <p align="center">
