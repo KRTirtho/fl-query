@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:example/components/hooks/basic_hook_query.dart';
-import 'package:fl_query/fl_query_hooks.dart';
+import 'package:fl_query_hooks/fl_query_hooks.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:http/http.dart' as http;
 

@@ -33,6 +33,7 @@ For elite flutter_hooks user:
 
 ```bash
 $ flutter pub add flutter_hooks
+$ flutter pub add fl_query_hooks
 ```
 
 # Docs

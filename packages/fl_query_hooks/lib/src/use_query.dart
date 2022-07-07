@@ -1,7 +1,5 @@
-import 'package:fl_query/src/models/query_job.dart';
-import 'package:fl_query/src/query.dart';
-import 'package:fl_query/src/query_bowl.dart';
-import 'package:fl_query/src/utils.dart';
+import 'package:fl_query/fl_query.dart';
+import 'package:fl_query_hooks/src/utils.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 

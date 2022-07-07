@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:fl_query/fl_query_hooks.dart';
 import 'package:fl_query/src/models/query_job.dart';
 import 'package:fl_query/src/mutation.dart';
 import 'package:fl_query/src/mutation_builder.dart';

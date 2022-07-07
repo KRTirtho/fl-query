@@ -11,9 +11,10 @@ $ flutter pub add fl_query
 
 ### For using with `flutter_hooks`
 
-If you're an ELITE `flutter_hooks` user or want to use `fl_query_hooks` you'll only need the `flutter_hooks` package & nothing else
+If you're an ELITE `flutter_hooks` user or want to use `fl_query_hooks` you'll need the `flutter_hooks` & `fl_query_hooks` package
 
 ```bash
+$ flutter pub add fl_query_hooks
 $ flutter pub add flutter_hooks
 ```
 

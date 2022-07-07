@@ -133,7 +133,14 @@ packages:
       path: "../fl_query"
       relative: true
     source: path
-    version: "0.0.1"
+    version: "0.1.0"
+  fl_query_hooks:
+    dependency: "direct main"
+    description:
+      path: "../fl_query_hooks"
+      relative: true
+    source: path
+    version: "0.1.0"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -145,7 +152,7 @@ packages:
       name: flutter_hooks
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.18.5"
+    version: "0.18.5+1"
   flutter_lints:
     dependency: "direct dev"
     description:
