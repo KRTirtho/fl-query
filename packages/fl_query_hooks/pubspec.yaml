@@ -16,8 +16,7 @@ dependencies:
     sdk: flutter
   flutter_hooks: ^0.18.5+1
   uuid: ^3.0.6
-  fl_query: 
-    path: ../fl_query
+  fl_query: ^0.1.0
 
 dev_dependencies:
   flutter_test:
