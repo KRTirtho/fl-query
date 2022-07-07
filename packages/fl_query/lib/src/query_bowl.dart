@@ -41,10 +41,10 @@ class QueryBowlScope extends StatefulWidget {
   /// refetch query when new query instance mounts
   final bool refetchOnMount;
 
-  /// for desktop & web only
+  /// for desktop & web only (DUMMY & isn't implemented yet)
   final bool refetchOnWindowFocus;
 
-  /// for mobile only
+  /// for mobile only (DUMMY & isn't implemented yet)
   final bool refetchOnApplicationResume;
 
   /// refetch when user's device reconnects to the internet after no being

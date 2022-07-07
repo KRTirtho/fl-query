@@ -35,6 +35,10 @@ For elite flutter_hooks user:
 $ flutter pub add flutter_hooks
 ```
 
+# Docs
+ 
+You can find the documentation (WIP) of fl-query at https://fl-query.vercel.app/
+
 # Basic Usage
 
 First wrap your `MaterialApp` with with `QueryBowlScope` widget
