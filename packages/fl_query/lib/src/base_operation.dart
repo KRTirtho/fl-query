@@ -21,7 +21,6 @@ abstract class BaseOperation<Data, StatusType> extends ChangeNotifier {
   int retryAttempts = 0;
   DateTime updatedAt;
 
-  @protected
   bool fetched = false;
 
   /// used for keeping track of query activity. If the are no mounts &

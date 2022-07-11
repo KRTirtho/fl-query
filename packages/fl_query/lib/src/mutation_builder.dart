@@ -51,7 +51,7 @@ class _MutationBuilderState<T extends Object, V>
   void init([_]) {
     queryBowl = QueryBowl.of(context);
     mutation = queryBowl.addMutation<T, V>(
-      Mutation<T, V>.fromOptions(widget.job, queryBowl: queryBowl),
+      widget.job,
       onData: widget.onData,
       onError: widget.onError,
       onMutate: widget.onMutate,

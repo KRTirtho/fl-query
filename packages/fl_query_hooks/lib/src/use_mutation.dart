@@ -27,7 +27,7 @@ Mutation<T, V> useMutation<T extends Object, V>({
 
   final init = useCallback(() {
     mutation.value = queryBowl.addMutation<T, V>(
-      mutation.value,
+      job,
       onData: onData,
       onError: onError,
       onMutate: onMutate,
@@ -55,10 +55,6 @@ Mutation<T, V> useMutation<T extends Object, V>({
   useEffect(() {
     if (oldJob != null && oldJob.mutationKey != job.mutationKey) {
       disposeMutation();
-      mutation.value = Mutation<T, V>.fromOptions(
-        job,
-        queryBowl: queryBowl,
-      );
       init();
     } else {
       if (oldOnData != onData && oldOnData != null) {

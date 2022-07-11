@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:fl_query/src/models/mutation_job.dart';
 import 'package:fl_query/src/models/query_job.dart';
 import 'package:fl_query/src/mutation.dart';
 import 'package:fl_query/src/mutation_builder.dart';
@@ -334,23 +335,24 @@ class QueryBowl extends InheritedWidget {
   /// !⚠️**Warning** only for internal library usage
   @protected
   Query<T, Outside> addQuery<T extends Object, Outside>(
-    Query<T, Outside> query, {
+    QueryJob<T, Outside> queryJob, {
+    required Outside externalData,
     required ValueKey<String> key,
     final QueryListener<T>? onData,
     final QueryListener<dynamic>? onError,
   }) {
     final prevQuery =
-        _queries.firstWhereOrNull((q) => q.queryKey == query.queryKey);
+        _queries.firstWhereOrNull((q) => q.queryKey == queryJob.queryKey);
     if (prevQuery is Query<T, Outside>) {
       // run the query if its still not called or if externalData has
       // changed
       if (prevQuery.prevUsedExternalData != null &&
-          query.externalData != null &&
+          externalData != null &&
           !isShallowEqual(
             prevQuery.prevUsedExternalData!,
-            query.externalData!,
+            externalData,
           )) {
-        prevQuery.setExternalData(query.externalData);
+        prevQuery.setExternalData(externalData);
       }
       prevQuery.mount(key);
       if (onData != null) prevQuery.onDataListeners.add(onData);
@@ -358,6 +360,11 @@ class QueryBowl extends InheritedWidget {
       // mounting the widget that is using the query in the prevQuery
       return prevQuery;
     }
+    final query = Query<T, Outside>.fromOptions(
+      queryJob,
+      externalData: externalData,
+      queryBowl: this,
+    );
     if (onData != null) query.onDataListeners.add(onData);
     if (onError != null) query.onErrorListeners.add(onError);
     query.updateDefaultOptions(
@@ -375,14 +382,14 @@ class QueryBowl extends InheritedWidget {
   /// !⚠️**Warning** only for internal library usage
   @protected
   Mutation<T, V> addMutation<T extends Object, V>(
-    Mutation<T, V> mutation, {
+    MutationJob<T, V> mutationJob, {
     final MutationListener<T>? onData,
     final MutationListener<dynamic>? onError,
     final MutationListener<V>? onMutate,
     required ValueKey<String> key,
   }) {
     final prevMutation = _mutations.firstWhereOrNull(
-        (prevMutation) => prevMutation.mutationKey == mutation.mutationKey);
+        (prevMutation) => prevMutation.mutationKey == mutationJob.mutationKey);
     if (prevMutation != null && prevMutation is Mutation<T, V>) {
       if (onData != null) prevMutation.onDataListeners.add(onData);
       if (onError != null) prevMutation.onErrorListeners.add(onError);
@@ -390,6 +397,10 @@ class QueryBowl extends InheritedWidget {
       prevMutation.mount(key);
       return prevMutation;
     } else {
+      final mutation = Mutation<T, V>.fromOptions(
+        mutationJob,
+        queryBowl: this,
+      );
       if (onData != null) mutation.onDataListeners.add(onData);
       if (onError != null) mutation.onErrorListeners.add(onError);
       if (onMutate != null) mutation.onMutateListeners.add(onMutate);

@@ -322,4 +322,10 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
   String toString() {
     return debugLabel;
   }
+
+  @override
+  bool operator ==(other) {
+    return (other is Query<T, Outside> && other.queryKey == queryKey) ||
+        identical(other, this);
+  }
 }

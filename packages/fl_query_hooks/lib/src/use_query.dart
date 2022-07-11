@@ -33,7 +33,8 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
 
   final init = useCallback(() {
     query.value = queryBowl.addQuery<T, Outside>(
-      query.value,
+      job,
+      externalData: externalData,
       key: uKey,
       onData: onData,
       onError: onError,
@@ -46,7 +47,7 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
             hasExternalDataChanged
         ? query.value.refetch()
         : query.value.fetch();
-  }, [queryBowl, query.value, uKey, onData, onError, job]);
+  }, [queryBowl, query.value, uKey, onData, onError, job, externalData]);
 
   final disposeQuery = useCallback(() {
     query.value.unmount(uKey);
@@ -64,11 +65,6 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
     final hasOnDataChanged = oldOnData != onData && oldOnData != null;
     if (oldJob != null && oldJob.queryKey != job.queryKey) {
       disposeQuery();
-      query.value = Query.fromOptions(
-        job,
-        externalData: externalData,
-        queryBowl: queryBowl,
-      );
       init();
     } else if (oldExternalData != null &&
         externalData != null &&

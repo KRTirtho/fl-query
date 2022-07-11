@@ -46,11 +46,8 @@ class _QueryBuilderState<T extends Object, Outside>
   void init([QueryBowl? bowl]) async {
     bowl ??= QueryBowl.of(context);
     query = bowl.addQuery<T, Outside>(
-      Query<T, Outside>.fromOptions(
-        widget.job,
-        externalData: widget.externalData,
-        queryBowl: QueryBowl.of(context),
-      ),
+      widget.job,
+      externalData: widget.externalData,
       key: uKey,
       onData: widget.onData,
       onError: widget.onError,

@@ -168,4 +168,10 @@ class Mutation<T extends Object, V> extends BaseOperation<T, MutationStatus> {
   bool get isLoading => status == MutationStatus.loading;
   @override
   bool get isSuccess => status == MutationStatus.success;
+
+  @override
+  bool operator ==(other) {
+    return (other is Mutation<T, V> && other.mutationKey == mutationKey) ||
+        identical(other, this);
+  }
 }
