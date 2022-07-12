@@ -14,7 +14,6 @@ import 'package:example/components/query_external_data.dart';
 import 'package:example/components/query_variable_key.dart';
 import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';
-import 'dart:async';
 
 void main() {
   runApp(const MyApp());

@@ -4,6 +4,7 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import HomepageFeatures from '@site/src/components/HomepageFeatures';
 import { FiGithub } from "react-icons/fi"
+import Head from '@docusaurus/Head';
 
 function HomepageHeader() {
   const { siteConfig } = useDocusaurusContext();
@@ -35,13 +36,36 @@ function HomepageHeader() {
 export default function Home(): JSX.Element {
   const { siteConfig } = useDocusaurusContext();
   return (
-    <Layout
-      title={`${siteConfig.title} - Flutter async data management couldn't be anymore easier`}
-      description="Flutter Asynchronous data caching, invalidation, refetching library. React-Query for Flutter. swr for Flutter">
-      <HomepageHeader />
-      <main>
-        <HomepageFeatures />
-      </main>
-    </Layout>
+    <>
+      <Head>
+        <link
+          rel="apple-touch-icon"
+          sizes="180x180"
+          href="/apple-touch-icon.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="32x32"
+          href="/favicon-32x32.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="16x16"
+          href="/favicon-16x16.png"
+        />
+        <link rel="manifest" href="/site.webmanifest" />
+      </Head>
+
+      <Layout
+        title={`${siteConfig.title} - Flutter async data management couldn't be anymore easier`}
+        description="Flutter Asynchronous data caching, invalidation, refetching library. React-Query for Flutter. swr for Flutter">
+        <HomepageHeader />
+        <main>
+          <HomepageFeatures />
+        </main>
+      </Layout>
+    </>
   );
 }
