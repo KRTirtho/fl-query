@@ -1,6 +1,4 @@
-<p align="center">
-<image alt="Fl-Query Logo" width=300 src="https://user-images.githubusercontent.com/61944859/177823630-c4e885c2-29c5-4549-af79-3e5d87c06be9.svg"/>
-</p>
+![Fl-Query Banner](https://user-images.githubusercontent.com/61944859/178648225-611d248b-df97-4f0d-b298-b178bb141a29.png)
 <h1>
   <p align="center">
     Fl-Query Hooks

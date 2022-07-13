@@ -1,6 +1,4 @@
-<p align="center">
-<image alt="Fl-Query Logo" width=300 src="/assets/fl-query-logo.svg"/>
-</p>
+!["Fl-Query Logo"](assets/fl-query-banner.png)
 <h1>
   <p align="center">
     Fl-Query
@@ -151,3 +149,10 @@ Yes but it is only if your commercial server has huge load of power & you're mad
 **So `FutureProvider` from riverpod or provider not enough?**
 Yeah, indeed its more than enough for many applications but what if your app needs Optimistic Updates & proper server-state synchronization or simply want a custom `cacheTime`? Although `FutureProvider` is a viable solution most of the `Future` related stuff, why not kick it up a notch with smart refetching capabilities with proper server-state synchronization?
 Riverpod is definitely a inspiration for Fl-Query & the `QueryJob` is actually inspired by riverpod & imo is the best state management solution any library has ever provided but that's still a client state manager just like other client state manager or synchronous data manager
+
+
+# Notice Board
+
+This project is currently under heavy development & not yet production ready. There are lot of features to cover. If anyone encounters any unintended behavior or any bug please report it. Also we're open to improvement suggestions & feature requests
+
+**Important!:** The project needs Dart-Flutter developers who are willing to contribute to the project by writing Tests. (I'm the worst example for tester)
