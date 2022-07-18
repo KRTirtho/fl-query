@@ -1,5 +1,10 @@
 name: fl-query
 
 packages:
-  - packages/fl_query_hooks
-  - packages/fl_query
+  - packages/**
+
+ignore:
+  - package/example/
+
+ide:
+  intellij: false
