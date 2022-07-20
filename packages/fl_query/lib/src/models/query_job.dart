@@ -1,22 +1,5 @@
 import 'package:fl_query/src/query.dart';
 
-/// How to make dependent Queries?
-///
-/// Pass a [QueryBowl] class/object to [task] that contains a method
-/// [QueryBowl.dependOnQuery] that takes a [QueryJob] and uses that to get
-/// the appropriate query for it or if it doesn't exist creates a new
-/// instance. It listens to the changes of [Query] of the passed
-/// [QueryJob] & calls the [notifyListener] method of running [Query]
-///
-/// If shown briefly
-///
-/// ```data
-/// task: (queryKey, external, queryBowl){
-/// final dependentQuery = queryBowl.dependOnQuery(dependentQueryJob);
-/// return someAsyncTask();
-/// }
-/// ```
-
 class QueryJob<T extends Object, Outside> {
   // all params
   String _queryKey;

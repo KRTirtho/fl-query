@@ -16,10 +16,12 @@ typedef MutationListener<T> = FutureOr<void> Function(T);
 typedef MutationTaskFunction<T, V> = FutureOr<T> Function(
     String queryKey, V variables);
 
-class Mutation<T extends Object, V> extends BaseOperation<T, MutationStatus> {
+class Mutation<T extends Object, V> extends BaseOperation<T> {
   // all params
   final String mutationKey;
   MutationTaskFunction<T, V> task;
+
+  MutationStatus status;
 
   @protected
   final Set<MutationListener<T>> onDataListeners = {};
@@ -38,7 +40,8 @@ class Mutation<T extends Object, V> extends BaseOperation<T, MutationStatus> {
     MutationListener<T>? onData,
     MutationListener<dynamic>? onError,
     MutationListener<V>? onMutate,
-  }) : super(cacheTime: cacheTime, status: MutationStatus.idle) {
+  })  : status = MutationStatus.idle,
+        super(cacheTime: cacheTime) {
     if (onData != null) onDataListeners.add(onData);
     if (onError != null) onErrorListeners.add(onError);
     if (onMutate != null) onMutateListeners.add(onMutate);
@@ -52,11 +55,11 @@ class Mutation<T extends Object, V> extends BaseOperation<T, MutationStatus> {
     required super.queryBowl,
   })  : mutationKey = options.mutationKey,
         task = options.task,
+        status = MutationStatus.idle,
         super(
           retries: options.retries ?? 3,
           retryDelay: options.retryDelay ?? const Duration(milliseconds: 200),
           cacheTime: options.cacheTime ?? const Duration(minutes: 5),
-          status: MutationStatus.idle,
         ) {
     if (onData != null) onDataListeners.add(onData);
     if (onError != null) onErrorListeners.add(onError);
@@ -160,13 +163,9 @@ class Mutation<T extends Object, V> extends BaseOperation<T, MutationStatus> {
 
   A? cast<A>() => this is A ? this as A : null;
 
-  @override
   bool get isError => status == MutationStatus.error;
-  @override
   bool get isIdle => status == MutationStatus.idle;
-  @override
   bool get isLoading => status == MutationStatus.loading;
-  @override
   bool get isSuccess => status == MutationStatus.success;
 
   @override

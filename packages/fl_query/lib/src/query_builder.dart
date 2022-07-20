@@ -55,9 +55,11 @@ class _QueryBuilderState<T extends Object, Outside>
     final hasExternalDataChanged = query!.externalData != null &&
         query!.prevUsedExternalData != null &&
         !isShallowEqual(query!.externalData!, query!.prevUsedExternalData!);
-    (query!.fetched && query!.refetchOnMount == true) || hasExternalDataChanged
-        ? await query!.refetch()
-        : await query!.fetch();
+    if (query!.fetched && hasExternalDataChanged) {
+      await query!.refetch();
+    } else if (!query!.fetched) {
+      await query!.fetch();
+    }
   }
 
   @override

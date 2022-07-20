@@ -1,7 +1,7 @@
 import 'package:fl_query/src/query_bowl.dart';
 import 'package:flutter/widgets.dart';
 
-abstract class BaseOperation<Data, StatusType> extends ChangeNotifier {
+abstract class BaseOperation<Data> extends ChangeNotifier {
   /// The number of times the query should refetch in the time of error
   /// before giving up
   final int retries;
@@ -14,7 +14,6 @@ abstract class BaseOperation<Data, StatusType> extends ChangeNotifier {
   // all properties
   Data? data;
   dynamic error;
-  StatusType status;
 
   /// total count of how many times the query retried to get a successful
   /// result
@@ -34,7 +33,6 @@ abstract class BaseOperation<Data, StatusType> extends ChangeNotifier {
     required this.cacheTime,
     required this.retries,
     required this.retryDelay,
-    required this.status,
     required this.queryBowl,
     this.data,
   }) : updatedAt = DateTime.now();
@@ -58,10 +56,6 @@ abstract class BaseOperation<Data, StatusType> extends ChangeNotifier {
 
   Set<ValueKey<String>> get mounts => _mounts;
 
-  bool get isSuccess;
-  bool get isError;
-  bool get isLoading;
-  bool get isIdle;
   bool get isInactive => mounts.isEmpty;
   bool get hasData => data != null;
   bool get hasError => error != null;

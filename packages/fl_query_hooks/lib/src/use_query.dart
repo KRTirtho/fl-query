@@ -43,10 +43,11 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
         query.value.prevUsedExternalData != null &&
         !isShallowEqual(
             query.value.externalData!, query.value.prevUsedExternalData!);
-    (query.value.fetched && query.value.refetchOnMount == true) ||
-            hasExternalDataChanged
-        ? query.value.refetch()
-        : query.value.fetch();
+    if (query.value.fetched && hasExternalDataChanged) {
+      query.value.refetch();
+    } else if (!query.value.fetched) {
+      query.value.fetch();
+    }
   }, [queryBowl, query.value, uKey, onData, onError, job, externalData]);
 
   final disposeQuery = useCallback(() {

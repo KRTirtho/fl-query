@@ -36,7 +36,7 @@ typedef ListenerUnsubscriber = void Function();
 
 typedef QueryUpdateFunction<T> = FutureOr<T> Function(T? oldData);
 
-class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
+class Query<T extends Object, Outside> extends BaseOperation<T> {
   // all params
   final String queryKey;
   QueryTaskFunction<T, Outside> task;
@@ -53,6 +53,8 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
   /// result
   int refetchCount = 0;
   bool enabled;
+
+  QueryStatus status;
 
   @protected
   final Set<QueryListener<T>> onDataListeners = Set<QueryListener<T>>();
@@ -89,10 +91,8 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
   })  : _staleTime = staleTime,
         _initialData = initialData,
         _externalData = externalData,
-        super(
-          status: QueryStatus.idle,
-          data: initialData,
-        ) {
+        status = QueryStatus.idle,
+        super(data: initialData) {
     if (onData != null) onDataListeners.add(onData);
     if (onError != null) onErrorListeners.add(onError);
 
@@ -116,8 +116,8 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
         refetchInterval = options.refetchInterval,
         refetchOnMount = options.refetchOnMount,
         refetchOnReconnect = options.refetchOnReconnect,
+        status = QueryStatus.idle,
         super(
-          status: QueryStatus.idle,
           cacheTime: options.cacheTime ?? const Duration(minutes: 5),
           retries: options.retries ?? 3,
           retryDelay: options.retryDelay ?? const Duration(milliseconds: 200),
@@ -193,6 +193,7 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
                 await onError(error);
               }
               notifyListeners();
+              break;
             }
             retryAttempts++;
           }
@@ -219,7 +220,7 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
     /// if isLoading/isRefetching is true that means its already fetching/
     /// refetching. So [_execute] again can create a race condition
     if (isRefetching || isLoading) return data;
-    if (enabled && !fetched) await fetch();
+    if (enabled && !fetched) return await fetch();
     status = QueryStatus.refetching;
     refetchCount++;
     // disabling the lazy query bound when query was actually called
@@ -245,7 +246,7 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
     notifyListeners();
   }
 
-  setExternalData(Outside externalData) {
+  void setExternalData(Outside externalData) {
     _prevUsedExternalData = _externalData;
     _externalData = externalData;
   }
@@ -289,10 +290,6 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
     notifyListeners();
   }
 
-  Future<T?> _internalRefetch<X>(X dataOrError) {
-    return refetch();
-  }
-
   bool get isStale {
     /// when [_staleTime] is [Duration.zero], the query will always be
     /// stale & will never refetch in the background. But can be inactive
@@ -304,19 +301,27 @@ class Query<T extends Object, Outside> extends BaseOperation<T, QueryStatus> {
     return DateTime.now().isAfter(updatedAt.add(_staleTime));
   }
 
-  @override
   bool get isError => status == QueryStatus.error;
-  @override
   bool get isIdle => status == QueryStatus.idle;
-  @override
   bool get isLoading => status == QueryStatus.loading;
   bool get isRefetching => status == QueryStatus.refetching;
-  @override
   bool get isSuccess => status == QueryStatus.success;
 
   A? cast<A>() => this is A ? this as A : null;
 
   String get debugLabel => "Query($queryKey)";
+
+  @override
+  void mount(ValueKey<String> uKey) {
+    super.mount(uKey);
+    if (refetchOnMount == true && isStale) {
+      Connectivity().checkConnectivity().then((status) async {
+        if (isConnectedToInternet(status)) {
+          await refetch();
+        }
+      });
+    }
+  }
 
   @override
   String toString() {
