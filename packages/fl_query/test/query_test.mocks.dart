@@ -4,13 +4,13 @@
 
 import 'dart:async' as _i7;
 
+import 'package:connectivity_plus/connectivity_plus.dart' as _i10;
 import 'package:fl_query/src/models/mutation_job.dart' as _i9;
 import 'package:fl_query/src/models/query_job.dart' as _i8;
 import 'package:fl_query/src/mutation.dart' as _i4;
 import 'package:fl_query/src/query.dart' as _i3;
 import 'package:fl_query/src/query_bowl.dart' as _i6;
 import 'package:flutter/foundation.dart' as _i5;
-import 'package:flutter/rendering.dart' as _i10;
 import 'package:flutter/widgets.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
 
@@ -136,9 +136,9 @@ class MockQueryBowl extends _i1.Mock implements _i6.QueryBowl {
   @override
   _i4.Mutation<T, V> addMutation<T extends Object, V>(
           _i9.MutationJob<T, V>? mutationJob,
-          {_i4.MutationListener<T>? onData,
-          _i4.MutationListener<dynamic>? onError,
-          _i4.MutationListener<V>? onMutate,
+          {_i4.MutationListener<T, V>? onData,
+          _i4.MutationListener<dynamic, V>? onError,
+          _i4.MutationListenerReturnable<V, dynamic>? onMutate,
           _i2.ValueKey<String>? key}) =>
       (super.noSuchMethod(
           Invocation.method(#addMutation, [
@@ -190,7 +190,7 @@ class MockQueryBowl extends _i1.Mock implements _i6.QueryBowl {
           .noSuchMethod(Invocation.method(#toStringShort, []), returnValue: '')
       as String);
   @override
-  void debugFillProperties(_i10.DiagnosticPropertiesBuilder? properties) =>
+  void debugFillProperties(_i5.DiagnosticPropertiesBuilder? properties) =>
       super.noSuchMethod(Invocation.method(#debugFillProperties, [properties]),
           returnValueForMissingStub: null);
   @override
@@ -227,6 +227,27 @@ class MockQueryBowl extends _i1.Mock implements _i6.QueryBowl {
   @override
   String toString({_i2.DiagnosticLevel? minLevel = _i2.DiagnosticLevel.info}) =>
       super.toString();
+}
+
+/// A class which mocks [Connectivity].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockConnectivity extends _i1.Mock implements _i10.Connectivity {
+  MockConnectivity() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i7.Stream<_i10.ConnectivityResult> get onConnectivityChanged =>
+      (super.noSuchMethod(Invocation.getter(#onConnectivityChanged),
+              returnValue: Stream<_i10.ConnectivityResult>.empty())
+          as _i7.Stream<_i10.ConnectivityResult>);
+  @override
+  _i7.Future<_i10.ConnectivityResult> checkConnectivity() =>
+      (super.noSuchMethod(Invocation.method(#checkConnectivity, []),
+              returnValue: Future<_i10.ConnectivityResult>.value(
+                  _i10.ConnectivityResult.bluetooth))
+          as _i7.Future<_i10.ConnectivityResult>);
 }
 
 /// A class which mocks [QueryJob].
@@ -269,6 +290,10 @@ class MockQueryJobVoidObject extends _i1.Mock
   @override
   set refetchInterval(Duration? _refetchInterval) =>
       super.noSuchMethod(Invocation.setter(#refetchInterval, _refetchInterval),
+          returnValueForMissingStub: null);
+  @override
+  set connectivity(_i10.Connectivity? _connectivity) =>
+      super.noSuchMethod(Invocation.setter(#connectivity, _connectivity),
           returnValueForMissingStub: null);
   @override
   String get queryKey =>

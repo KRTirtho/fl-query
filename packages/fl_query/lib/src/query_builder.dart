@@ -90,17 +90,16 @@ class _QueryBuilderState<T extends Object, Outside>
             .getQuery(widget.job.queryKey)
             ?.setExternalData(widget.externalData);
       }
-      if (hasOnDataChanged) query?.onDataListeners.remove(oldWidget.onData);
-      if (hasOnErrorChanged) query?.onErrorListeners.remove(oldWidget.onError);
+      if (hasOnDataChanged) query?.removeDataListener(oldWidget.onData!);
+      if (hasOnErrorChanged) query?.removeErrorListener(oldWidget.onError!);
     } else {
       if (hasOnDataChanged) {
-        query?.onDataListeners.remove(oldWidget.onData);
-        if (widget.onData != null) query?.onDataListeners.add(widget.onData!);
+        query?.removeDataListener(oldWidget.onData!);
+        if (widget.onData != null) query?.addDataListener(widget.onData!);
       }
       if (hasOnErrorChanged) {
-        query?.onErrorListeners.remove(oldWidget.onError);
-        if (widget.onError != null)
-          query?.onErrorListeners.add(widget.onError!);
+        query?.removeErrorListener(oldWidget.onError!);
+        if (widget.onError != null) query?.addErrorListener(widget.onError!);
       }
     }
     super.didUpdateWidget(oldWidget);
@@ -108,8 +107,8 @@ class _QueryBuilderState<T extends Object, Outside>
 
   _queryDispose() {
     query?.unmount(uKey);
-    if (widget.onData != null) query?.onDataListeners.remove(widget.onData);
-    if (widget.onError != null) query?.onErrorListeners.remove(widget.onError);
+    if (widget.onData != null) query?.removeDataListener(widget.onData!);
+    if (widget.onError != null) query?.removeErrorListener(widget.onError!);
   }
 
   @override

@@ -282,6 +282,39 @@ class QueryBowl extends InheritedWidget {
         _addMutation = addMutation,
         super(child: child, key: key);
 
+  Query<T, Outside> _createQueryWithDefaults<T extends Object, Outside>(
+    QueryJob<T, Outside> options,
+    Outside externalData,
+  ) {
+    final query = Query<T, Outside>.fromOptions(
+      options,
+      externalData: externalData,
+      queryBowl: this,
+    );
+    query.updateDefaultOptions(
+      cacheTime: cacheTime,
+      staleTime: staleTime,
+      refetchInterval: refetchInterval,
+      refetchOnMount: refetchOnMount,
+      refetchOnReconnect: refetchOnReconnect,
+    );
+    return query;
+  }
+
+  Future<T?> prefetchQuery<T extends Object, Outside>(
+    QueryJob<T, Outside> options, {
+    required Outside externalData,
+  }) async {
+    final prevQuery =
+        _queries.firstWhereOrNull((q) => q.queryKey == options.queryKey);
+    if (prevQuery != null && prevQuery is Query<T, Outside>)
+      return prevQuery.data;
+
+    final query = _createQueryWithDefaults<T, Outside>(options, externalData);
+    _addQuery<T, Outside>(query);
+    return await query.fetch();
+  }
+
   /// !⚠️**Warning** only for internal library usage
   @protected
   Future<T?> fetchQuery<T extends Object, Outside>(
@@ -303,8 +336,8 @@ class QueryBowl extends InheritedWidget {
             externalData,
           );
       prevQuery.mount(key);
-      if (onData != null) prevQuery.onDataListeners.add(onData);
-      if (onError != null) prevQuery.onErrorListeners.add(onError);
+      if (onData != null) prevQuery.addDataListener(onData);
+      if (onError != null) prevQuery.addErrorListener(onError);
       if (!prevQuery.hasData || hasExternalDataChanged) {
         if (hasExternalDataChanged) prevQuery.setExternalData(externalData);
 
@@ -314,19 +347,7 @@ class QueryBowl extends InheritedWidget {
       return prevQuery.data;
     }
 
-    /// populating with default configurations
-    options.refetchInterval ??= refetchInterval;
-    options.staleTime ??= staleTime;
-    options.cacheTime ??= cacheTime;
-    options.refetchOnMount ??= refetchOnMount;
-    options.refetchOnReconnect ??= refetchOnReconnect;
-    final query = Query<T, Outside>.fromOptions(
-      options,
-      externalData: externalData,
-      queryBowl: this,
-      onData: onData,
-      onError: onError,
-    );
+    final query = _createQueryWithDefaults<T, Outside>(options, externalData);
     query.mount(key);
     _addQuery<T, Outside>(query);
     return await query.fetch();
@@ -355,25 +376,14 @@ class QueryBowl extends InheritedWidget {
         prevQuery.setExternalData(externalData);
       }
       prevQuery.mount(key);
-      if (onData != null) prevQuery.onDataListeners.add(onData);
-      if (onError != null) prevQuery.onErrorListeners.add(onError);
+      if (onData != null) prevQuery.addDataListener(onData);
+      if (onError != null) prevQuery.addErrorListener(onError);
       // mounting the widget that is using the query in the prevQuery
       return prevQuery;
     }
-    final query = Query<T, Outside>.fromOptions(
-      queryJob,
-      externalData: externalData,
-      queryBowl: this,
-    );
-    if (onData != null) query.onDataListeners.add(onData);
-    if (onError != null) query.onErrorListeners.add(onError);
-    query.updateDefaultOptions(
-      cacheTime: cacheTime,
-      staleTime: staleTime,
-      refetchInterval: refetchInterval,
-      refetchOnMount: refetchOnMount,
-      refetchOnReconnect: refetchOnReconnect,
-    );
+    final query = _createQueryWithDefaults<T, Outside>(queryJob, externalData);
+    if (onData != null) query.addDataListener(onData);
+    if (onError != null) query.addErrorListener(onError);
     query.mount(key);
     _addQuery<T, Outside>(query);
     return query;
@@ -383,17 +393,17 @@ class QueryBowl extends InheritedWidget {
   @protected
   Mutation<T, V> addMutation<T extends Object, V>(
     MutationJob<T, V> mutationJob, {
-    final MutationListener<T>? onData,
-    final MutationListener<dynamic>? onError,
-    final MutationListener<V>? onMutate,
+    final MutationListener<T, V>? onData,
+    final MutationListener<dynamic, V>? onError,
+    final MutationListenerReturnable<V, dynamic>? onMutate,
     required ValueKey<String> key,
   }) {
     final prevMutation = _mutations.firstWhereOrNull(
         (prevMutation) => prevMutation.mutationKey == mutationJob.mutationKey);
     if (prevMutation != null && prevMutation is Mutation<T, V>) {
-      if (onData != null) prevMutation.onDataListeners.add(onData);
-      if (onError != null) prevMutation.onErrorListeners.add(onError);
-      if (onMutate != null) prevMutation.onMutateListeners.add(onMutate);
+      if (onData != null) prevMutation.addDataListener(onData);
+      if (onError != null) prevMutation.addErrorListener(onError);
+      if (onMutate != null) prevMutation.addMutateListener(onMutate);
       prevMutation.mount(key);
       return prevMutation;
     } else {
@@ -401,9 +411,9 @@ class QueryBowl extends InheritedWidget {
         mutationJob,
         queryBowl: this,
       );
-      if (onData != null) mutation.onDataListeners.add(onData);
-      if (onError != null) mutation.onErrorListeners.add(onError);
-      if (onMutate != null) mutation.onMutateListeners.add(onMutate);
+      if (onData != null) mutation.addDataListener(onData);
+      if (onError != null) mutation.addErrorListener(onError);
+      if (onMutate != null) mutation.addMutateListener(onMutate);
       mutation.updateDefaultOptions(cacheTime: cacheTime);
       mutation.mount(key);
       _addMutation(mutation);
@@ -461,27 +471,35 @@ class QueryBowl extends InheritedWidget {
   }
 
   /// resets all the queries matching the passed List of queryKeys
+  ///
+  /// If an empty list of [queryKeys] is passed then all of the queries
+  /// will be reset
   void resetQueries(List<String> queryKeys) {
     for (final query in _queries) {
-      if (!queryKeys.contains(query.queryKey)) continue;
+      if (queryKeys.isNotEmpty && !queryKeys.contains(query.queryKey)) continue;
       query.reset();
     }
   }
 
   /// makes all the queries matching the passed List of queryKeys stale
+  ///
+  /// If an empty list of [queryKeys] is passed then all of the queries
+  /// will be invalidated
   void invalidateQueries(List<String> queryKeys) {
     for (final query in _queries) {
-      if (!queryKeys.contains(query.queryKey)) continue;
-      // TODO: Implement Invaldiate Queries
+      if (queryKeys.isNotEmpty && queryKeys.contains(query.queryKey)) continue;
+      query.invalidate();
     }
   }
 
   /// refetches all the queries matching the passed List of queryKeys
+  ///
+  /// If an empty list of [queryKeys] is passed then all of the queries
+  /// will be refetched
   Future<void> refetchQueries(List<String> queryKeys) async {
     for (final query in _queries) {
-      if (queryKeys.contains(query.queryKey)) {
-        await query.refetch();
-      }
+      if (queryKeys.isNotEmpty && queryKeys.contains(query.queryKey)) continue;
+      await query.refetch();
     }
   }
 

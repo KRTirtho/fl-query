@@ -52,8 +52,8 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
 
   final disposeQuery = useCallback(() {
     query.value.unmount(uKey);
-    if (onData != null) query.value.onDataListeners.remove(onData);
-    if (onError != null) query.value.onErrorListeners.remove(onError);
+    if (onData != null) query.value.removeDataListener(onData);
+    if (onError != null) query.value.removeErrorListener(onError);
   }, [query.value, onData, onError, uKey]);
 
   useEffect(() {
@@ -85,16 +85,16 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
             ?.setExternalData(externalData);
       }
 
-      if (hasOnDataChanged) query.value.onDataListeners.remove(oldOnData);
-      if (hasOnErrorChanged) query.value.onErrorListeners.remove(oldOnError);
+      if (hasOnDataChanged) query.value.removeDataListener(oldOnData);
+      if (hasOnErrorChanged) query.value.removeErrorListener(oldOnError);
     } else {
       if (hasOnDataChanged) {
-        query.value.onDataListeners.remove(oldOnData);
-        if (onData != null) query.value.onDataListeners.add(onData);
+        query.value.removeDataListener(oldOnData);
+        if (onData != null) query.value.addDataListener(onData);
       }
       if (hasOnErrorChanged) {
-        query.value.onErrorListeners.remove(oldOnError);
-        if (onError != null) query.value.onErrorListeners.add(onError);
+        query.value.removeErrorListener(oldOnError);
+        if (onError != null) query.value.addErrorListener(onError);
       }
     }
     return null;

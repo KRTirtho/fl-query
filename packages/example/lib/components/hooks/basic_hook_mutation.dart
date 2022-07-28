@@ -49,7 +49,7 @@ class BasicHookMutationExample extends HookWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "# Basic Mutation Hook Example",
+          "# Basic Mutation Hook Example (with failure & retry simulation)",
           style: Theme.of(context).textTheme.headline5,
         ),
         Padding(
@@ -74,7 +74,7 @@ class BasicHookMutationExample extends HookWidget {
                     "title": title,
                     "body": body,
                     "id": id,
-                  }, onData: (data) {
+                  }, onData: (data, variable, context) {
                     // resetting the form
                     titleController.text = "";
                     bodyController.text = "";

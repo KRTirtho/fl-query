@@ -56,12 +56,14 @@ class _BasicMutationExampleState extends State<BasicMutationExample> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "# Basic Mutation Example",
+          "# Basic Mutation Example (with Failure & Retry simulation)",
           style: Theme.of(context).textTheme.headline5,
         ),
         MutationBuilder<Map, Map<String, dynamic>>(
             job: basicMutationJob,
             onMutate: (v) {
+              final data =
+                  QueryBowl.of(context).getQuery(successJob.queryKey)?.data;
               QueryBowl.of(context)
                   .setQueryData<String, void>(successJob.queryKey, (oldData) {
                 if (oldData?.contains("After Mutate (OPTIMISTIC UPDATE)") ==
@@ -70,6 +72,11 @@ class _BasicMutationExampleState extends State<BasicMutationExample> {
                 }
                 return "$oldData - After Mutate (OPTIMISTIC UPDATE)";
               });
+              return data;
+            },
+            onData: (data, variables, context) {
+              print("Passed Variable: $variables");
+              print("Safe Previous Value: $context");
             },
             builder: (context, mutation) {
               return Padding(
@@ -94,7 +101,7 @@ class _BasicMutationExampleState extends State<BasicMutationExample> {
                           "title": title,
                           "body": body,
                           "id": id,
-                        }, onData: (data) {
+                        }, onData: (data, variables, context) {
                           // resetting the form
                           titleController.text = "";
                           bodyController.text = "";

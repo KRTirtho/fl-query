@@ -1,15 +1,18 @@
 import 'dart:math';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_query/src/models/query_job.dart';
 import 'package:fl_query/src/query.dart';
 import 'package:fl_query/src/query_bowl.dart';
+import 'package:fl_query/src/utils.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'query_test.mocks.dart';
 
 @GenerateMocks(
-  [QueryBowl],
+  [QueryBowl, Connectivity],
   customMocks: [
     MockSpec<QueryJob<Object, void>>(
       as: #MockQueryJobVoidObject,
@@ -129,7 +132,7 @@ void main() {
       "onData listeners are called When new data is fetched and set",
       () async {
         int count = 0;
-        query.onDataListeners.add((_) {
+        query.addDataListener((_) {
           count++;
         });
         await query.fetch();
@@ -138,20 +141,111 @@ void main() {
     );
     test(
       "onError listeners are called When any error occurs",
-      () {},
+      () async {
+        reset(queryJob);
+        when(queryJob.queryKey).thenReturn("test");
+        when(queryJob.task).thenAnswer(
+          (_) => (_, __) => Future.error("Error"),
+        );
+        query = Query.fromOptions(
+          queryJob,
+          externalData: null,
+          queryBowl: queryBowl,
+        );
+        int count = 0;
+        query.addErrorListener((_) {
+          count++;
+        });
+        await query.fetch();
+        expect(count, 1);
+      },
     );
-    test("query should become stale after defined amount time", () {});
+    test("query should become stale after defined amount time", () async {
+      when(queryJob.staleTime).thenReturn(Duration(milliseconds: 500));
+      query = Query.fromOptions(
+        queryJob,
+        externalData: null,
+        queryBowl: queryBowl,
+      );
+      expect(query.isStale, isFalse);
+      await Future.delayed(Duration(milliseconds: 300));
+      expect(query.isStale, isFalse);
+      await Future.delayed(Duration(milliseconds: 600));
+      expect(query.isStale, isTrue);
+    });
     test(
       "query should refetch in interval When refetchInterval is specified",
-      () {},
+      () async {
+        reset(queryJob);
+        when(queryJob.queryKey).thenReturn("test");
+        when(queryJob.task).thenAnswer(
+          (_) => (_, __) => Future.value(Random().nextInt(100)),
+        );
+        when(queryJob.staleTime).thenReturn(
+          Duration(milliseconds: 1),
+        );
+        when(queryJob.refetchInterval).thenReturn(
+          Duration(milliseconds: 200),
+        );
+        query = Query.fromOptions(
+          queryJob,
+          externalData: null,
+          queryBowl: queryBowl,
+        );
+
+        final data = await query.fetch();
+        await Future.delayed(Duration(milliseconds: 400));
+        expect(data, isNot(equals(await query.fetch())));
+      },
     );
     test(
       "query should revalidate When a new caller gets mounted",
-      () {},
+      () async {
+        reset(queryJob);
+        when(queryJob.queryKey).thenReturn("test");
+        when(queryJob.task).thenAnswer(
+          (_) => (_, __) => Future.value(Random().nextInt(150)),
+        );
+        when(queryJob.refetchOnMount).thenReturn(true);
+        query = Query.fromOptions(
+          queryJob,
+          externalData: null,
+          queryBowl: queryBowl,
+        );
+        final data = await query.fetch();
+        query.invalidate();
+        query.mount(ValueKey<String>(uuid.v4()));
+        await Future.delayed(Duration(milliseconds: 100));
+        expect(data, isNot(equals(await query.fetch())));
+        expect(query.refetchCount, 1);
+      },
     );
     test(
       "query should not revalidate When there's no Internet Connectivity and a new caller gets mounted",
-      () {},
+      () async {
+        final connectivityMock = MockConnectivity();
+        when(connectivityMock.checkConnectivity()).thenAnswer(
+          (_) async => ConnectivityResult.none,
+        );
+        reset(queryJob);
+        when(queryJob.queryKey).thenReturn("test");
+        when(queryJob.task).thenAnswer(
+          (_) => (_, __) => Future.value(Random().nextInt(150)),
+        );
+        when(queryJob.connectivity).thenReturn(connectivityMock);
+        when(queryJob.refetchOnMount).thenReturn(true);
+        query = Query.fromOptions(
+          queryJob,
+          externalData: null,
+          queryBowl: queryBowl,
+        );
+        final data = await query.fetch();
+        query.invalidate();
+        query.mount(ValueKey<String>(uuid.v4()));
+        await Future.delayed(Duration(milliseconds: 100));
+        expect(data, equals(await query.fetch()));
+        expect(query.refetchCount, 0);
+      },
     );
   });
 }

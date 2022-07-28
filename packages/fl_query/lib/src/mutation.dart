@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fl_query/fl_query.dart';
 import 'package:fl_query/src/base_operation.dart';
 import 'package:fl_query/src/models/mutation_job.dart';
 import 'package:flutter/widgets.dart';
@@ -11,7 +12,13 @@ enum MutationStatus {
   idle,
 }
 
-typedef MutationListener<T> = FutureOr<void> Function(T);
+typedef MutationListenerReturnable<T, R> = FutureOr<R> Function(T);
+
+typedef MutationListener<T, V> = FutureOr<void> Function(
+  T payload,
+  V variables,
+  dynamic context,
+);
 
 typedef MutationTaskFunction<T, V> = FutureOr<T> Function(
     String queryKey, V variables);
@@ -23,12 +30,18 @@ class Mutation<T extends Object, V> extends BaseOperation<T> {
 
   MutationStatus status;
 
+  dynamic _sideEffectContext;
+
   @protected
-  final Set<MutationListener<T>> onDataListeners = {};
+  final Set<MutationListener<T, V>> _onDataListeners = {};
   @protected
-  final Set<MutationListener<dynamic>> onErrorListeners = {};
+  final Set<MutationListener<dynamic, V>> _onErrorListeners = {};
   @protected
-  final Set<MutationListener<V>> onMutateListeners = {};
+  final Set<MutationListenerReturnable<V, dynamic>> _onMutateListeners = {};
+
+  // using late as _variables will only be used after a [mutate] or
+  // [mutateAsync] is executed
+  late V _variables;
 
   Mutation({
     required this.mutationKey,
@@ -37,21 +50,21 @@ class Mutation<T extends Object, V> extends BaseOperation<T> {
     required super.retryDelay,
     required super.queryBowl,
     required Duration cacheTime,
-    MutationListener<T>? onData,
-    MutationListener<dynamic>? onError,
-    MutationListener<V>? onMutate,
+    MutationListener<T, V>? onData,
+    MutationListener<dynamic, V>? onError,
+    MutationListenerReturnable<V, dynamic>? onMutate,
   })  : status = MutationStatus.idle,
         super(cacheTime: cacheTime) {
-    if (onData != null) onDataListeners.add(onData);
-    if (onError != null) onErrorListeners.add(onError);
-    if (onMutate != null) onMutateListeners.add(onMutate);
+    if (onData != null) _onDataListeners.add(onData);
+    if (onError != null) _onErrorListeners.add(onError);
+    if (onMutate != null) _onMutateListeners.add(onMutate);
   }
 
   Mutation.fromOptions(
     MutationJob<T, V> options, {
-    MutationListener<T>? onData,
-    MutationListener<dynamic>? onError,
-    MutationListener<V>? onMutate,
+    MutationListener<T, V>? onData,
+    MutationListener<dynamic, V>? onError,
+    MutationListenerReturnable<V, dynamic>? onMutate,
     required super.queryBowl,
   })  : mutationKey = options.mutationKey,
         task = options.task,
@@ -61,8 +74,8 @@ class Mutation<T extends Object, V> extends BaseOperation<T> {
           retryDelay: options.retryDelay ?? const Duration(milliseconds: 200),
           cacheTime: options.cacheTime ?? const Duration(minutes: 5),
         ) {
-    if (onData != null) onDataListeners.add(onData);
-    if (onError != null) onErrorListeners.add(onError);
+    if (onData != null) _onDataListeners.add(onData);
+    if (onError != null) _onErrorListeners.add(onError);
   }
 
   // all methods
@@ -74,22 +87,22 @@ class Mutation<T extends Object, V> extends BaseOperation<T> {
       status = MutationStatus.loading;
       notifyListeners();
       retryAttempts = 0;
-      for (final onMutate in onMutateListeners) {
-        onMutate(variables);
+      for (final onMutate in _onMutateListeners) {
+        _sideEffectContext = await onMutate(variables);
       }
       data = await task(mutationKey, variables);
       updatedAt = DateTime.now();
       status = MutationStatus.success;
-      for (final onData in onDataListeners) {
-        onData(data!);
+      for (final onData in _onDataListeners) {
+        onData(data!, _variables, _sideEffectContext);
       }
       notifyListeners();
     } catch (e) {
       if (retries == 0) {
         status = MutationStatus.error;
         error = e;
-        for (final onError in onErrorListeners) {
-          onError(error);
+        for (final onError in _onErrorListeners) {
+          onError(error, variables, _sideEffectContext);
         }
         notifyListeners();
       } else {
@@ -97,13 +110,13 @@ class Mutation<T extends Object, V> extends BaseOperation<T> {
         while (retryAttempts <= retries) {
           await Future.delayed(retryDelay);
           try {
-            for (final onMutate in onMutateListeners) {
-              onMutate(variables);
+            for (final onMutate in _onMutateListeners) {
+              _sideEffectContext = onMutate(variables);
             }
             data = await task(mutationKey, variables);
             status = MutationStatus.success;
-            for (final onData in onDataListeners) {
-              onData(data!);
+            for (final onData in _onDataListeners) {
+              onData(data!, variables, _sideEffectContext);
             }
             notifyListeners();
             break;
@@ -111,8 +124,8 @@ class Mutation<T extends Object, V> extends BaseOperation<T> {
             if (retryAttempts == retries) {
               status = MutationStatus.error;
               error = e;
-              for (final onError in onErrorListeners) {
-                onError(error);
+              for (final onError in _onErrorListeners) {
+                onError(error, variables, _sideEffectContext);
               }
               notifyListeners();
             }
@@ -123,20 +136,46 @@ class Mutation<T extends Object, V> extends BaseOperation<T> {
     }
   }
 
+  void addDataListener(MutationListener<T, V> listener) {
+    _onDataListeners.add(listener);
+  }
+
+  void addErrorListener(MutationListener<dynamic, V> listener) {
+    _onErrorListeners.add(listener);
+  }
+
+  void addMutateListener(MutationListenerReturnable<V, dynamic> listener) {
+    _onMutateListeners.add(listener);
+  }
+
+  void removeDataListener(MutationListener<T, V> listener) {
+    _onDataListeners.remove(listener);
+  }
+
+  void removeErrorListener(MutationListener<dynamic, V> listener) {
+    _onErrorListeners.remove(listener);
+  }
+
+  void removeMutateListener(MutationListenerReturnable<V, dynamic> listener) {
+    _onMutateListeners.remove(listener);
+  }
+
   void mutate(
     V variables, {
-    MutationListener<T>? onData,
-    MutationListener<dynamic>? onError,
+    MutationListener<T, V>? onData,
+    MutationListener<dynamic, V>? onError,
   }) {
-    if (onData != null) onDataListeners.add(onData);
-    if (onError != null) onErrorListeners.add(onError);
+    _variables = variables;
+    if (onData != null) _onDataListeners.add(onData);
+    if (onError != null) _onErrorListeners.add(onError);
     _execute(variables).then((_) {
-      onDataListeners.remove(onData);
-      onErrorListeners.remove(onError);
+      _onDataListeners.remove(onData);
+      _onErrorListeners.remove(onError);
     });
   }
 
   Future<T?> mutateAsync(V variables) async {
+    _variables = variables;
     return await _execute(variables).then((_) => data);
   }
 
@@ -155,10 +194,11 @@ class Mutation<T extends Object, V> extends BaseOperation<T> {
     data = null;
     retryAttempts = 0;
     updatedAt = DateTime.now();
-    onDataListeners.clear();
-    onErrorListeners.clear();
+    _onDataListeners.clear();
+    _onErrorListeners.clear();
     status = MutationStatus.idle;
-    onMutateListeners.clear();
+    _onMutateListeners.clear();
+    _sideEffectContext = null;
   }
 
   A? cast<A>() => this is A ? this as A : null;

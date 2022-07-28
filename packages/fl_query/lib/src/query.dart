@@ -56,10 +56,8 @@ class Query<T extends Object, Outside> extends BaseOperation<T> {
 
   QueryStatus status;
 
-  @protected
-  final Set<QueryListener<T>> onDataListeners = Set<QueryListener<T>>();
-  @protected
-  final Set<QueryListener<dynamic>> onErrorListeners =
+  final Set<QueryListener<T>> _onDataListeners = Set<QueryListener<T>>();
+  final Set<QueryListener<dynamic>> _onErrorListeners =
       Set<QueryListener<dynamic>>();
 
   // externalData will always be passed to the task Callback
@@ -71,6 +69,8 @@ class Query<T extends Object, Outside> extends BaseOperation<T> {
   Duration? refetchInterval;
 
   Timer? _refetchIntervalTimer;
+
+  Connectivity _connectivity;
 
   Query({
     required this.queryKey,
@@ -85,6 +85,7 @@ class Query<T extends Object, Outside> extends BaseOperation<T> {
     this.refetchOnReconnect,
     this.refetchInterval,
     this.enabled = true,
+    Connectivity? connectivity,
     T? initialData,
     QueryListener<T>? onData,
     QueryListener<dynamic>? onError,
@@ -92,9 +93,10 @@ class Query<T extends Object, Outside> extends BaseOperation<T> {
         _initialData = initialData,
         _externalData = externalData,
         status = QueryStatus.idle,
+        _connectivity = connectivity ?? Connectivity(),
         super(data: initialData) {
-    if (onData != null) onDataListeners.add(onData);
-    if (onError != null) onErrorListeners.add(onError);
+    if (onData != null) _onDataListeners.add(onData);
+    if (onError != null) _onErrorListeners.add(onError);
 
     if (refetchInterval != null && refetchInterval != Duration.zero) {
       _refetchIntervalTimer = _createRefetchTimer();
@@ -117,14 +119,18 @@ class Query<T extends Object, Outside> extends BaseOperation<T> {
         refetchOnMount = options.refetchOnMount,
         refetchOnReconnect = options.refetchOnReconnect,
         status = QueryStatus.idle,
+        _connectivity = options.connectivity ?? Connectivity(),
         super(
           cacheTime: options.cacheTime ?? const Duration(minutes: 5),
           retries: options.retries ?? 3,
           retryDelay: options.retryDelay ?? const Duration(milliseconds: 200),
           data: options.initialData,
         ) {
-    if (onData != null) onDataListeners.add(onData);
-    if (onError != null) onErrorListeners.add(onError);
+    if (onData != null) _onDataListeners.add(onData);
+    if (onError != null) _onErrorListeners.add(onError);
+    if (refetchInterval != null && refetchInterval != Duration.zero) {
+      _refetchIntervalTimer = _createRefetchTimer();
+    }
   }
 
   // all getters & setters
@@ -138,9 +144,7 @@ class Query<T extends Object, Outside> extends BaseOperation<T> {
       (_) async {
         // only refetch if its connected to the internet or refetch will
         // always result in error while there's no internet
-        if (isStale &&
-            isConnectedToInternet(await Connectivity().checkConnectivity()))
-          await refetch();
+        if (isStale && await isInternetConnected()) await refetch();
       },
     );
   }
@@ -157,7 +161,7 @@ class Query<T extends Object, Outside> extends BaseOperation<T> {
       _prevUsedExternalData = _externalData;
       updatedAt = DateTime.now();
       status = QueryStatus.success;
-      for (final onData in onDataListeners) {
+      for (final onData in _onDataListeners) {
         onData(data!);
       }
       notifyListeners();
@@ -165,7 +169,7 @@ class Query<T extends Object, Outside> extends BaseOperation<T> {
       if (retries == 0) {
         status = QueryStatus.error;
         error = e;
-        for (final onError in onErrorListeners) {
+        for (final onError in _onErrorListeners) {
           onError(error);
         }
         notifyListeners();
@@ -180,7 +184,7 @@ class Query<T extends Object, Outside> extends BaseOperation<T> {
             );
             _prevUsedExternalData = _externalData;
             status = QueryStatus.success;
-            for (final onData in onDataListeners) {
+            for (final onData in _onDataListeners) {
               await onData(data!);
             }
             notifyListeners();
@@ -189,7 +193,7 @@ class Query<T extends Object, Outside> extends BaseOperation<T> {
             if (retryAttempts == retries) {
               status = QueryStatus.error;
               error = e;
-              for (final onError in onErrorListeners) {
+              for (final onError in _onErrorListeners) {
                 await onError(error);
               }
               notifyListeners();
@@ -200,6 +204,22 @@ class Query<T extends Object, Outside> extends BaseOperation<T> {
         }
       }
     }
+  }
+
+  void addDataListener(QueryListener<T> listener) {
+    _onDataListeners.add(listener);
+  }
+
+  void addErrorListener(QueryListener<dynamic> listener) {
+    _onErrorListeners.add(listener);
+  }
+
+  void removeDataListener(QueryListener<T> listener) {
+    _onDataListeners.remove(listener);
+  }
+
+  void removeErrorListener(QueryListener<dynamic> listener) {
+    _onErrorListeners.remove(listener);
   }
 
   Future<T?> fetch() async {
@@ -258,8 +278,8 @@ class Query<T extends Object, Outside> extends BaseOperation<T> {
     fetched = false;
     status = QueryStatus.idle;
     retryAttempts = 0;
-    onDataListeners.clear();
-    onErrorListeners.clear();
+    _onDataListeners.clear();
+    _onErrorListeners.clear();
     mounts.clear();
   }
 
@@ -290,13 +310,27 @@ class Query<T extends Object, Outside> extends BaseOperation<T> {
     notifyListeners();
   }
 
+  Future<bool> isInternetConnected() async {
+    return isConnectedToInternet(await _connectivity.checkConnectivity());
+  }
+
+  /// invalidates the query
+  void invalidate() {
+    /// subtracting [staleTime] from [updatedAt] as staleTime=Duration.zero
+    /// indicates the query must never become stale but subtracting the
+    /// [staleTime] will always revert the updatedAt time to the default
+    /// time whenever isStale is called
+    updatedAt = updatedAt.subtract(_staleTime);
+    notifyListeners();
+  }
+
   bool get isStale {
     /// when [_staleTime] is [Duration.zero], the query will always be
     /// stale & will never refetch in the background. But can be inactive
     /// if [mounts.length] become zero
     if (_staleTime == Duration.zero) return false;
 
-    // when current DateTime is after [update_at + stale_time] it means
+    // when [DateTime.now()] is after [update_at + stale_time] it means
     // the data has become stale
     return DateTime.now().isAfter(updatedAt.add(_staleTime));
   }
@@ -315,10 +349,8 @@ class Query<T extends Object, Outside> extends BaseOperation<T> {
   void mount(ValueKey<String> uKey) {
     super.mount(uKey);
     if (refetchOnMount == true && isStale) {
-      Connectivity().checkConnectivity().then((status) async {
-        if (isConnectedToInternet(status)) {
-          await refetch();
-        }
+      this.isInternetConnected().then((isConnected) async {
+        if (isConnected) await refetch();
       });
     }
   }

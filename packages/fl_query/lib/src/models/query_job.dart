@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_query/src/query.dart';
 
 class QueryJob<T extends Object, Outside> {
@@ -20,6 +21,7 @@ class QueryJob<T extends Object, Outside> {
   Duration? cacheTime;
 
   Duration? refetchInterval;
+  Connectivity? connectivity;
 
   QueryJob({
     required String queryKey,
@@ -34,6 +36,7 @@ class QueryJob<T extends Object, Outside> {
     this.refetchOnMount,
     this.refetchOnReconnect,
     this.refetchOnExternalDataChange,
+    this.connectivity,
   }) : _queryKey = queryKey;
 
   String get queryKey => _queryKey;
@@ -56,6 +59,7 @@ class QueryJob<T extends Object, Outside> {
     bool? refetchOnMount,
     bool? refetchOnReconnect,
     bool? refetchOnExternalDataChange,
+    Connectivity? connectivity,
   }) {
     return (String queryKey) {
       if (preQueryKey != null) queryKey = "$preQueryKey#$queryKey";
@@ -72,6 +76,7 @@ class QueryJob<T extends Object, Outside> {
         refetchOnMount: refetchOnMount,
         refetchOnReconnect: refetchOnReconnect,
         refetchOnExternalDataChange: refetchOnExternalDataChange,
+        connectivity: connectivity,
       );
     };
   }
