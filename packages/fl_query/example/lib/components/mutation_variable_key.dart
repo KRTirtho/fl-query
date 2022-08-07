@@ -4,6 +4,7 @@ import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';
 
 final mutationVariableKeyJob = MutationJob.withVariableKey<String, double>(
+  preMutationKey: "mutation-example",
   task: (queryKey, variables) {
     return Future.value("$variables");
   },
@@ -37,7 +38,7 @@ class _MutationVariableKeyExampleState
           style: Theme.of(context).textTheme.headline5,
         ),
         MutationBuilder<String, double>(
-          job: mutationVariableKeyJob("mutation-variable-key#$id"),
+          job: mutationVariableKeyJob(id.toString()),
           builder: (context, mutation) {
             return Row(
               children: [

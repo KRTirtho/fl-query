@@ -1,5 +1,5 @@
 ---
-title: Optimistic Updates (Still WIP)
+title: Optimistic Updates
 sidebar_position: 10
 ---
 
@@ -34,6 +34,7 @@ return MutationBuilder(
 return MutationBuilder(
   job: mutationJob,
   onMutate: (variable) {
+    final data = QueryBowl.of(context).getQuery(successJob.queryKey)?.data;
     QueryBowl.of(context)
         .setQueryData<Map<String, dynamic>, void>(successJob.queryKey, (oldData) {
       // replacing the soon to be expired data with updated data
@@ -44,6 +45,15 @@ return MutationBuilder(
     // of the intended query data which can be used when 
     // an error occurs in mutation & we can rollback to a previous
     // data set
+    return data;
+  },
+  onData: (data, variables, context) {
+    print("Passed Variable: $variables");
+    print("Safe Previous Value: $context");
+  },
+  onError: (data, variables, context) {
+    print("Passed Variable: $variables");
+    print("Safe Previous Value: $context");
   }
 );
 ```

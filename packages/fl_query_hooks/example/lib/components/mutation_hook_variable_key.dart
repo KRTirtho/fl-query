@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
 final mutationHookVariableKeyJob = MutationJob.withVariableKey<String, double>(
+  preMutationKey: "mutation-example",
   task: (queryKey, variables) {
     return Future.value("$variables");
   },
@@ -17,7 +18,7 @@ class MutationHookVariableKeyExample extends HookWidget {
   Widget build(BuildContext context) {
     final id = useState(Random().nextDouble());
     final mutation = useMutation(
-      job: mutationHookVariableKeyJob("mutation-hook-variable-key#${id.value}"),
+      job: mutationHookVariableKeyJob(id.value.toString()),
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
