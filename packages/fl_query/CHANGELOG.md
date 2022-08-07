@@ -1,4 +1,16 @@
-v0.1.0
+## v0.2.0
+
+### New
+- Paginated/Lagged Query support using `QueryJob`'s `keepPreviousData`
+- Mutation event context (returned data from `onMutate` available in `onData` & `onError`)
+- Support for `refetchOnMount`. Now query will be refetched when a new widget is mounted.
+
+### Improvements
+- Only one Query & Mutation instance in `QueryBuilder` & `MutationBuilder` which reduces memory usage
+- Optimistic updates are now context driven
+
+
+## v0.1.0
 
 Initial Release
 

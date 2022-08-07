@@ -1,6 +1,6 @@
 name: fl_query
 description: Asynchronous data caching, refetching & invalidation library for Flutter
-version: 0.1.0
+version: 0.2.0
 homepage: https://fl-query.vercel.app
 
 issue_tracker: https://github.com/KRTirtho/fl-query/issues
