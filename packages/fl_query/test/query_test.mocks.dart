@@ -4,6 +4,7 @@
 
 import 'dart:async' as _i7;
 
+import 'package:connectivity_plus/connectivity_plus.dart' as _i11;
 import 'package:fl_query/src/models/mutation_job.dart' as _i9;
 import 'package:fl_query/src/models/query_job.dart' as _i8;
 import 'package:fl_query/src/mutation.dart' as _i4;
@@ -100,6 +101,14 @@ class MockQueryBowl extends _i1.Mock implements _i6.QueryBowl {
   _i2.Widget get child => (super.noSuchMethod(Invocation.getter(#child),
       returnValue: _FakeWidget_1()) as _i2.Widget);
   @override
+  _i7.Future<T?> prefetchQuery<T extends Object, Outside>(
+          _i8.QueryJob<T, Outside>? options,
+          {Outside? externalData}) =>
+      (super.noSuchMethod(
+          Invocation.method(
+              #prefetchQuery, [options], {#externalData: externalData}),
+          returnValue: Future<T?>.value()) as _i7.Future<T?>);
+  @override
   _i7.Future<T?> fetchQuery<T extends Object, Outside>(
           _i8.QueryJob<T, Outside>? options,
           {Outside? externalData,
@@ -122,7 +131,8 @@ class MockQueryBowl extends _i1.Mock implements _i6.QueryBowl {
           {Outside? externalData,
           _i2.ValueKey<String>? key,
           _i3.QueryListener<T>? onData,
-          _i3.QueryListener<dynamic>? onError}) =>
+          _i3.QueryListener<dynamic>? onError,
+          T? previousData}) =>
       (super.noSuchMethod(
           Invocation.method(#addQuery, [
             queryJob
@@ -130,15 +140,16 @@ class MockQueryBowl extends _i1.Mock implements _i6.QueryBowl {
             #externalData: externalData,
             #key: key,
             #onData: onData,
-            #onError: onError
+            #onError: onError,
+            #previousData: previousData
           }),
           returnValue: _FakeQuery_2<T, Outside>()) as _i3.Query<T, Outside>);
   @override
   _i4.Mutation<T, V> addMutation<T extends Object, V>(
           _i9.MutationJob<T, V>? mutationJob,
-          {_i4.MutationListener<T>? onData,
-          _i4.MutationListener<dynamic>? onError,
-          _i4.MutationListener<V>? onMutate,
+          {_i4.MutationListener<T, V>? onData,
+          _i4.MutationListener<dynamic, V>? onError,
+          _i4.MutationListenerReturnable<V, dynamic>? onMutate,
           _i2.ValueKey<String>? key}) =>
       (super.noSuchMethod(
           Invocation.method(#addMutation, [
@@ -229,6 +240,27 @@ class MockQueryBowl extends _i1.Mock implements _i6.QueryBowl {
       super.toString();
 }
 
+/// A class which mocks [Connectivity].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockConnectivity extends _i1.Mock implements _i11.Connectivity {
+  MockConnectivity() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i7.Stream<_i11.ConnectivityResult> get onConnectivityChanged =>
+      (super.noSuchMethod(Invocation.getter(#onConnectivityChanged),
+              returnValue: Stream<_i11.ConnectivityResult>.empty())
+          as _i7.Stream<_i11.ConnectivityResult>);
+  @override
+  _i7.Future<_i11.ConnectivityResult> checkConnectivity() =>
+      (super.noSuchMethod(Invocation.method(#checkConnectivity, []),
+              returnValue: Future<_i11.ConnectivityResult>.value(
+                  _i11.ConnectivityResult.bluetooth))
+          as _i7.Future<_i11.ConnectivityResult>);
+}
+
 /// A class which mocks [QueryJob].
 ///
 /// See the documentation for Mockito's code generation for more information.
@@ -245,30 +277,16 @@ class MockQueryJobVoidObject extends _i1.Mock
       super.noSuchMethod(Invocation.setter(#task, _task),
           returnValueForMissingStub: null);
   @override
-  set refetchOnMount(bool? _refetchOnMount) =>
-      super.noSuchMethod(Invocation.setter(#refetchOnMount, _refetchOnMount),
+  set initialData(Object? _initialData) =>
+      super.noSuchMethod(Invocation.setter(#initialData, _initialData),
           returnValueForMissingStub: null);
   @override
-  set refetchOnReconnect(bool? _refetchOnReconnect) => super.noSuchMethod(
-      Invocation.setter(#refetchOnReconnect, _refetchOnReconnect),
-      returnValueForMissingStub: null);
+  bool get isDynamic =>
+      (super.noSuchMethod(Invocation.getter(#isDynamic), returnValue: false)
+          as bool);
   @override
-  set refetchOnExternalDataChange(bool? _refetchOnExternalDataChange) =>
-      super.noSuchMethod(
-          Invocation.setter(
-              #refetchOnExternalDataChange, _refetchOnExternalDataChange),
-          returnValueForMissingStub: null);
-  @override
-  set staleTime(Duration? _staleTime) =>
-      super.noSuchMethod(Invocation.setter(#staleTime, _staleTime),
-          returnValueForMissingStub: null);
-  @override
-  set cacheTime(Duration? _cacheTime) =>
-      super.noSuchMethod(Invocation.setter(#cacheTime, _cacheTime),
-          returnValueForMissingStub: null);
-  @override
-  set refetchInterval(Duration? _refetchInterval) =>
-      super.noSuchMethod(Invocation.setter(#refetchInterval, _refetchInterval),
+  set isDynamic(bool? _isDynamic) =>
+      super.noSuchMethod(Invocation.setter(#isDynamic, _isDynamic),
           returnValueForMissingStub: null);
   @override
   String get queryKey =>

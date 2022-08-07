@@ -10,15 +10,15 @@ class MutationBuilder<T extends Object, V> extends StatefulWidget {
 
   /// Called when the query returns new data, on query
   /// refetch or query gets expired
-  final MutationListener<T>? onData;
+  final MutationListener<T, V>? onData;
 
   /// Called when the query returns error
-  final MutationListener<dynamic>? onError;
+  final MutationListener<dynamic, V>? onError;
 
   /// called right before the mutation is about to run
   ///
   /// perfect scenario for doing optimistic updates
-  final MutationListener<V>? onMutate;
+  final MutationListenerReturnable<V, dynamic>? onMutate;
 
   const MutationBuilder({
     required this.job,
@@ -66,19 +66,17 @@ class _MutationBuilderState<T extends Object, V>
       init();
     } else {
       if (oldWidget.onData != widget.onData && oldWidget.onData != null) {
-        mutation?.onDataListeners.remove(oldWidget.onData);
-        if (widget.onData != null)
-          mutation?.onDataListeners.add(widget.onData!);
+        mutation?.removeDataListener(oldWidget.onData!);
+        if (widget.onData != null) mutation?.addDataListener(widget.onData!);
       }
       if (oldWidget.onError != widget.onError && oldWidget.onError != null) {
-        mutation?.onErrorListeners.remove(oldWidget.onError);
-        if (widget.onError != null)
-          mutation?.onErrorListeners.add(widget.onError!);
+        mutation?.removeErrorListener(oldWidget.onError!);
+        if (widget.onError != null) mutation?.addErrorListener(widget.onError!);
       }
       if (oldWidget.onMutate != widget.onMutate && oldWidget.onMutate != null) {
-        mutation?.onMutateListeners.remove(oldWidget.onMutate);
+        mutation?.removeMutateListener(oldWidget.onMutate!);
         if (widget.onMutate != null)
-          mutation?.onMutateListeners.add(widget.onMutate!);
+          mutation?.addMutateListener(widget.onMutate!);
       }
     }
     super.didUpdateWidget(oldWidget);
@@ -92,11 +90,9 @@ class _MutationBuilderState<T extends Object, V>
 
   void _mutationDispose() {
     mutation?.unmount(uKey);
-    if (widget.onData != null) mutation?.onDataListeners.remove(widget.onData);
-    if (widget.onError != null)
-      mutation?.onErrorListeners.remove(widget.onError);
-    if (widget.onMutate != null)
-      mutation?.onMutateListeners.remove(widget.onMutate);
+    if (widget.onData != null) mutation?.addDataListener(widget.onData!);
+    if (widget.onError != null) mutation?.addErrorListener(widget.onError!);
+    if (widget.onMutate != null) mutation?.addMutateListener(widget.onMutate!);
   }
 
   @override

@@ -1,3 +1,5 @@
+// ignore_for_file: invalid_use_of_protected_member
+
 import 'package:fl_query/src/models/query_job.dart';
 import 'package:fl_query/src/query.dart';
 import 'package:fl_query/src/query_bowl.dart';
@@ -43,11 +45,12 @@ class _QueryBuilderState<T extends Object, Outside>
     WidgetsBinding.instance.addPostFrameCallback((_) => init());
   }
 
-  void init([QueryBowl? bowl]) async {
-    bowl ??= QueryBowl.of(context);
+  void init([T? previousData]) async {
+    final bowl = QueryBowl.of(context);
     query = bowl.addQuery<T, Outside>(
       widget.job,
       externalData: widget.externalData,
+      previousData: previousData,
       key: uKey,
       onData: widget.onData,
       onError: widget.onError,
@@ -72,7 +75,17 @@ class _QueryBuilderState<T extends Object, Outside>
     // re-init the query-builder when new queryJob is appended
     if (oldWidget.job.queryKey != widget.job.queryKey) {
       _queryDispose();
-      init();
+
+      /// setting the new query's initial data as prev query's data
+      /// when [job.keepPreviousData] is true and both are dynamic
+      if (oldWidget.job.isDynamic &&
+          widget.job.isDynamic &&
+          oldWidget.job.keepPreviousData == true &&
+          widget.job.keepPreviousData == true) {
+        init(query?.data);
+      } else {
+        init();
+      }
     } else if (oldWidget.externalData != null &&
         widget.externalData != null &&
         !isShallowEqual(oldWidget.externalData!, widget.externalData!)) {
@@ -90,17 +103,16 @@ class _QueryBuilderState<T extends Object, Outside>
             .getQuery(widget.job.queryKey)
             ?.setExternalData(widget.externalData);
       }
-      if (hasOnDataChanged) query?.onDataListeners.remove(oldWidget.onData);
-      if (hasOnErrorChanged) query?.onErrorListeners.remove(oldWidget.onError);
+      if (hasOnDataChanged) query?.removeDataListener(oldWidget.onData!);
+      if (hasOnErrorChanged) query?.removeErrorListener(oldWidget.onError!);
     } else {
       if (hasOnDataChanged) {
-        query?.onDataListeners.remove(oldWidget.onData);
-        if (widget.onData != null) query?.onDataListeners.add(widget.onData!);
+        query?.removeDataListener(oldWidget.onData!);
+        if (widget.onData != null) query?.addDataListener(widget.onData!);
       }
       if (hasOnErrorChanged) {
-        query?.onErrorListeners.remove(oldWidget.onError);
-        if (widget.onError != null)
-          query?.onErrorListeners.add(widget.onError!);
+        query?.removeErrorListener(oldWidget.onError!);
+        if (widget.onError != null) query?.addErrorListener(widget.onError!);
       }
     }
     super.didUpdateWidget(oldWidget);
@@ -108,8 +120,8 @@ class _QueryBuilderState<T extends Object, Outside>
 
   _queryDispose() {
     query?.unmount(uKey);
-    if (widget.onData != null) query?.onDataListeners.remove(widget.onData);
-    if (widget.onError != null) query?.onErrorListeners.remove(widget.onError);
+    if (widget.onData != null) query?.removeDataListener(widget.onData!);
+    if (widget.onError != null) query?.removeErrorListener(widget.onError!);
   }
 
   @override

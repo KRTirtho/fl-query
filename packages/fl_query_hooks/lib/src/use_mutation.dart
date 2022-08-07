@@ -8,15 +8,15 @@ Mutation<T, V> useMutation<T extends Object, V>({
 
   /// Called when the query returns new data, on query
   /// refetch or query gets expired
-  MutationListener<T>? onData,
+  MutationListener<T, V>? onData,
 
   /// Called when the query returns error
-  MutationListener<dynamic>? onError,
+  MutationListener<dynamic, V>? onError,
 
   /// called right before the mutation is about to run
   ///
   /// perfect scenario for doing optimistic updates
-  MutationListener<V>? onMutate,
+  MutationListenerReturnable<V, dynamic>? onMutate,
   List<Object?>? keys,
 }) {
   final context = useContext();
@@ -37,9 +37,9 @@ Mutation<T, V> useMutation<T extends Object, V>({
 
   final disposeMutation = useCallback(() {
     mutation.value.unmount(uKey);
-    if (onData != null) mutation.value.onDataListeners.remove(onData);
-    if (onError != null) mutation.value.onErrorListeners.remove(onError);
-    if (onMutate != null) mutation.value.onMutateListeners.remove(onMutate);
+    if (onData != null) mutation.value.removeDataListener(onData);
+    if (onError != null) mutation.value.removeErrorListener(onError);
+    if (onMutate != null) mutation.value.removeMutateListener(onMutate);
   }, [mutation.value, onData, onError, onMutate]);
 
   final oldJob = usePrevious(job);
@@ -58,16 +58,16 @@ Mutation<T, V> useMutation<T extends Object, V>({
       init();
     } else {
       if (oldOnData != onData && oldOnData != null) {
-        mutation.value.onDataListeners.remove(oldOnData);
-        if (onData != null) mutation.value.onDataListeners.add(onData);
+        mutation.value.removeDataListener(oldOnData);
+        if (onData != null) mutation.value.addDataListener(onData);
       }
       if (oldOnError != onError && oldOnError != null) {
-        mutation.value.onErrorListeners.remove(oldOnError);
-        if (onError != null) mutation.value.onErrorListeners.add(onError);
+        mutation.value.removeErrorListener(oldOnError);
+        if (onError != null) mutation.value.addErrorListener(onError);
       }
       if (oldOnMutate != onMutate && oldOnMutate != null) {
-        mutation.value.onMutateListeners.remove(oldOnMutate);
-        if (onMutate != null) mutation.value.onMutateListeners.add(onMutate);
+        mutation.value.removeMutateListener(oldOnMutate);
+        if (onMutate != null) mutation.value.addMutateListener(onMutate);
       }
     }
     return null;

@@ -1,3 +1,5 @@
+// ignore_for_file: invalid_use_of_protected_member
+
 import 'package:fl_query/fl_query.dart';
 import 'package:fl_query_hooks/src/utils.dart';
 import 'package:flutter/widgets.dart';
@@ -31,10 +33,11 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
   final oldOnData = usePrevious(onData);
   final oldOnError = usePrevious(onError);
 
-  final init = useCallback(() {
+  final init = useCallback(([T? previousData]) {
     query.value = queryBowl.addQuery<T, Outside>(
       job,
       externalData: externalData,
+      previousData: previousData,
       key: uKey,
       onData: onData,
       onError: onError,
@@ -52,8 +55,8 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
 
   final disposeQuery = useCallback(() {
     query.value.unmount(uKey);
-    if (onData != null) query.value.onDataListeners.remove(onData);
-    if (onError != null) query.value.onErrorListeners.remove(onError);
+    if (onData != null) query.value.removeDataListener(onData);
+    if (onError != null) query.value.removeErrorListener(onError);
   }, [query.value, onData, onError, uKey]);
 
   useEffect(() {
@@ -66,7 +69,17 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
     final hasOnDataChanged = oldOnData != onData && oldOnData != null;
     if (oldJob != null && oldJob.queryKey != job.queryKey) {
       disposeQuery();
-      init();
+
+      /// setting the new query's initial data as prev query's data
+      /// when [job.keepPreviousData] is true and both are dynamic
+      if (oldJob.isDynamic &&
+          job.isDynamic &&
+          oldJob.keepPreviousData == true &&
+          job.keepPreviousData == true) {
+        init(query.value.data);
+      } else {
+        init();
+      }
     } else if (oldExternalData != null &&
         externalData != null &&
         !isShallowEqual(oldExternalData, externalData)) {
@@ -85,16 +98,16 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
             ?.setExternalData(externalData);
       }
 
-      if (hasOnDataChanged) query.value.onDataListeners.remove(oldOnData);
-      if (hasOnErrorChanged) query.value.onErrorListeners.remove(oldOnError);
+      if (hasOnDataChanged) query.value.removeDataListener(oldOnData);
+      if (hasOnErrorChanged) query.value.removeErrorListener(oldOnError);
     } else {
       if (hasOnDataChanged) {
-        query.value.onDataListeners.remove(oldOnData);
-        if (onData != null) query.value.onDataListeners.add(onData);
+        query.value.removeDataListener(oldOnData);
+        if (onData != null) query.value.addDataListener(onData);
       }
       if (hasOnErrorChanged) {
-        query.value.onErrorListeners.remove(oldOnError);
-        if (onError != null) query.value.onErrorListeners.add(onError);
+        query.value.removeErrorListener(oldOnError);
+        if (onError != null) query.value.addErrorListener(onError);
       }
     }
     return null;

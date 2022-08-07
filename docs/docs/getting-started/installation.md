@@ -9,7 +9,7 @@ Fl-Query is just another Flutter "package" so no extra installation step needed 
 $ flutter pub add fl_query
 ```
 
-### For using with `flutter_hooks`
+### Using with `flutter_hooks`
 
 If you're an ELITE `flutter_hooks` user or want to use `fl_query_hooks` you'll need the `flutter_hooks` & `fl_query_hooks` package
 
