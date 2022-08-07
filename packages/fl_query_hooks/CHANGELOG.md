@@ -1,3 +1,11 @@
+## 0.2.0
+
+### New
+- Support Paginated/Lagged Query using `keepPreviousData`
+
+### Improvements
+- Only one Query & Mutation instance in `useQuery` & `useMutation` reducing memory usage
+
 ## 0.1.0
 
 Initial Release

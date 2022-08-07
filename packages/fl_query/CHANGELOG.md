@@ -6,7 +6,7 @@
 - Support for `refetchOnMount`. Now query will be refetched when a new widget is mounted.
 
 ### Improvements
-- Only one Query & Mutation instance in `QueryBuilder` & `MutationBuilder`
+- Only one Query & Mutation instance in `QueryBuilder` & `MutationBuilder` which reduces memory usage
 - Optimistic updates are now context driven
 
 
