@@ -3,13 +3,15 @@ import 'dart:math';
 import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';
 
-final queryVariableKeyJob =
-    QueryJob.withVariableKey<String, void>(task: (queryKey, externalData) {
-  return Future.delayed(
-    const Duration(milliseconds: 500),
-    () => "QueryKey:${queryKey.split("#").last}",
-  );
-});
+final queryVariableKeyJob = QueryJob.withVariableKey<String, void>(
+  preQueryKey: "variable-query",
+  task: (queryKey, externalData) {
+    return Future.delayed(
+      const Duration(milliseconds: 500),
+      () => "QueryKey:${queryKey.split("#").last}",
+    );
+  },
+);
 
 class QueryVariableKeyExample extends StatefulWidget {
   const QueryVariableKeyExample({Key? key}) : super(key: key);
@@ -37,7 +39,7 @@ class _QueryVariableKeyExampleState extends State<QueryVariableKeyExample> {
           style: Theme.of(context).textTheme.headline5,
         ),
         QueryBuilder<String, void>(
-          job: queryVariableKeyJob("variable-query#$id"),
+          job: queryVariableKeyJob(id.toString()),
           externalData: null,
           builder: (context, query) {
             if (query.isLoading || query.isRefetching || !query.hasData) {
