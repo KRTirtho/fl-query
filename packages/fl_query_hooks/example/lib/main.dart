@@ -3,6 +3,7 @@ import 'package:fl_query_hooks_example/components/basic_hook_query.dart';
 import 'package:fl_query_hooks_example/components/lazy_hook_query.dart';
 import 'package:fl_query_hooks_example/components/mutation_hook_variable_key.dart';
 import 'package:fl_query_hooks_example/components/query_hook_external_data.dart';
+import 'package:fl_query_hooks_example/components/query_hook_previous_data.dart';
 import 'package:fl_query_hooks_example/components/query_hook_variable_key.dart';
 import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';
@@ -53,6 +54,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
             QueryHookExternalDataExample(),
             LazyHookQueryExample(),
             QueryHookVariableKeyExample(),
+            QueryHookPreviousDataExample(),
             Divider(),
             BasicHookMutationExample(),
             MutationHookVariableKeyExample(),

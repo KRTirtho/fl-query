@@ -1,5 +1,6 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_query/src/query.dart';
+import 'package:flutter/widgets.dart';
 
 class QueryJob<T extends Object, Outside> {
   // all params
@@ -7,21 +8,25 @@ class QueryJob<T extends Object, Outside> {
   QueryTaskFunction<T, Outside> task;
   final int? retries;
   final Duration? retryDelay;
-  final T? initialData;
+  T? initialData;
 
   /// If set to false then the initial fetch will not be called & to
   /// start the process the user has to call the refetch first
   final bool? enabled;
 
   // got from global options
-  bool? refetchOnMount;
-  bool? refetchOnReconnect;
-  bool? refetchOnExternalDataChange;
-  Duration? staleTime;
-  Duration? cacheTime;
+  final bool? refetchOnMount;
+  final bool? refetchOnReconnect;
+  final bool? refetchOnExternalDataChange;
+  final bool? keepPreviousData;
+  final Duration? staleTime;
+  final Duration? cacheTime;
 
-  Duration? refetchInterval;
-  Connectivity? connectivity;
+  final Duration? refetchInterval;
+  final Connectivity? connectivity;
+
+  @protected
+  bool isDynamic = false;
 
   QueryJob({
     required String queryKey,
@@ -37,6 +42,7 @@ class QueryJob<T extends Object, Outside> {
     this.refetchOnReconnect,
     this.refetchOnExternalDataChange,
     this.connectivity,
+    this.keepPreviousData,
   }) : _queryKey = queryKey;
 
   String get queryKey => _queryKey;
@@ -60,10 +66,11 @@ class QueryJob<T extends Object, Outside> {
     bool? refetchOnReconnect,
     bool? refetchOnExternalDataChange,
     Connectivity? connectivity,
+    bool? keepPreviousData,
   }) {
     return (String queryKey) {
       if (preQueryKey != null) queryKey = "$preQueryKey#$queryKey";
-      return QueryJob<T, Outside>(
+      final query = QueryJob<T, Outside>(
         queryKey: queryKey,
         task: task,
         retries: retries,
@@ -77,7 +84,10 @@ class QueryJob<T extends Object, Outside> {
         refetchOnReconnect: refetchOnReconnect,
         refetchOnExternalDataChange: refetchOnExternalDataChange,
         connectivity: connectivity,
+        keepPreviousData: keepPreviousData,
       );
+      query.isDynamic = true;
+      return query;
     };
   }
 }

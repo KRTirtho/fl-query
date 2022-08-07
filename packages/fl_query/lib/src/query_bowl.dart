@@ -284,11 +284,13 @@ class QueryBowl extends InheritedWidget {
 
   Query<T, Outside> _createQueryWithDefaults<T extends Object, Outside>(
     QueryJob<T, Outside> options,
-    Outside externalData,
-  ) {
+    Outside externalData, [
+    T? previousData,
+  ]) {
     final query = Query<T, Outside>.fromOptions(
       options,
       externalData: externalData,
+      previousData: previousData,
       queryBowl: this,
     );
     query.updateDefaultOptions(
@@ -361,6 +363,7 @@ class QueryBowl extends InheritedWidget {
     required ValueKey<String> key,
     final QueryListener<T>? onData,
     final QueryListener<dynamic>? onError,
+    final T? previousData,
   }) {
     final prevQuery =
         _queries.firstWhereOrNull((q) => q.queryKey == queryJob.queryKey);
@@ -381,7 +384,11 @@ class QueryBowl extends InheritedWidget {
       // mounting the widget that is using the query in the prevQuery
       return prevQuery;
     }
-    final query = _createQueryWithDefaults<T, Outside>(queryJob, externalData);
+    final query = _createQueryWithDefaults<T, Outside>(
+      queryJob,
+      externalData,
+      previousData,
+    );
     if (onData != null) query.addDataListener(onData);
     if (onError != null) query.addErrorListener(onError);
     query.mount(key);

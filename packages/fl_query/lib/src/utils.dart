@@ -50,3 +50,7 @@ bool isConnectedToInternet(ConnectivityResult result) {
     ConnectivityResult.wifi,
   ].contains(result);
 }
+
+String getVariable(String queryKey) {
+  return queryKey.split("#").last;
+}
