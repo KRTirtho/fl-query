@@ -19,6 +19,14 @@ Fl-Query makes asynchronous server state management a breeze in flutter
 - Easy to write & understand code. Follows DRY (Don't repeat yourself) convention
 - Compatible with both vanilla Flutter & elite [flutter_hooks](https://pub.dev/packages/flutter_hooks)
 
+
+## Support Us
+<a href="https://www.buymeacoffee.com/krtirtho">
+<img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=krtirtho&button_colour=FF5F5F&font_colour=ffffff&font_family=Inter&outline_colour=000000&coffee_colour=FFDD00" />
+</a>
+<br/>
+<a href="https://patreon.com/krtirtho"><img src="https://user-images.githubusercontent.com/61944859/180249027-678b01b8-c336-451e-b147-6d84a5b9d0e7.png" width="250"/></a>
+
 # Installation
 
 Regular installation:
