@@ -5,7 +5,7 @@ id: overview
 
 # Overview
 
-Fl-Query is a asynchronous data manager for Flutter that caches, fetches, automatically refetches stale data. Basically, its [React-Query](https://react-query.tanstack.com/) but for Flutter. But that doesn't mean it's a direct port of React-Query. Instead the concept of React-Query is implemented by Fl-Query
+Fl-Query is a asynchronous data manager for Flutter that caches, fetches, automatically refetches stale data. Basically, its [Tanstack-Query](https://tanstack.com/query/) (formerly React-Query) but for Flutter. But that doesn't mean it's a direct port of Tanstack-Query. Instead the concept of Tanstack-Query is implemented by Fl-Query
 
 ## What does it offer?
 
