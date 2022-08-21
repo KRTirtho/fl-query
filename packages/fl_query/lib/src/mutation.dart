@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:fl_query/fl_query.dart';
 import 'package:fl_query/src/base_operation.dart';
+import 'package:fl_query/src/mixins/autocast.dart';
 import 'package:fl_query/src/models/mutation_job.dart';
 import 'package:flutter/widgets.dart';
 
@@ -23,7 +24,7 @@ typedef MutationListener<T, V> = FutureOr<void> Function(
 typedef MutationTaskFunction<T, V> = FutureOr<T> Function(
     String queryKey, V variables);
 
-class Mutation<T extends Object, V> extends BaseOperation<T> {
+class Mutation<T extends Object, V> extends BaseOperation<T> with AutoCast {
   // all params
   final String mutationKey;
   MutationTaskFunction<T, V> task;
@@ -200,8 +201,6 @@ class Mutation<T extends Object, V> extends BaseOperation<T> {
     _onMutateListeners.clear();
     _sideEffectContext = null;
   }
-
-  A? cast<A>() => this is A ? this as A : null;
 
   bool get isError => status == MutationStatus.error;
   bool get isIdle => status == MutationStatus.idle;

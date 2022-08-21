@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:fl_query/src/infinite_query.dart';
+import 'package:fl_query/src/models/infinite_query_job.dart';
 import 'package:fl_query/src/models/mutation_job.dart';
 import 'package:fl_query/src/models/query_job.dart';
 import 'package:fl_query/src/mutation.dart';
@@ -90,6 +92,7 @@ class QueryBowlScope extends StatefulWidget {
 }
 
 class _QueryBowlScopeState extends State<QueryBowlScope> {
+  late Set<InfiniteQuery> infiniteQueries;
   late Set<Query> queries;
   late Set<Mutation> mutations;
 
@@ -98,6 +101,7 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
   @override
   void initState() {
     super.initState();
+    infiniteQueries = {};
     queries = {};
     mutations = {};
 
@@ -122,6 +126,9 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
   }
 
   void _listenToUpdates() {
+    for (final infiniteQuery in infiniteQueries) {
+      infiniteQuery.addListener(() => updateInfiniteQueries(infiniteQuery));
+    }
     for (final query in queries) {
       query.addListener(() => updateQueries(query));
     }
@@ -131,6 +138,9 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
   }
 
   void _disposeUpdateListeners() {
+    for (final infiniteQuery in infiniteQueries) {
+      infiniteQuery.removeListener(() => updateInfiniteQueries(infiniteQuery));
+    }
     for (final query in queries) {
       query.removeListener(() => updateQueries(query));
     }
@@ -153,6 +163,21 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
     });
   }
 
+  void updateInfiniteQueries(InfiniteQuery infiniteQuery) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // checking & not including inactive queries
+      // basically garbage collecting queries
+      setState(() {
+        infiniteQueries = Set.from(
+          // infiniteQuery.isInactive
+          //     ? infiniteQueries.where((el) => el.queryKey != infiniteQuery.queryKey)
+          //     : infiniteQuery,
+          infiniteQueries,
+        );
+      });
+    });
+  }
+
   void updateMutations(Mutation mutation) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       setState(() {
@@ -165,6 +190,15 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
                 )
               : mutations,
         );
+      });
+    });
+  }
+
+  void addInfiniteQuery<T extends Object, Outside, PageParam extends Object>(
+      InfiniteQuery<T, Outside, PageParam> infiniteQuery) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        infiniteQueries = Set.from({...infiniteQueries, infiniteQuery});
       });
     });
   }
@@ -215,10 +249,12 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
     _disposeUpdateListeners();
     _listenToUpdates();
     return QueryBowl(
+      addInfiniteQuery: addInfiniteQuery,
       addQuery: addQuery,
       addMutation: addMutation,
       removeQueries: removeQueries,
       clear: clear,
+      infiniteQueries: infiniteQueries,
       queries: queries,
       mutations: mutations,
       staleTime: widget.staleTime,
@@ -238,6 +274,7 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
 /// Its responsible or can be used for (not recommended) creating,
 /// updating & deleting queries & mutations
 class QueryBowl extends InheritedWidget {
+  final Set<InfiniteQuery> _infiniteQueries;
   final Set<Query> _queries;
   final Set<Mutation> _mutations;
   final Duration staleTime;
@@ -247,6 +284,9 @@ class QueryBowl extends InheritedWidget {
   final bool refetchOnMount;
   final bool refetchOnReconnect;
   final bool refetchOnExternalDataChange;
+
+  final void Function<T extends Object, Outside, PageParam extends Object>(
+      InfiniteQuery<T, Outside, PageParam> infiniteQuery) _addInfiniteQuery;
 
   final void Function<T extends Object, Outside>(Query<T, Outside> query)
       _addQuery;
@@ -260,11 +300,16 @@ class QueryBowl extends InheritedWidget {
 
   const QueryBowl({
     required Widget child,
+    required final void Function<T extends Object, Outside,
+                PageParam extends Object>(
+            InfiniteQuery<T, Outside, PageParam> infiniteQuery)
+        addInfiniteQuery,
     required final void Function<T extends Object, Outside>(
             Query<T, Outside> query)
         addQuery,
     required final void Function<T extends Object, V>(Mutation<T, V> mutation)
         addMutation,
+    required final Set<InfiniteQuery> infiniteQueries,
     required final Set<Query> queries,
     required final Set<Mutation> mutations,
     required this.staleTime,
@@ -280,6 +325,8 @@ class QueryBowl extends InheritedWidget {
         _queries = queries,
         _mutations = mutations,
         _addMutation = addMutation,
+        _addInfiniteQuery = addInfiniteQuery,
+        _infiniteQueries = infiniteQueries,
         super(child: child, key: key);
 
   Query<T, Outside> _createQueryWithDefaults<T extends Object, Outside>(
@@ -302,6 +349,26 @@ class QueryBowl extends InheritedWidget {
     );
     return query;
   }
+
+  // InfiniteQuery<T, Outside, PageParam> _createInfiniteQueryWithDefaults<
+  //     T extends Object, Outside, PageParam extends Object>(
+  //   InfiniteQueryJob<T, Outside, PageParam> options,
+  //   Outside externalData,
+  // ) {
+  // final query = InfiniteQuery<T, Outside, PageParam>.fromOptions(
+  //   options,
+  //   externalData: externalData,
+  //   queryBowl: this,
+  // );
+  // query.updateDefaultOptions(
+  //   cacheTime: cacheTime,
+  //   staleTime: staleTime,
+  //   refetchInterval: refetchInterval,
+  //   refetchOnMount: refetchOnMount,
+  //   refetchOnReconnect: refetchOnReconnect,
+  // );
+  // return query;
+  // }
 
   Future<T?> prefetchQuery<T extends Object, Outside>(
     QueryJob<T, Outside> options, {
@@ -353,6 +420,50 @@ class QueryBowl extends InheritedWidget {
     query.mount(key);
     _addQuery<T, Outside>(query);
     return await query.fetch();
+  }
+
+  @protected
+  InfiniteQuery<T, Outside, PageParam>
+      addInfiniteQuery<T extends Object, Outside, PageParam extends Object>(
+    InfiniteQueryJob<T, Outside, PageParam> infiniteQueryJob, {
+    required Outside externalData,
+    required ValueKey<String> key,
+    final QueryListener<T>? onData,
+    final QueryListener<dynamic>? onError,
+  }) {
+    final prevInfiniteQuery = _infiniteQueries.firstWhereOrNull(
+      (q) => q.queryKey == infiniteQueryJob.queryKey,
+    );
+    if (prevInfiniteQuery is InfiniteQuery<T, Outside, PageParam>) {
+      // run the query if its still not called or if externalData has
+      // changed
+      // if (prevQuery.prevUsedExternalData != null &&
+      //     externalData != null &&
+      //     !isShallowEqual(
+      //       prevQuery.prevUsedExternalData!,
+      //       externalData,
+      //     )) {
+      //   prevQuery.setExternalData(externalData);
+      // }
+      // prevQuery.mount(key);
+      // if (onData != null) prevQuery.addDataListener(onData);
+      // if (onError != null) prevQuery.addErrorListener(onError);
+      // mounting the widget that is using the query in the prevQuery
+      return prevInfiniteQuery;
+    }
+    //  _createQueryWithDefaults<T, Outside, PageParam>(
+    //   infiniteQueryJob,
+    //   externalData,
+    // );
+    final infiniteQuery = InfiniteQuery<T, Outside, PageParam>.fromOptions(
+      infiniteQueryJob,
+      externalData: externalData,
+    );
+    // if (onData != null) infiniteQuery.addDataListener(onData);
+    // if (onError != null) infiniteQuery.addErrorListener(onError);
+    // infiniteQuery.mount(key);
+    _addInfiniteQuery<T, Outside, PageParam>(infiniteQuery);
+    return infiniteQuery;
   }
 
   /// !⚠️**Warning** only for internal library usage
@@ -426,6 +537,16 @@ class QueryBowl extends InheritedWidget {
       _addMutation(mutation);
       return mutation;
     }
+  }
+
+  InfiniteQuery<T, Outside, PageParam>?
+      getInfiniteQuery<T extends Object, Outside, PageParam extends Object>(
+    String queryKey,
+  ) {
+    return _infiniteQueries.firstWhereOrNull((infiniteQuery) {
+      return infiniteQuery.queryKey == queryKey &&
+          infiniteQuery is InfiniteQuery<T, Outside, PageParam>;
+    })?.cast<InfiniteQuery<T, Outside, PageParam>>();
   }
 
   /// Get a query by providing queryKey only
@@ -519,6 +640,7 @@ class QueryBowl extends InheritedWidget {
   bool updateShouldNotify(QueryBowl oldWidget) {
     return oldWidget.staleTime != staleTime ||
         oldWidget._queries != _queries ||
-        oldWidget._mutations != _mutations;
+        oldWidget._mutations != _mutations ||
+        oldWidget._infiniteQueries != _infiniteQueries;
   }
 }

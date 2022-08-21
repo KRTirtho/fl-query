@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_query/src/base_operation.dart';
+import 'package:fl_query/src/mixins/autocast.dart';
 import 'package:fl_query/src/models/query_job.dart';
 import 'package:fl_query/src/utils.dart';
 import 'package:flutter/widgets.dart';
@@ -36,7 +37,7 @@ typedef ListenerUnsubscriber = void Function();
 
 typedef QueryUpdateFunction<T> = FutureOr<T> Function(T? oldData);
 
-class Query<T extends Object, Outside> extends BaseOperation<T> {
+class Query<T extends Object, Outside> extends BaseOperation<T> with AutoCast {
   // all params
   final String queryKey;
   QueryTaskFunction<T, Outside> task;
@@ -234,7 +235,7 @@ class Query<T extends Object, Outside> extends BaseOperation<T> {
   /// and will only return the available data
   ///
   /// If a [fetch] is already running in the background it'll just return
-  /// the current available [data] (which can be nul if no [initialData]
+  /// the current available [data] (which can be nul if no [initialPage]
   /// was provided) instead of running the task to prevent race conditions
   Future<T?> fetch() async {
     if (!enabled) return null;
@@ -390,8 +391,6 @@ class Query<T extends Object, Outside> extends BaseOperation<T> {
   bool get isPreviousData {
     return _previousData != null ? _previousData == data : false;
   }
-
-  A? cast<A>() => this is A ? this as A : null;
 
   String get debugLabel => "Query($queryKey)";
 

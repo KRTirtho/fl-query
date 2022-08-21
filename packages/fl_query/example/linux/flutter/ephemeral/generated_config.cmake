@@ -1,10 +1,10 @@
 # Generated code do not commit.
-file(TO_CMAKE_PATH "/opt/flutter" FLUTTER_ROOT)
+file(TO_CMAKE_PATH "/home/krtirtho/fvm/versions/3.0.5" FLUTTER_ROOT)
 file(TO_CMAKE_PATH "/home/krtirtho/dev/fl-query/packages/fl_query/example" PROJECT_DIR)
 
 # Environment variables to pass to tool_backend.sh
 list(APPEND FLUTTER_TOOL_ENVIRONMENT
-  "FLUTTER_ROOT=/opt/flutter"
+  "FLUTTER_ROOT=/home/krtirtho/fvm/versions/3.0.5"
   "PROJECT_DIR=/home/krtirtho/dev/fl-query/packages/fl_query/example"
   "DART_DEFINES=RkxVVFRFUl9XRUJfQVVUT19ERVRFQ1Q9dHJ1ZQ=="
   "DART_OBFUSCATION=false"
