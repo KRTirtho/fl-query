@@ -45,14 +45,15 @@ class _InfiniteQueryBuilderState<T extends Object, Outside,
       externalData: widget.externalData,
       key: uKey,
     );
-    // final hasExternalDataChanged = infiniteQuery!.externalData != null &&
-    //     infiniteQuery!.prevUsedExternalData != null &&
-    //     !isShallowEqual(infiniteQuery!.externalData!, infiniteQuery!.prevUsedExternalData!);
-    // if (infiniteQuery!.fetched && hasExternalDataChanged) {
-    //   await infiniteQuery!.refetch();
-    // } else if (!infiniteQuery!.fetched) {
-    await infiniteQuery!.fetch();
-    // }
+    final hasExternalDataChanged = infiniteQuery!.externalData != null &&
+        infiniteQuery!.prevUsedExternalData != null &&
+        !isShallowEqual(
+            infiniteQuery!.externalData!, infiniteQuery!.prevUsedExternalData!);
+    if (infiniteQuery!.fetched && hasExternalDataChanged) {
+      await infiniteQuery!.refetch();
+    } else if (!infiniteQuery!.fetched) {
+      await infiniteQuery!.fetch();
+    }
   }
 
   @override

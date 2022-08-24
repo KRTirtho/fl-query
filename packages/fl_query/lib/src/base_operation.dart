@@ -1,7 +1,7 @@
 import 'package:fl_query/src/query_bowl.dart';
 import 'package:flutter/widgets.dart';
 
-abstract class BaseOperation<Data> extends ChangeNotifier {
+abstract class BaseOperation<Data, Error> extends ChangeNotifier {
   /// The number of times the query should refetch in the time of error
   /// before giving up
   final int retries;
@@ -13,7 +13,7 @@ abstract class BaseOperation<Data> extends ChangeNotifier {
 
   // all properties
   Data? data;
-  dynamic error;
+  Error? error;
 
   /// total count of how many times the query retried to get a successful
   /// result

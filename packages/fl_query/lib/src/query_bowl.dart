@@ -437,17 +437,17 @@ class QueryBowl extends InheritedWidget {
     if (prevInfiniteQuery is InfiniteQuery<T, Outside, PageParam>) {
       // run the query if its still not called or if externalData has
       // changed
-      // if (prevQuery.prevUsedExternalData != null &&
-      //     externalData != null &&
-      //     !isShallowEqual(
-      //       prevQuery.prevUsedExternalData!,
-      //       externalData,
-      //     )) {
-      //   prevQuery.setExternalData(externalData);
-      // }
-      // prevQuery.mount(key);
-      // if (onData != null) prevQuery.addDataListener(onData);
-      // if (onError != null) prevQuery.addErrorListener(onError);
+      if (prevInfiniteQuery.prevUsedExternalData != null &&
+          externalData != null &&
+          !isShallowEqual(
+            prevInfiniteQuery.prevUsedExternalData!,
+            externalData,
+          )) {
+        prevInfiniteQuery.setExternalData(externalData);
+      }
+      prevInfiniteQuery.mount(key);
+      if (onData != null) prevInfiniteQuery.addDataListener(onData);
+      if (onError != null) prevInfiniteQuery.addErrorListener(onError);
       // mounting the widget that is using the query in the prevQuery
       return prevInfiniteQuery;
     }
@@ -458,6 +458,7 @@ class QueryBowl extends InheritedWidget {
     final infiniteQuery = InfiniteQuery<T, Outside, PageParam>.fromOptions(
       infiniteQueryJob,
       externalData: externalData,
+      queryBowl: this,
     );
     // if (onData != null) infiniteQuery.addDataListener(onData);
     // if (onError != null) infiniteQuery.addErrorListener(onError);

@@ -1,8 +1,9 @@
 import 'dart:async';
 
-import 'package:fl_query/src/mixins/autocast.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:fl_query/src/base_query.dart';
 import 'package:fl_query/src/models/infinite_query_job.dart';
-import 'package:flutter/widgets.dart';
+import 'package:fl_query/src/query.dart';
 
 typedef InfiniteQueryTaskFunction<T extends Object, Outside,
         PageParam extends Object>
@@ -16,84 +17,94 @@ typedef InfiniteQueryPageParamFunction<T extends Object,
     = FutureOr<PageParam> Function(T lastPage, PageParam lastParam);
 
 class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
-    with ChangeNotifier, AutoCast {
-  String queryKey;
-
-  Map<PageParam, T?> _data;
-  Map<PageParam, dynamic> _error;
-
+    extends BaseQuery<Map<PageParam, T?>, Outside, Map<PageParam, dynamic>> {
   InfiniteQueryTaskFunction<T, Outside, PageParam> task;
 
   InfiniteQueryPageParamFunction<T, PageParam>? getNextPageParam;
   InfiniteQueryPageParamFunction<T, PageParam>? getPreviousPageParam;
 
-  List<PageParam> get pageParams => _data.keys.toList();
-  List<dynamic> get errors => _error.values.toList();
-  List<T?> get pages => _data.values.toList();
-
-  PageParam currentParam;
-
-  Outside _externalData;
-
   bool _hasNextPage = false;
   bool _hasPreviousPage = false;
 
+  bool _isFetchingNextPage = false;
+  bool _isFetchingPreviousPage = false;
+
+  bool get isFetchingNextPage => _isFetchingNextPage;
+  bool get isFetchingPreviousPage => _isFetchingPreviousPage;
   bool get hasNextPage => _hasNextPage;
   bool get hasPreviousPage => _hasPreviousPage;
 
+  PageParam _currentParam;
+
   InfiniteQuery({
-    required this.queryKey,
+    required super.queryKey,
     required this.task,
+    required super.staleTime,
+    required super.cacheTime,
+    required super.externalData,
+    required super.retries,
+    required super.retryDelay,
+    required super.queryBowl,
+    required super.status,
     required PageParam initialParam,
-    required Outside externalData,
+    super.refetchOnMount,
+    super.refetchOnReconnect,
+    super.refetchInterval,
+    super.enabled,
+    super.previousData,
+    super.connectivity,
+    super.onData,
+    super.onError,
+    required T? initialPage,
     this.getNextPageParam,
     this.getPreviousPageParam,
-    T? initialPage,
-  })  : currentParam = initialParam,
-        _externalData = externalData,
-        _error = {},
-        _data = {
-          if (initialPage != null) initialParam: initialPage,
-        };
+  })  : _currentParam = initialParam,
+        super(initialData: {initialParam: initialPage});
 
   InfiniteQuery.fromOptions(
     InfiniteQueryJob<T, Outside, PageParam> options, {
+    required super.queryBowl,
     required Outside externalData,
-  })  : queryKey = options.queryKey,
-        task = options.task,
-        currentParam = options.initialParam,
-        _externalData = externalData,
-        _error = {},
+    QueryListener<T>? onData,
+    QueryListener<dynamic>? onError,
+  })  : task = options.task,
+        _currentParam = options.initialParam,
         getNextPageParam = options.getNextPageParam,
         getPreviousPageParam = options.getPreviousPageParam,
-        _data = {
-          if (options.initialPage != null)
-            options.initialParam: options.initialPage,
-        };
+        super(
+          cacheTime: options.cacheTime ?? const Duration(minutes: 5),
+          retries: options.retries ?? 3,
+          retryDelay: options.retryDelay ?? const Duration(milliseconds: 200),
+          externalData: externalData,
+          enabled: options.enabled ?? true,
+          staleTime: options.staleTime ?? const Duration(milliseconds: 500),
+          refetchInterval: options.refetchInterval,
+          refetchOnMount: options.refetchOnMount,
+          refetchOnReconnect: options.refetchOnReconnect,
+          status: QueryStatus.idle,
+          connectivity: options.connectivity ?? Connectivity(),
+          queryKey: options.queryKey,
+          initialData: {options.initialParam: options.initialPage},
+        );
 
-  Future<void> _execute() async {
-    final page = await task(
-      queryKey,
-      currentParam,
-      _externalData,
-    );
-    _data[currentParam] = page;
-    notifyListeners();
-  }
-
-  Future<List<T?>> fetch() async {
-    if (_data.isEmpty) await _execute();
-    return pages;
-  }
+  List<PageParam> get pageParams => data?.keys.toList() ?? [];
+  List<dynamic> get errors => error?.values.toList() ?? [];
+  List<T?> get pages => data?.values.toList() ?? [];
 
   Future<T?> fetchNextPage([
     InfiniteQueryPageParamFunction<T, PageParam>? getNextPageParam,
   ]) async {
     try {
-      if (_data[currentParam] == null) await _execute();
+      if (isFetchingNextPage ||
+          isFetchingPreviousPage ||
+          isLoading ||
+          isRefetching) return null;
+      if (data == null || data?[_currentParam] == null) execute();
+      _isFetchingNextPage = true;
+      _isFetchingPreviousPage = false;
       final nextParam = await (getNextPageParam ?? this.getNextPageParam)?.call(
-        _data[currentParam]!,
-        currentParam,
+        data![_currentParam]!,
+        _currentParam,
       );
       if (nextParam == null) {
         _hasNextPage = false;
@@ -101,11 +112,11 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
         return null;
       }
       _hasNextPage = true;
-      currentParam = nextParam;
-      return await _execute().then((_) => _data[currentParam]);
-    } catch (e) {
-      print("[InfiniteQuery.fetchNextPage]: $e");
-      rethrow;
+      _currentParam = nextParam;
+      return await refetch().then((data) => data?[_currentParam]);
+    } finally {
+      _isFetchingNextPage = false;
+      notifyListeners();
     }
   }
 
@@ -113,11 +124,18 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
     InfiniteQueryPageParamFunction<T, PageParam>? getPreviousPageParam,
   ]) async {
     try {
-      if (_data[currentParam] == null) await _execute();
+      if (isFetchingNextPage ||
+          isFetchingPreviousPage ||
+          isLoading ||
+          isRefetching) return null;
+      _isFetchingPreviousPage = true;
+      _isFetchingNextPage = false;
+      notifyListeners();
+      if (data?[_currentParam] == null) execute();
       final prevParam =
-          await (getNextPageParam ?? this.getPreviousPageParam)?.call(
-        _data[currentParam]!,
-        currentParam,
+          await (getPreviousPageParam ?? this.getPreviousPageParam)?.call(
+        data![_currentParam]!,
+        _currentParam,
       );
       if (prevParam == null) {
         _hasPreviousPage = false;
@@ -125,11 +143,44 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
         return null;
       }
       _hasPreviousPage = true;
-      currentParam = prevParam;
-      return await _execute().then((_) => _data[currentParam]);
+      _currentParam = prevParam;
+      return await refetch().then((_) => data?[_currentParam]);
     } catch (e) {
       print("[InfiniteQuery.fetchPreviousPage]: $e");
       rethrow;
+    } finally {
+      _isFetchingPreviousPage = false;
+      notifyListeners();
     }
   }
+
+  @override
+  // TODO: implement debugLabel
+  String get debugLabel => "InfiniteQuery($queryKey)";
+
+  @override
+  void setData() async {
+    if (data == null) data = Map();
+    data?[_currentParam] = await task(
+      queryKey,
+      _currentParam,
+      externalData,
+    );
+  }
+
+  @override
+  void setError(specError) {
+    if (error is! Map) error = Map();
+    error?[_currentParam] = specError;
+  }
+
+  @override
+  bool operator ==(other) {
+    return (other is InfiniteQuery<T, Outside, PageParam> &&
+            other.queryKey == queryKey) ||
+        identical(other, this);
+  }
+
+  @override
+  bool get hasData => data?[_currentParam] != null;
 }

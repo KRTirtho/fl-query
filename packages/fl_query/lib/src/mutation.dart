@@ -24,7 +24,8 @@ typedef MutationListener<T, V> = FutureOr<void> Function(
 typedef MutationTaskFunction<T, V> = FutureOr<T> Function(
     String queryKey, V variables);
 
-class Mutation<T extends Object, V> extends BaseOperation<T> with AutoCast {
+class Mutation<T extends Object, V> extends BaseOperation<T, dynamic>
+    with AutoCast {
   // all params
   final String mutationKey;
   MutationTaskFunction<T, V> task;
