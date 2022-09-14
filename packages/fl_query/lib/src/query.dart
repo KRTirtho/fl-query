@@ -85,6 +85,18 @@ class Query<T extends Object, Outside> extends BaseQuery<T, Outside, dynamic> {
           queryKey: options.queryKey,
         );
 
+  @override
+  Timer createRefetchTimer() {
+    return Timer.periodic(
+      refetchInterval!,
+      (_) async {
+        // only refetch if its connected to the internet or refetch will
+        // always result in error while there's no internet
+        if (isStale && await isInternetConnected()) await refetch();
+      },
+    );
+  }
+
   /// can be used to update the data manually. Can be useful when used
   /// together with mutations to perform optimistic updates or manual data
   /// updates

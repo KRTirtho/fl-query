@@ -114,6 +114,12 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
           await query.refetch();
           await Future.delayed(widget.refetchOnReconnectDelay);
         }
+        for (final infiniteQuery in infiniteQueries) {
+          if (infiniteQuery.refetchOnReconnect == false ||
+              !infiniteQuery.enabled) continue;
+          await infiniteQuery.refetchPages();
+          await Future.delayed(widget.refetchOnReconnectDelay);
+        }
       }
     });
   }
@@ -169,10 +175,10 @@ class _QueryBowlScopeState extends State<QueryBowlScope> {
       // basically garbage collecting queries
       setState(() {
         infiniteQueries = Set.from(
-          // infiniteQuery.isInactive
-          //     ? infiniteQueries.where((el) => el.queryKey != infiniteQuery.queryKey)
-          //     : infiniteQuery,
-          infiniteQueries,
+          infiniteQuery.isInactive
+              ? infiniteQueries
+                  .where((el) => el.queryKey != infiniteQuery.queryKey)
+              : infiniteQueries,
         );
       });
     });
@@ -350,25 +356,25 @@ class QueryBowl extends InheritedWidget {
     return query;
   }
 
-  // InfiniteQuery<T, Outside, PageParam> _createInfiniteQueryWithDefaults<
-  //     T extends Object, Outside, PageParam extends Object>(
-  //   InfiniteQueryJob<T, Outside, PageParam> options,
-  //   Outside externalData,
-  // ) {
-  // final query = InfiniteQuery<T, Outside, PageParam>.fromOptions(
-  //   options,
-  //   externalData: externalData,
-  //   queryBowl: this,
-  // );
-  // query.updateDefaultOptions(
-  //   cacheTime: cacheTime,
-  //   staleTime: staleTime,
-  //   refetchInterval: refetchInterval,
-  //   refetchOnMount: refetchOnMount,
-  //   refetchOnReconnect: refetchOnReconnect,
-  // );
-  // return query;
-  // }
+  InfiniteQuery<T, Outside, PageParam> _createInfiniteQueryWithDefaults<
+      T extends Object, Outside, PageParam extends Object>(
+    InfiniteQueryJob<T, Outside, PageParam> options,
+    Outside externalData,
+  ) {
+    final infiniteQuery = InfiniteQuery<T, Outside, PageParam>.fromOptions(
+      options,
+      externalData: externalData,
+      queryBowl: this,
+    );
+    infiniteQuery.updateDefaultOptions(
+      cacheTime: cacheTime,
+      staleTime: staleTime,
+      refetchInterval: refetchInterval,
+      refetchOnMount: refetchOnMount,
+      refetchOnReconnect: refetchOnReconnect,
+    );
+    return infiniteQuery;
+  }
 
   Future<T?> prefetchQuery<T extends Object, Outside>(
     QueryJob<T, Outside> options, {
@@ -451,18 +457,15 @@ class QueryBowl extends InheritedWidget {
       // mounting the widget that is using the query in the prevQuery
       return prevInfiniteQuery;
     }
-    //  _createQueryWithDefaults<T, Outside, PageParam>(
-    //   infiniteQueryJob,
-    //   externalData,
-    // );
-    final infiniteQuery = InfiniteQuery<T, Outside, PageParam>.fromOptions(
+
+    final infiniteQuery =
+        _createInfiniteQueryWithDefaults<T, Outside, PageParam>(
       infiniteQueryJob,
-      externalData: externalData,
-      queryBowl: this,
+      externalData,
     );
-    // if (onData != null) infiniteQuery.addDataListener(onData);
-    // if (onError != null) infiniteQuery.addErrorListener(onError);
-    // infiniteQuery.mount(key);
+    if (onData != null) infiniteQuery.addDataListener(onData);
+    if (onError != null) infiniteQuery.addErrorListener(onError);
+    infiniteQuery.mount(key);
     _addInfiniteQuery<T, Outside, PageParam>(infiniteQuery);
     return infiniteQuery;
   }

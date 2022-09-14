@@ -4,6 +4,8 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_query/src/base_query.dart';
 import 'package:fl_query/src/models/infinite_query_job.dart';
 import 'package:fl_query/src/query.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:queue/queue.dart';
 
 typedef InfiniteQueryTaskFunction<T extends Object, Outside,
         PageParam extends Object>
@@ -91,6 +93,19 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
   List<dynamic> get errors => error?.values.toList() ?? [];
   List<T?> get pages => data?.values.toList() ?? [];
 
+  @override
+  @protected
+  Timer createRefetchTimer() {
+    return Timer.periodic(
+      refetchInterval!,
+      (_) async {
+        // only refetch if its connected to the internet or refetch will
+        // always result in error while there's no internet
+        if (isStale && await isInternetConnected()) await refetchPages();
+      },
+    );
+  }
+
   Future<T?> fetchNextPage([
     InfiniteQueryPageParamFunction<T, PageParam>? getNextPageParam,
   ]) async {
@@ -110,10 +125,11 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
         _hasNextPage = false;
         notifyListeners();
         return null;
+      } else {
+        _hasNextPage = true;
+        _currentParam = nextParam;
+        return await refetch().then((data) => data?[_currentParam]);
       }
-      _hasNextPage = true;
-      _currentParam = nextParam;
-      return await refetch().then((data) => data?[_currentParam]);
     } finally {
       _isFetchingNextPage = false;
       notifyListeners();
@@ -154,11 +170,53 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
     }
   }
 
+  Future<List<T>> refetchPages([
+    bool Function(T? page, int index, List<T?> allPages)? selector,
+  ]) async {
+    if (isFetchingNextPage ||
+        isFetchingPreviousPage ||
+        isLoading ||
+        isRefetching) return [];
+    final refetchedPages = <T>[];
+    final queue = Queue();
+    for (final entry in data?.entries.toList() ?? <MapEntry<PageParam, T?>>[]) {
+      final page = entry.value;
+      final selected = selector?.call(page, pages.indexOf(page), pages) ?? true;
+      if (!selected) continue;
+      _currentParam = entry.key;
+      queue.add<void>(
+        () async {
+          final s = await refetch();
+          if (s?[_currentParam] != null) {
+            refetchedPages.add(s![_currentParam]!);
+          }
+        },
+      );
+    }
+    await queue.onComplete;
+    return refetchedPages;
+  }
+
   @override
   // TODO: implement debugLabel
   String get debugLabel => "InfiniteQuery($queryKey)";
 
   @override
+  void mount(ValueKey<String> uKey) {
+    super.mount(uKey);
+
+    /// refetching on mount if it's set to true
+    /// also checking if the is stale or not
+    /// no need to refetch a valid query for no reason
+    if (refetchOnMount == true && isStale) {
+      this.isInternetConnected().then((isConnected) async {
+        if (isConnected) await refetchPages();
+      });
+    }
+  }
+
+  @override
+  @protected
   void setData() async {
     if (data == null) data = Map();
     data?[_currentParam] = await task(
@@ -169,6 +227,7 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
   }
 
   @override
+  @protected
   void setError(specError) {
     if (error is! Map) error = Map();
     error?[_currentParam] = specError;

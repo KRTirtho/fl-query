@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:fl_query/fl_query.dart';
 import 'package:http/http.dart' as http;
 
@@ -49,9 +48,18 @@ class BasicInfiniteQueryExample extends StatelessWidget {
                 ),
                 Align(
                   alignment: Alignment.bottomRight,
-                  child: IconButton(
-                    icon: const Icon(Icons.get_app_rounded),
-                    onPressed: () => infiniteQuery.fetchNextPage(),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.refresh_rounded),
+                        onPressed: () => infiniteQuery.refetchPages(),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.get_app_rounded),
+                        onPressed: () => infiniteQuery.fetchNextPage(),
+                      ),
+                    ],
                   ),
                 ),
               ],

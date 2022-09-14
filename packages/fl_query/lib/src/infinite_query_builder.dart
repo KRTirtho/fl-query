@@ -48,12 +48,75 @@ class _InfiniteQueryBuilderState<T extends Object, Outside,
     final hasExternalDataChanged = infiniteQuery!.externalData != null &&
         infiniteQuery!.prevUsedExternalData != null &&
         !isShallowEqual(
-            infiniteQuery!.externalData!, infiniteQuery!.prevUsedExternalData!);
+          infiniteQuery!.externalData!,
+          infiniteQuery!.prevUsedExternalData!,
+        );
+
     if (infiniteQuery!.fetched && hasExternalDataChanged) {
-      await infiniteQuery!.refetch();
+      await infiniteQuery!.refetchPages();
     } else if (!infiniteQuery!.fetched) {
       await infiniteQuery!.fetch();
     }
+  }
+
+  @override
+  void didUpdateWidget(covariant oldWidget) {
+    // final hasOnErrorChanged = false;
+    // oldWidget.onError != widget.onError && oldWidget.onError != null;
+    // final hasOnDataChanged = false;
+    // oldWidget.onData != widget.onData && oldWidget.onData != null;
+
+    // re-init the query-builder when new queryJob is appended
+    if (oldWidget.job.queryKey != widget.job.queryKey) {
+      _infiniteQueryDispose();
+      init();
+
+      /// setting the new query's initial data as prev query's data
+      /// when [job.keepPreviousData] is true and both are dynamic
+      // if (oldWidget.job.isDynamic &&
+      //     widget.job.isDynamic &&
+      //     oldWidget.job.keepPreviousData == true &&
+      //     widget.job.keepPreviousData == true) {
+      //   init(infiniteQuery?.pages);
+      // } else {
+      // init();
+      // }
+    } else if (oldWidget.externalData != null &&
+        widget.externalData != null &&
+        !isShallowEqual(oldWidget.externalData!, widget.externalData!)) {
+      if (widget.job.refetchOnExternalDataChange ??
+          queryBowl.refetchOnExternalDataChange) {
+        QueryBowl.of(context).addInfiniteQuery(
+          widget.job,
+          externalData: widget.externalData,
+          key: uKey,
+          // onData: widget.onData,
+          // onError: widget.onError,
+        )..refetchPages();
+      } else {
+        QueryBowl.of(context)
+            .getQuery(widget.job.queryKey)
+            ?.setExternalData(widget.externalData);
+      }
+      // if (hasOnDataChanged) query?.removeDataListener(oldWidget.onData!);
+      // if (hasOnErrorChanged) query?.removeErrorListener(oldWidget.onError!);
+    } else {
+      // if (hasOnDataChanged) {
+      // query?.removeDataListener(oldWidget.onData!);
+      // if (widget.onData != null) query?.addDataListener(widget.onData!);
+      // }
+      // if (hasOnErrorChanged) {
+      //   query?.removeErrorListener(oldWidget.onError!);
+      //   if (widget.onError != null) query?.addErrorListener(widget.onError!);
+      // }
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  _infiniteQueryDispose() {
+    infiniteQuery?.unmount(uKey);
+    // if (widget.onData != null) query?.removeDataListener(widget.onData!);
+    // if (widget.onError != null) query?.removeErrorListener(widget.onError!);
   }
 
   @override

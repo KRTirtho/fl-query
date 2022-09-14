@@ -71,7 +71,7 @@ abstract class BaseQuery<T extends Object, Outside, Error>
     if (onError != null) _onErrorListeners.add(onError);
 
     if (refetchInterval != null && refetchInterval != Duration.zero) {
-      _refetchIntervalTimer = _createRefetchTimer();
+      _refetchIntervalTimer = createRefetchTimer();
     }
   }
   // all getters & setters
@@ -79,16 +79,8 @@ abstract class BaseQuery<T extends Object, Outside, Error>
   Outside get externalData => _externalData;
   Outside? get prevUsedExternalData => _prevUsedExternalData;
 
-  Timer _createRefetchTimer() {
-    return Timer.periodic(
-      refetchInterval!,
-      (_) async {
-        // only refetch if its connected to the internet or refetch will
-        // always result in error while there's no internet
-        if (isStale && await isInternetConnected()) await refetch();
-      },
-    );
-  }
+  @protected
+  Timer createRefetchTimer();
 
   /// Calls the task function & doesn't check if there's already
   /// cached data available
@@ -205,7 +197,9 @@ abstract class BaseQuery<T extends Object, Outside, Error>
     return await execute().then((_) => data);
   }
 
+  @protected
   FutureOr<void> setData();
+  @protected
   void setError(dynamic);
 
   /// Sets the [externalData] from outside of the query
@@ -251,7 +245,7 @@ abstract class BaseQuery<T extends Object, Outside, Error>
         refetchInterval != Duration.zero) {
       this.refetchInterval = refetchInterval;
       _refetchIntervalTimer?.cancel();
-      _refetchIntervalTimer = _createRefetchTimer();
+      _refetchIntervalTimer = createRefetchTimer();
     }
     if (this.cacheTime == Duration(minutes: 5) && cacheTime != null)
       this.cacheTime = cacheTime;
