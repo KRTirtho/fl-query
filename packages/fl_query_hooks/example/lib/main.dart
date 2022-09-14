@@ -1,3 +1,4 @@
+import 'package:fl_query_hooks_example/components/basic_hook_infinite_query.dart';
 import 'package:fl_query_hooks_example/components/basic_hook_mutation.dart';
 import 'package:fl_query_hooks_example/components/basic_hook_query.dart';
 import 'package:fl_query_hooks_example/components/lazy_hook_query.dart';
@@ -49,15 +50,26 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
           child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
-          children: const [
-            BasicHookQueryExample(),
-            QueryHookExternalDataExample(),
-            LazyHookQueryExample(),
-            QueryHookVariableKeyExample(),
-            QueryHookPreviousDataExample(),
-            Divider(),
-            BasicHookMutationExample(),
-            MutationHookVariableKeyExample(),
+          children: [
+            const BasicHookQueryExample(),
+            const QueryHookExternalDataExample(),
+            const LazyHookQueryExample(),
+            const QueryHookVariableKeyExample(),
+            const QueryHookPreviousDataExample(),
+            ListTile(
+              title: const Text("Infinite Query Example"),
+              trailing: const Icon(Icons.open_in_new),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const BasicHookInfiniteQueryExample(),
+                  ),
+                );
+              },
+            ),
+            const Divider(),
+            const BasicHookMutationExample(),
+            const MutationHookVariableKeyExample(),
           ],
         ),
       )),
