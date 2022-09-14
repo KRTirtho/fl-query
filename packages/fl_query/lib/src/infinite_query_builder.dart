@@ -1,3 +1,5 @@
+// ignore_for_file: invalid_use_of_protected_member
+
 import 'package:fl_query/src/infinite_query.dart';
 import 'package:fl_query/src/models/infinite_query_job.dart';
 import 'package:fl_query/src/query_bowl.dart';

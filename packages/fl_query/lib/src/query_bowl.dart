@@ -598,8 +598,22 @@ class QueryBowl extends InheritedWidget {
   /// Mostly used in combination with [onMutate] callback of
   /// [MutationBuilder] & [useMutation] for optimistic updates
   void setQueryData<T extends Object, Outside>(
-      String queryKey, QueryUpdateFunction<T> updateCb) {
+    String queryKey,
+    QueryUpdateFunction<T> updateCb,
+  ) {
     getQuery<T, Outside>(queryKey)?.setQueryData(updateCb);
+  }
+
+  /// Sets [InfiniteQuery]'s data manually
+  ///
+  /// Mostly used in combination with [onMutate] callback of
+  /// [MutationBuilder] & [useMutation] for optimistic updates
+  void
+      setInfiniteQueryData<T extends Object, Outside, PageParam extends Object>(
+    String queryKey,
+    QueryUpdateFunction<Map<PageParam, T?>> updateCb,
+  ) {
+    getInfiniteQuery<T, Outside, PageParam>(queryKey)?.setQueryData(updateCb);
   }
 
   /// resets all the queries matching the passed List of queryKeys

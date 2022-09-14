@@ -97,23 +97,6 @@ class Query<T extends Object, Outside> extends BaseQuery<T, Outside, dynamic> {
     );
   }
 
-  /// can be used to update the data manually. Can be useful when used
-  /// together with mutations to perform optimistic updates or manual data
-  /// updates
-  /// For updating particular queries after a mutation using the
-  /// `QueryBowl.refetchQueries` is more appropriate. But this one can be
-  /// used when only 1 query needs get updated
-  ///
-  /// Every time a new instance of data should be returned because of
-  /// immutability
-  void setQueryData(QueryUpdateFunction<T> updateFn) async {
-    final newData = await updateFn(data);
-    if (data == newData) return;
-    data = newData;
-    status = QueryStatus.success;
-    notifyListeners();
-  }
-
   String get debugLabel => "Query($queryKey)";
 
   @override
