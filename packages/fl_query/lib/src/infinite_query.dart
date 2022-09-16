@@ -14,6 +14,10 @@ typedef InfiniteQueryTaskFunction<T extends Object, Outside,
   PageParam pageParam,
   Outside externalData,
 );
+
+typedef InfiniteQueryListeners<T, PageParam extends Object> = FutureOr<void>
+    Function(T page, PageParam pageParam, List<T?> pages);
+
 typedef InfiniteQueryPageParamFunction<T extends Object,
         PageParam extends Object>
     = FutureOr<PageParam> Function(T lastPage, PageParam lastParam);
@@ -38,6 +42,10 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
 
   PageParam _currentParam;
 
+  final Set<InfiniteQueryListeners<T, PageParam>> onDataListeners = Set();
+  final Set<InfiniteQueryListeners<dynamic, PageParam>> onErrorListeners =
+      Set();
+
   InfiniteQuery({
     required super.queryKey,
     required this.task,
@@ -55,8 +63,8 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
     super.enabled,
     super.previousData,
     super.connectivity,
-    super.onData,
-    super.onError,
+    InfiniteQueryListeners<T, PageParam>? super.onData,
+    InfiniteQueryListeners<dynamic, PageParam>? super.onError,
     required T? initialPage,
     this.getNextPageParam,
     this.getPreviousPageParam,
@@ -67,8 +75,8 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
     InfiniteQueryJob<T, Outside, PageParam> options, {
     required super.queryBowl,
     required Outside externalData,
-    QueryListener<T>? onData,
-    QueryListener<dynamic>? onError,
+    InfiniteQueryListeners<T, PageParam>? onData,
+    InfiniteQueryListeners<dynamic, PageParam>? onError,
   })  : task = options.task,
         _currentParam = options.initialParam,
         getNextPageParam = options.getNextPageParam,
@@ -114,13 +122,16 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
           isFetchingPreviousPage ||
           isLoading ||
           isRefetching) return null;
-      if (data == null || data?[_currentParam] == null) execute();
+      final page = data?[_currentParam];
+      if (data == null || page == null) await execute();
       _isFetchingNextPage = true;
       _isFetchingPreviousPage = false;
-      final nextParam = await (getNextPageParam ?? this.getNextPageParam)?.call(
-        data![_currentParam]!,
-        _currentParam,
-      );
+      final nextParam = page != null
+          ? await (getNextPageParam ?? this.getNextPageParam)?.call(
+              page,
+              _currentParam,
+            )
+          : null;
       if (nextParam == null) {
         _hasNextPage = false;
         notifyListeners();
@@ -128,7 +139,7 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
       } else {
         _hasNextPage = true;
         _currentParam = nextParam;
-        return await refetch().then((data) => data?[_currentParam]);
+        return await fetch().then((_) => data?[_currentParam]);
       }
     } finally {
       _isFetchingNextPage = false;
@@ -147,12 +158,14 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
       _isFetchingPreviousPage = true;
       _isFetchingNextPage = false;
       notifyListeners();
-      if (data?[_currentParam] == null) execute();
-      final prevParam =
-          await (getPreviousPageParam ?? this.getPreviousPageParam)?.call(
-        data![_currentParam]!,
-        _currentParam,
-      );
+      final page = data?[_currentParam];
+      if (page == null) await execute();
+      final prevParam = page != null
+          ? await (getPreviousPageParam ?? this.getPreviousPageParam)?.call(
+              page,
+              _currentParam,
+            )
+          : null;
       if (prevParam == null) {
         _hasPreviousPage = false;
         notifyListeners();
@@ -160,7 +173,7 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
       }
       _hasPreviousPage = true;
       _currentParam = prevParam;
-      return await refetch().then((_) => data?[_currentParam]);
+      return await fetch().then((_) => data?[_currentParam]);
     } catch (e) {
       print("[InfiniteQuery.fetchPreviousPage]: $e");
       rethrow;
@@ -231,6 +244,23 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
   void setError(specError) {
     if (error is! Map) error = Map();
     error?[_currentParam] = specError;
+  }
+
+  @override
+  @protected
+  FutureOr<void> notifyDataListeners() async {
+    for (var onData in onDataListeners) {
+      if (data?[_currentParam] == null) continue;
+      onData.call(data![_currentParam]!, _currentParam, pages);
+    }
+  }
+
+  @override
+  @protected
+  FutureOr<void> notifyErrorListeners() async {
+    for (var onError in onErrorListeners) {
+      onError.call(error?[_currentParam], _currentParam, errors);
+    }
   }
 
   @override

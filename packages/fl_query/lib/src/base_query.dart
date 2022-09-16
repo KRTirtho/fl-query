@@ -26,8 +26,10 @@ abstract class BaseQuery<T extends Object, Outside, Error>
 
   QueryStatus status;
 
-  final Set _onDataListeners = Set();
-  final Set _onErrorListeners = Set();
+  @protected
+  final Set onDataListeners = Set();
+  @protected
+  final Set onErrorListeners = Set();
 
   // externalData will always be passed to the task Callback
   // it will change based on the presence of QueryBuilder
@@ -67,8 +69,8 @@ abstract class BaseQuery<T extends Object, Outside, Error>
         _connectivity = connectivity ?? Connectivity(),
         _previousData = previousData,
         super(data: previousData ?? initialData) {
-    if (onData != null) _onDataListeners.add(onData);
-    if (onError != null) _onErrorListeners.add(onError);
+    if (onData != null) onDataListeners.add(onData);
+    if (onError != null) onErrorListeners.add(onError);
 
     if (refetchInterval != null && refetchInterval != Duration.zero) {
       _refetchIntervalTimer = createRefetchTimer();
@@ -92,17 +94,13 @@ abstract class BaseQuery<T extends Object, Outside, Error>
       _prevUsedExternalData = _externalData;
       updatedAt = DateTime.now();
       status = QueryStatus.success;
-      for (final onData in _onDataListeners) {
-        onData(data!);
-      }
+      await notifyDataListeners();
       notifyListeners();
     } catch (e) {
       if (retries == 0) {
         status = QueryStatus.error;
         setError(e);
-        for (final onError in _onErrorListeners) {
-          onError(error);
-        }
+        await notifyErrorListeners();
         notifyListeners();
       } else {
         // retrying for retry count if failed for the first time
@@ -112,18 +110,14 @@ abstract class BaseQuery<T extends Object, Outside, Error>
             await setData();
             _prevUsedExternalData = _externalData;
             status = QueryStatus.success;
-            for (final onData in _onDataListeners) {
-              await onData(data!);
-            }
+            await notifyDataListeners();
             notifyListeners();
             break;
           } catch (e) {
             if (retryAttempts == retries) {
               status = QueryStatus.error;
               setError(e);
-              for (final onError in _onErrorListeners) {
-                await onError(error);
-              }
+              await notifyErrorListeners();
               notifyListeners();
               break;
             }
@@ -135,19 +129,19 @@ abstract class BaseQuery<T extends Object, Outside, Error>
   }
 
   void addDataListener(listener) {
-    _onDataListeners.add(listener);
+    onDataListeners.add(listener);
   }
 
   void addErrorListener(listener) {
-    _onErrorListeners.add(listener);
+    onErrorListeners.add(listener);
   }
 
   void removeDataListener(listener) {
-    _onDataListeners.remove(listener);
+    onDataListeners.remove(listener);
   }
 
   void removeErrorListener(listener) {
-    _onErrorListeners.remove(listener);
+    onErrorListeners.remove(listener);
   }
 
   /// fetches data or runs the provided task initially
@@ -185,6 +179,13 @@ abstract class BaseQuery<T extends Object, Outside, Error>
   /// the current available [data] instead of running the task to prevent
   /// race conditions
   Future<T?> refetch() async {
+    if (queryKey == "category-playlists#user-featured-playlists") {
+      print(
+        "Refetch Count of ${queryKey}-> ${refetchCount}",
+      );
+      print(StackTrace.current);
+    }
+
     /// if isLoading/isRefetching is true that means its already fetching/
     /// refetching. So [_execute] again can create a race condition
     if (isRefetching || isLoading) return data;
@@ -201,6 +202,19 @@ abstract class BaseQuery<T extends Object, Outside, Error>
   FutureOr<void> setData();
   @protected
   void setError(dynamic);
+  @protected
+  FutureOr<void> notifyDataListeners() async {
+    for (final onData in onDataListeners) {
+      await onData(error);
+    }
+  }
+
+  @protected
+  FutureOr<void> notifyErrorListeners() async {
+    for (final onError in onErrorListeners) {
+      await onError(error);
+    }
+  }
 
   /// Sets the [externalData] from outside of the query
   ///
@@ -222,8 +236,8 @@ abstract class BaseQuery<T extends Object, Outside, Error>
     fetched = false;
     status = QueryStatus.idle;
     retryAttempts = 0;
-    _onDataListeners.clear();
-    _onErrorListeners.clear();
+    onDataListeners.clear();
+    onErrorListeners.clear();
     mounts.clear();
   }
 

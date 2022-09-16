@@ -434,8 +434,8 @@ class QueryBowl extends InheritedWidget {
     InfiniteQueryJob<T, Outside, PageParam> infiniteQueryJob, {
     required Outside externalData,
     required ValueKey<String> key,
-    final QueryListener<T>? onData,
-    final QueryListener<dynamic>? onError,
+    final InfiniteQueryListeners<T, PageParam>? onData,
+    final InfiniteQueryListeners<dynamic, PageParam>? onError,
   }) {
     final prevInfiniteQuery = _infiniteQueries.firstWhereOrNull(
       (q) => q.queryKey == infiniteQueryJob.queryKey,

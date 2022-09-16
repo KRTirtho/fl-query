@@ -39,6 +39,9 @@ typedef QueryUpdateFunction<T> = FutureOr<T> Function(T? oldData);
 class Query<T extends Object, Outside> extends BaseQuery<T, Outside, dynamic> {
   QueryTaskFunction<T, Outside> task;
 
+  final Set<QueryListener<T>> onDataListeners = Set();
+  final Set<QueryListener<dynamic>> onErrorListeners = Set();
+
   Query({
     required super.queryKey,
     required this.task,
@@ -56,8 +59,8 @@ class Query<T extends Object, Outside> extends BaseQuery<T, Outside, dynamic> {
     super.previousData,
     super.connectivity,
     super.initialData,
-    super.onData,
-    super.onError,
+    QueryListener<T>? super.onData,
+    QueryListener<dynamic>? super.onError,
   });
 
   Query.fromOptions(
