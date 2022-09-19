@@ -37,9 +37,36 @@ class BasicInfiniteQueryExample extends StatelessWidget {
             return Stack(
               children: [
                 ListView.builder(
-                  itemCount: infiniteQuery.pages.length,
+                  itemCount: infiniteQuery.pages.length + 1,
                   itemBuilder: (context, index) {
-                    final page = infiniteQuery.pages[index];
+                    if (index == 0) {
+                      return Text(
+                        """
+    InfiniteQuery properties
+
+    isFetchingNextPage: ${infiniteQuery.isFetchingNextPage}
+    isFetchingPreviousPage: ${infiniteQuery.isFetchingPreviousPage}
+    isLoading: ${infiniteQuery.isLoading}
+    isRefetching: ${infiniteQuery.isRefetching}
+    isError: ${infiniteQuery.isError}
+    isSuccess: ${infiniteQuery.isSuccess}
+    isIdle: ${infiniteQuery.isIdle}
+    isInactive: ${infiniteQuery.isInactive}
+    isStale: ${infiniteQuery.isStale}
+    fetched: ${infiniteQuery.fetched}
+    
+    hasData: ${infiniteQuery.hasData}
+    hasError: ${infiniteQuery.hasError}
+    hasNextPage: ${infiniteQuery.hasNextPage}
+    hasPreviousPage: ${infiniteQuery.hasPreviousPage}
+
+    refetchCount: ${infiniteQuery.refetchCount}
+    retryAttempts: ${infiniteQuery.retryAttempts}
+    updatedAt: ${infiniteQuery.updatedAt}
+                    """,
+                      );
+                    }
+                    final page = infiniteQuery.pages[index - 1];
                     return ListTile(
                       title: Text(page?["title"] ?? ""),
                       subtitle: Text(page?["body"] ?? ""),

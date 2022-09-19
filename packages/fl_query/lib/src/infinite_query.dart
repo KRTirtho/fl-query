@@ -29,8 +29,8 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
   InfiniteQueryPageParamFunction<T, PageParam>? getNextPageParam;
   InfiniteQueryPageParamFunction<T, PageParam>? getPreviousPageParam;
 
-  bool _hasNextPage = false;
-  bool _hasPreviousPage = false;
+  bool _hasNextPage = true;
+  bool _hasPreviousPage = true;
 
   bool _isFetchingNextPage = false;
   bool _isFetchingPreviousPage = false;
@@ -184,7 +184,7 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
   }
 
   Future<List<T>> refetchPages([
-    bool Function(T? page, int index, List<T?> allPages)? selector,
+    bool Function(T? page, PageParam pageParam, List<T?> allPages)? selector,
   ]) async {
     if (isFetchingNextPage ||
         isFetchingPreviousPage ||
@@ -194,7 +194,7 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
     final queue = Queue();
     for (final entry in data?.entries.toList() ?? <MapEntry<PageParam, T?>>[]) {
       final page = entry.value;
-      final selected = selector?.call(page, pages.indexOf(page), pages) ?? true;
+      final selected = selector?.call(page, entry.key, pages) ?? true;
       if (!selected) continue;
       _currentParam = entry.key;
       queue.add<void>(
