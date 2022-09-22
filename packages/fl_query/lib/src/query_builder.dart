@@ -1,13 +1,11 @@
-// ignore_for_file: invalid_use_of_protected_member
-
 import 'package:fl_query/src/models/query_job.dart';
 import 'package:fl_query/src/query.dart';
 import 'package:fl_query/src/query_bowl.dart';
 import 'package:fl_query/src/utils.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/cupertino.dart';
 
 class QueryBuilder<T extends Object, Outside> extends StatefulWidget {
-  final Function(BuildContext context, Query<T, Outside> query) builder;
+  final Widget Function(BuildContext context, Query<T, Outside> query) builder;
   final QueryJob<T, Outside> job;
   final Outside externalData;
 
@@ -28,21 +26,34 @@ class QueryBuilder<T extends Object, Outside> extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<QueryBuilder<T, Outside>> createState() =>
+  _QueryBuilderState<T, Outside> createState() =>
       _QueryBuilderState<T, Outside>();
 }
 
 class _QueryBuilderState<T extends Object, Outside>
     extends State<QueryBuilder<T, Outside>> {
-  late QueryBowl queryBowl;
-  late final ValueKey<String> uKey;
   Query<T, Outside>? query;
+  late final ValueKey<String> uKey;
 
   @override
   void initState() {
     super.initState();
+
     uKey = ValueKey<String>(uuid.v4());
-    WidgetsBinding.instance.addPostFrameCallback((_) => init());
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      init();
+
+      QueryBowl.of(context).onQueriesUpdate<T, Outside>(
+        (query) {
+          if (query.queryKey != widget.job.queryKey) return;
+          if (mounted)
+            setState(() {
+              this.query = query;
+            });
+        },
+      );
+    });
   }
 
   void init([T? previousData]) async {
@@ -55,6 +66,7 @@ class _QueryBuilderState<T extends Object, Outside>
       onData: widget.onData,
       onError: widget.onError,
     );
+
     final hasExternalDataChanged = query!.externalData != null &&
         query!.prevUsedExternalData != null &&
         !isShallowEqual(
@@ -71,6 +83,7 @@ class _QueryBuilderState<T extends Object, Outside>
 
   @override
   void didUpdateWidget(covariant oldWidget) {
+    final bowl = QueryBowl.of(context);
     final hasOnErrorChanged =
         oldWidget.onError != widget.onError && oldWidget.onError != null;
     final hasOnDataChanged =
@@ -94,8 +107,8 @@ class _QueryBuilderState<T extends Object, Outside>
         widget.externalData != null &&
         !isShallowEqual(oldWidget.externalData!, widget.externalData!)) {
       if (widget.job.refetchOnExternalDataChange ??
-          queryBowl.refetchOnExternalDataChange) {
-        QueryBowl.of(context).fetchQuery(
+          bowl.refetchOnExternalDataChange) {
+        bowl.fetchQuery(
           widget.job,
           externalData: widget.externalData,
           onData: widget.onData,
@@ -103,7 +116,7 @@ class _QueryBuilderState<T extends Object, Outside>
           key: uKey,
         );
       } else {
-        QueryBowl.of(context)
+        bowl
             .getQuery(widget.job.queryKey)
             ?.setExternalData(widget.externalData);
       }
@@ -136,10 +149,7 @@ class _QueryBuilderState<T extends Object, Outside>
 
   @override
   Widget build(BuildContext context) {
-    queryBowl = QueryBowl.of(context);
-    final latestQuery =
-        queryBowl.getQuery<T, Outside>(widget.job.queryKey) ?? query;
-    if (latestQuery == null) return Container();
-    return widget.builder(context, latestQuery);
+    if (query == null) return Container();
+    return widget.builder(context, query!);
   }
 }

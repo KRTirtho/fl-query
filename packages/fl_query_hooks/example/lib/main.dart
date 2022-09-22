@@ -19,6 +19,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return QueryBowlScope(
+      bowl: QueryBowl(),
       child: MaterialApp(
         // showPerformanceOverlay: true,
         title: 'Fl-Query Hooks Example',

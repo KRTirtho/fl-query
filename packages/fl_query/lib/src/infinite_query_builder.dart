@@ -42,11 +42,23 @@ class _InfiniteQueryBuilderState<T extends Object, Outside,
   void initState() {
     super.initState();
     uKey = ValueKey<String>(uuid.v4());
-    WidgetsBinding.instance.addPostFrameCallback((_) => init());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      init();
+      QueryBowl.of(context).onInfiniteQueriesUpdate<T, Outside, PageParam>(
+        (infiniteQuery) {
+          if (infiniteQuery.queryKey != widget.job.queryKey) return;
+          if (mounted)
+            setState(() {
+              this.infiniteQuery = infiniteQuery;
+            });
+        },
+      );
+    });
   }
 
   void init([T? previousData]) async {
     final bowl = QueryBowl.of(context);
+
     infiniteQuery = bowl.addInfiniteQuery<T, Outside, PageParam>(
       widget.job,
       externalData: widget.externalData,

@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';
 
+final bowl = QueryBowl();
+
 final successJob = QueryJob<String, void>(
   queryKey: "greetings-example",
   task: (queryKey, _) => Future.delayed(

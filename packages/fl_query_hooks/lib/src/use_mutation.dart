@@ -20,6 +20,8 @@ Mutation<T, V> useMutation<T extends Object, V>({
   List<Object?>? keys,
 }) {
   final context = useContext();
+  final mounted = useIsMounted();
+  final update = useForceUpdate();
   final QueryBowl queryBowl = QueryBowl.of(context);
   final ValueKey<String> uKey = useMemoized(() => ValueKey(uuid.v4()), []);
   final mutation =
@@ -33,6 +35,7 @@ Mutation<T, V> useMutation<T extends Object, V>({
       onMutate: onMutate,
       key: uKey,
     );
+    update();
   }, [mutation.value, job, onData, onError, onMutate, uKey]);
 
   final disposeMutation = useCallback(() {
@@ -48,7 +51,16 @@ Mutation<T, V> useMutation<T extends Object, V>({
   final oldOnMutate = usePrevious(onMutate);
 
   useEffect(() {
-    init();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      init();
+      QueryBowl.of(context).onMutationsUpdate<T, V>(
+        (newMutation) {
+          if (newMutation.mutationKey != job.mutationKey || !mounted()) return;
+          mutation.value = newMutation;
+          update();
+        },
+      );
+    });
     return disposeMutation;
   }, []);
 
@@ -73,5 +85,5 @@ Mutation<T, V> useMutation<T extends Object, V>({
     return null;
   });
 
-  return queryBowl.getMutation<T, V>(job.mutationKey) ?? mutation.value;
+  return mutation.value;
 }

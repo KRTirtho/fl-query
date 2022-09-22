@@ -17,6 +17,8 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
   QueryListener<dynamic>? onError,
   List<Object?>? keys,
 }) {
+  final mounted = useIsMounted();
+  final update = useForceUpdate();
   final context = useContext();
   final QueryBowl queryBowl = QueryBowl.of(context);
   final ValueKey<String> uKey = useMemoized(() => ValueKey(uuid.v4()), []);
@@ -42,6 +44,7 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
       onData: onData,
       onError: onError,
     );
+    update();
     final hasExternalDataChanged = query.value.externalData != null &&
         query.value.prevUsedExternalData != null &&
         !isShallowEqual(
@@ -60,7 +63,16 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
   }, [query.value, onData, onError, uKey]);
 
   useEffect(() {
-    init();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      init();
+      QueryBowl.of(context).onQueriesUpdate<T, Outside>(
+        (newQuery) {
+          if (newQuery.queryKey != job.queryKey || !mounted()) return;
+          query.value = newQuery;
+          update();
+        },
+      );
+    });
     return disposeQuery;
   }, []);
 
@@ -113,5 +125,5 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
     return null;
   });
 
-  return queryBowl.getQuery<T, Outside>(job.queryKey) ?? query.value;
+  return query.value;
 }
