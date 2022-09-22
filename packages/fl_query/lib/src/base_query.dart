@@ -254,22 +254,33 @@ abstract class BaseQuery<T extends Object, Outside, Error>
     bool? refetchOnMount,
     bool? refetchOnReconnect,
   }) {
+    bool updated = false;
     if (this.refetchInterval == null &&
         refetchInterval != null &&
         refetchInterval != Duration.zero) {
       this.refetchInterval = refetchInterval;
       _refetchIntervalTimer?.cancel();
       _refetchIntervalTimer = createRefetchTimer();
+      updated = true;
     }
-    if (this.cacheTime == Duration(minutes: 5) && cacheTime != null)
+    if (this.cacheTime == Duration(minutes: 5) && cacheTime != null) {
       this.cacheTime = cacheTime;
+      updated = true;
+    }
     if (this._staleTime == const Duration(milliseconds: 500) &&
-        staleTime != null) this._staleTime = staleTime;
-    if (this.refetchOnMount == null && refetchOnMount != null)
+        staleTime != null) {
+      this._staleTime = staleTime;
+      updated = true;
+    }
+    if (this.refetchOnMount == null && refetchOnMount != null) {
       this.refetchOnMount = refetchOnMount;
-    if (this.refetchOnReconnect == null && refetchOnReconnect != null)
+      updated = true;
+    }
+    if (this.refetchOnReconnect == null && refetchOnReconnect != null) {
       this.refetchOnReconnect = refetchOnReconnect;
-    notifyListeners();
+      updated = true;
+    }
+    if (updated) notifyListeners();
   }
 
   /// checks if the application is connected to internet in any mean

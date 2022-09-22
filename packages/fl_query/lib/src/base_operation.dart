@@ -1,4 +1,3 @@
-import 'package:fl_query/src/query_bowl.dart';
 import 'package:flutter/widgets.dart';
 
 abstract class BaseOperation<Data, Error> extends ChangeNotifier {
@@ -27,7 +26,7 @@ abstract class BaseOperation<Data, Error> extends ChangeNotifier {
   /// storage/cache
   Set<ValueKey<String>> _mounts = {};
 
-  final QueryBowl queryBowl;
+  final queryBowl;
 
   BaseOperation({
     required this.cacheTime,

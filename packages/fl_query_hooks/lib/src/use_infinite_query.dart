@@ -19,6 +19,8 @@ InfiniteQuery<T, Outside, PageParam>
   List<Object?>? keys,
 }) {
   final context = useContext();
+  final mounted = useIsMounted();
+  final update = useForceUpdate();
   final QueryBowl queryBowl = QueryBowl.of(context);
   final ValueKey<String> uKey = useMemoized(() => ValueKey(uuid.v4()), []);
   final infiniteQuery = useRef(
@@ -42,6 +44,7 @@ InfiniteQuery<T, Outside, PageParam>
       onData: onData,
       onError: onError,
     );
+    update();
     final hasExternalDataChanged = infiniteQuery.value.externalData != null &&
         infiniteQuery.value.prevUsedExternalData != null &&
         !isShallowEqual(infiniteQuery.value.externalData!,
@@ -73,7 +76,16 @@ InfiniteQuery<T, Outside, PageParam>
   ]);
 
   useEffect(() {
-    init();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      init();
+      QueryBowl.of(context).onInfiniteQueriesUpdate<T, Outside, PageParam>(
+        (newInfiniteQuery) {
+          if (newInfiniteQuery.queryKey != job.queryKey || !mounted()) return;
+          infiniteQuery.value = newInfiniteQuery;
+          update();
+        },
+      );
+    });
     return disposeQuery;
   }, []);
 
@@ -117,6 +129,5 @@ InfiniteQuery<T, Outside, PageParam>
     return null;
   });
 
-  return queryBowl.getInfiniteQuery<T, Outside, PageParam>(job.queryKey) ??
-      infiniteQuery.value;
+  return infiniteQuery.value;
 }

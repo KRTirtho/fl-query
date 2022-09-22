@@ -37,8 +37,6 @@ class MutationBuilder<T extends Object, V> extends StatefulWidget {
 
 class _MutationBuilderState<T extends Object, V>
     extends State<MutationBuilder<T, V>> {
-  late QueryBowl queryBowl;
-
   late ValueKey<String> uKey;
 
   Mutation<T, V>? mutation;
@@ -47,18 +45,32 @@ class _MutationBuilderState<T extends Object, V>
   void initState() {
     super.initState();
     uKey = ValueKey<String>(uuid.v4());
-    WidgetsBinding.instance.addPostFrameCallback(init);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      init();
+      QueryBowl.of(context).onMutationsUpdate<T, V>(
+        (mutation) {
+          if (mutation.mutationKey != widget.job.mutationKey || !mounted)
+            return;
+          setState(() {
+            this.mutation = mutation;
+          });
+        },
+      );
+    });
   }
 
   void init([_]) {
-    queryBowl = QueryBowl.of(context);
-    mutation = queryBowl.addMutation<T, V>(
-      widget.job,
-      onData: widget.onData,
-      onError: widget.onError,
-      onMutate: widget.onMutate,
-      key: uKey,
-    );
+    final bowl = QueryBowl.of(context);
+
+    setState(() {
+      mutation = bowl.addMutation<T, V>(
+        widget.job,
+        onData: widget.onData,
+        onError: widget.onError,
+        onMutate: widget.onMutate,
+        key: uKey,
+      );
+    });
   }
 
   @override
@@ -99,10 +111,7 @@ class _MutationBuilderState<T extends Object, V>
 
   @override
   Widget build(BuildContext context) {
-    queryBowl = QueryBowl.of(context);
-    final latestMutation =
-        queryBowl.getMutation<T, V>(widget.job.mutationKey) ?? mutation;
-    if (latestMutation == null) return Container();
-    return widget.builder(context, latestMutation);
+    if (mutation == null) return Container();
+    return widget.builder(context, mutation!);
   }
 }
