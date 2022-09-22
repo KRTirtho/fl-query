@@ -45,6 +45,7 @@ First wrap your `MaterialApp` with with `QueryBowlScope` widget
 ```dart
   Widget build(BuildContext context) {
     return QueryBowlScope(
+      bowl: QueryBowl(),
       child: MaterialApp(
         title: 'Fl-Query Example App',
         theme: ThemeData(

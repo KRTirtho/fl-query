@@ -39,6 +39,7 @@ class MyApp extends StatelessWidget {
     // QueryBowlScope creates a Bowl (metaphor for Collection/Store)
     // for all the Queries & Mutations
     return QueryBowlScope(
+      bowl: QueryBowl(),
       child: MaterialApp(
         title: 'Fl-Query Quick Start',
         theme: ThemeData(
