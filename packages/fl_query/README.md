@@ -16,6 +16,7 @@ Fl-Query makes asynchronous server state management a breeze in flutter
 - Smart + effective refetching
 - Optimistic updates
 - Automatically cached data invalidation & unneeded query/mutation garbage collection
+- Infinite data pagination via `InfiniteQuery`
 - Easy to write & understand code. Follows DRY (Don't repeat yourself) convention
 - Compatible with both vanilla Flutter & elite [flutter_hooks](https://pub.dev/packages/flutter_hooks)
 
@@ -139,7 +140,9 @@ class Example extends HookWidget{
 ```
 
 # Why?
-![The hell, why?](https://media.giphy.com/media/1M9fmo1WAFVK0/giphy.gif)
+<p align="center">
+<img src="https://media.giphy.com/media/1M9fmo1WAFVK0/giphy.gif" alt="The hell, why?">
+</p>
 
 The main purpose of Fl-Query is providing the easiest way to manage the messy server-state part requiring the least amount of code with code reusability & performance
 

@@ -1,4 +1,4 @@
-!["Fl-Query Logo"](assets/fl-query-banner.png)
+!["Fl-Query Logo"](https://user-images.githubusercontent.com/61944859/178648225-611d248b-df97-4f0d-b298-b178bb141a29.png)
 <h1>
   <p align="center">
     Fl-Query
@@ -16,16 +16,9 @@ Fl-Query makes asynchronous server state management a breeze in flutter
 - Smart + effective refetching
 - Optimistic updates
 - Automatically cached data invalidation & unneeded query/mutation garbage collection
+- Infinite data pagination via `InfiniteQuery`
 - Easy to write & understand code. Follows DRY (Don't repeat yourself) convention
 - Compatible with both vanilla Flutter & elite [flutter_hooks](https://pub.dev/packages/flutter_hooks)
-
-
-## Support Us
-<a href="https://www.buymeacoffee.com/krtirtho">
-<img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=krtirtho&button_colour=FF5F5F&font_colour=ffffff&font_family=Inter&outline_colour=000000&coffee_colour=FFDD00" />
-</a>
-<br/>
-<a href="https://patreon.com/krtirtho"><img src="https://user-images.githubusercontent.com/61944859/180249027-678b01b8-c336-451e-b147-6d84a5b9d0e7.png" width="250"/></a>
 
 # Installation
 
@@ -53,6 +46,7 @@ First wrap your `MaterialApp` with with `QueryBowlScope` widget
 ```dart
   Widget build(BuildContext context) {
     return QueryBowlScope(
+      bowl: QueryBowl(),
       child: MaterialApp(
         title: 'Fl-Query Example App',
         theme: ThemeData(
@@ -146,7 +140,9 @@ class Example extends HookWidget{
 ```
 
 # Why?
-![The hell, why?](https://media.giphy.com/media/1M9fmo1WAFVK0/giphy.gif)
+<p align="center">
+<img src="https://media.giphy.com/media/1M9fmo1WAFVK0/giphy.gif" alt="The hell, why?">
+</p>
 
 The main purpose of Fl-Query is providing the easiest way to manage the messy server-state part requiring the least amount of code with code reusability & performance
 
