@@ -19,7 +19,6 @@ class InfiniteQueryJob<T extends Object, Outside, PageParam extends Object> {
   final bool? refetchOnMount;
   final bool? refetchOnReconnect;
   final bool? refetchOnExternalDataChange;
-  final bool? keepPreviousData;
   final Duration? staleTime;
   final Duration? cacheTime;
 
@@ -48,7 +47,6 @@ class InfiniteQueryJob<T extends Object, Outside, PageParam extends Object> {
     this.refetchOnReconnect,
     this.refetchOnExternalDataChange,
     this.connectivity,
-    this.keepPreviousData,
   }) : _queryKey = queryKey;
 
   String get queryKey => _queryKey;
@@ -75,7 +73,6 @@ class InfiniteQueryJob<T extends Object, Outside, PageParam extends Object> {
     bool? refetchOnReconnect,
     bool? refetchOnExternalDataChange,
     Connectivity? connectivity,
-    bool? keepPreviousData,
   }) {
     return (String queryKey) {
       if (preQueryKey != null) queryKey = "$preQueryKey#$queryKey";
@@ -95,7 +92,6 @@ class InfiniteQueryJob<T extends Object, Outside, PageParam extends Object> {
         refetchOnReconnect: refetchOnReconnect,
         refetchOnExternalDataChange: refetchOnExternalDataChange,
         connectivity: connectivity,
-        keepPreviousData: keepPreviousData,
         initialParam: initialParam,
       );
       query.isDynamic = true;
