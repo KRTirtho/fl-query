@@ -3,10 +3,14 @@ sidebar_position: 3
 title: Quick Start
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 
 This is a simple & dummy example that covers the usage of 
 - [Query](/)
 - [QueryJob](/)
+
 
 ```dart
 import 'package:fl_query/fl_query.dart';
@@ -51,9 +55,14 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+```
 
-class BasicExample extends StatelessWidget {
-  const BasicExample({Key? key}) : super(key: key);
+<Tabs>
+  <TabItem value="vanilla" label="Vanilla">
+
+```dart
+class MyHomePage extends StatelessWidget {
+  const MyHomePage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -92,6 +101,52 @@ class BasicExample extends StatelessWidget {
   }
 }
 ```
+
+  </TabItem>
+  <TabItem value="hooks" label="Flutter Hooks">
+
+```dart
+class MyHomePage extends HookWidget {
+  const MyHomePage({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // useQuery hook returns the expected query 
+    // instances based on the passed job & externalData argument
+    final query= useQuery<String, void>(
+      job: successJob,
+      externalData: null,
+    );
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "# Basic Query Example",
+          style: Theme.of(context).textTheme.headline5,
+        ),
+        if (!query.hasData || query.isLoading || query.isRefetching)
+          const CircularProgressIndicator();
+        else
+          Row(
+            children: [
+              Text(query.data!),
+              ElevatedButton(
+                child: const Text("Refetch"),
+                onPressed: () async {
+                  await query.refetch();
+                },
+              ), // Text
+            ],
+          ); // Row
+      ],
+    );
+  }
+}
+```
+
+  </TabItem>
+</Tabs>
 
 :::tip
 If you want to explore more you can see the [Example Application](https://github.com/KRTirtho/fl-query/tree/main/packages/example) which covers a lot of use-cases
