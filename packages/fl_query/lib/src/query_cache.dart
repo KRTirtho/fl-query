@@ -26,10 +26,9 @@ class QueryCache {
 
   final Set<CacheUpdateListener<BaseOperation>> _listeners = {};
 
-  ReadonlySet<Query> get queries => UnmodifiableSetView(_queries);
-  ReadonlySet<InfiniteQuery> get infiniteQueries =>
-      UnmodifiableSetView(_infiniteQueries);
-  ReadonlySet<Mutation> get mutations => UnmodifiableSetView(_mutations);
+  Set<Query> get queries => _queries;
+  Set<InfiniteQuery> get infiniteQueries => _infiniteQueries;
+  Set<Mutation> get mutations => _mutations;
 
   ReadonlySet<CacheUpdateListener<BaseOperation>> get listeners =>
       UnmodifiableSetView(_listeners);

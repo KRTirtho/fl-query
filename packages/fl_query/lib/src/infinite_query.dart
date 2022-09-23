@@ -211,7 +211,6 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
   }
 
   @override
-  // TODO: implement debugLabel
   String get debugLabel => "InfiniteQuery($queryKey)";
 
   @override

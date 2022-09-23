@@ -129,5 +129,5 @@ InfiniteQuery<T, Outside, PageParam>
     return null;
   });
 
-  return infiniteQuery.value;
+  return queryBowl.getInfiniteQuery(job.queryKey) ?? infiniteQuery.value;
 }

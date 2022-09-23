@@ -85,5 +85,5 @@ Mutation<T, V> useMutation<T extends Object, V>({
     return null;
   });
 
-  return mutation.value;
+  return queryBowl.getMutation(job.mutationKey) ?? mutation.value;
 }

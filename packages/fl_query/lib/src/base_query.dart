@@ -179,13 +179,6 @@ abstract class BaseQuery<T extends Object, Outside, Error>
   /// the current available [data] instead of running the task to prevent
   /// race conditions
   Future<T?> refetch() async {
-    if (queryKey == "category-playlists#user-featured-playlists") {
-      print(
-        "Refetch Count of ${queryKey}-> ${refetchCount}",
-      );
-      print(StackTrace.current);
-    }
-
     /// if isLoading/isRefetching is true that means its already fetching/
     /// refetching. So [_execute] again can create a race condition
     if (isRefetching || isLoading) return data;

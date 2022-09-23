@@ -125,5 +125,5 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
     return null;
   });
 
-  return query.value;
+  return queryBowl.getQuery(job.queryKey) ?? query.value;
 }
