@@ -38,6 +38,9 @@ class BasicQueryExample extends StatelessWidget {
         QueryBuilder<String, void>(
           job: successJob,
           externalData: null,
+          onData: (data) {
+            print("Success: $data");
+          },
           builder: (context, query) {
             if (!query.hasData || query.isLoading || query.isRefetching) {
               return const CircularProgressIndicator();
@@ -58,6 +61,9 @@ class BasicQueryExample extends StatelessWidget {
         QueryBuilder<String, void>(
           job: canFailJob,
           externalData: null,
+          onError: (error) {
+            print("Error: $error");
+          },
           builder: (context, query) {
             if (!query.hasData || query.isLoading || query.isRefetching) {
               return const CircularProgressIndicator();

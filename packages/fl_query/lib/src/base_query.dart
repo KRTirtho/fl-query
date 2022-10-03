@@ -197,7 +197,7 @@ abstract class BaseQuery<T extends Object, Outside, Error>
   @protected
   FutureOr<void> notifyDataListeners() async {
     for (final onData in onDataListeners) {
-      await onData(error);
+      await onData(data);
     }
   }
 
