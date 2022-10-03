@@ -24,8 +24,18 @@ Mutation<T, V> useMutation<T extends Object, V>({
   final update = useForceUpdate();
   final QueryBowl queryBowl = QueryBowl.of(context);
   final ValueKey<String> uKey = useMemoized(() => ValueKey(uuid.v4()), []);
-  final mutation =
-      useRef(Mutation<T, V>.fromOptions(job, queryBowl: queryBowl));
+  final mutation = useRef(
+    useMemoized(
+      () => queryBowl.addMutation<T, V>(
+        job,
+        onData: onData,
+        onError: onError,
+        onMutate: onMutate,
+        key: uKey,
+      ),
+      [],
+    ),
+  );
 
   final init = useCallback(() {
     mutation.value = queryBowl.addMutation<T, V>(
@@ -85,5 +95,5 @@ Mutation<T, V> useMutation<T extends Object, V>({
     return null;
   });
 
-  return queryBowl.getMutation(job.mutationKey) ?? mutation.value;
+  return mutation.value;
 }

@@ -264,7 +264,6 @@ class QueryBowl {
       options,
       externalData: externalData,
       previousData: previousData,
-      queryBowl: this,
     );
     query.updateDefaultOptions(
       cacheTime: cache.cacheTime,
@@ -284,7 +283,6 @@ class QueryBowl {
     final infiniteQuery = InfiniteQuery<T, Outside, PageParam>.fromOptions(
       options,
       externalData: externalData,
-      queryBowl: this,
     );
     infiniteQuery.updateDefaultOptions(
       cacheTime: cache.cacheTime,
@@ -400,7 +398,6 @@ class QueryBowl {
     } else {
       final mutation = Mutation<T, V>.fromOptions(
         mutationJob,
-        queryBowl: this,
       );
       if (onData != null) mutation.addDataListener(onData);
       if (onError != null) mutation.addErrorListener(onError);

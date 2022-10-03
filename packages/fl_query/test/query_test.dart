@@ -24,10 +24,8 @@ void main() {
   // for testing query without external data
   late Query query;
   late MockQueryJobVoidObject queryJob;
-  late MockQueryBowl queryBowl;
   setUp(() {
     queryJob = MockQueryJobVoidObject();
-    queryBowl = MockQueryBowl();
     when(queryJob.queryKey).thenReturn("test");
     when(queryJob.task).thenAnswer(
       (_) =>
@@ -36,7 +34,6 @@ void main() {
     query = Query.fromOptions(
       queryJob,
       externalData: null,
-      queryBowl: queryBowl,
     );
   });
 
@@ -86,7 +83,6 @@ void main() {
       query = Query.fromOptions(
         queryJob,
         externalData: null,
-        queryBowl: queryBowl,
       );
 
       await Future.delayed(Duration(milliseconds: 100));
@@ -119,7 +115,6 @@ void main() {
         query = Query.fromOptions(
           queryJob,
           externalData: null,
-          queryBowl: queryBowl,
         );
 
         await query.fetch();
@@ -150,7 +145,6 @@ void main() {
         query = Query.fromOptions(
           queryJob,
           externalData: null,
-          queryBowl: queryBowl,
         );
         int count = 0;
         query.addErrorListener((_) {
@@ -165,7 +159,6 @@ void main() {
       query = Query.fromOptions(
         queryJob,
         externalData: null,
-        queryBowl: queryBowl,
       );
       expect(query.isStale, isFalse);
       await Future.delayed(Duration(milliseconds: 300));
@@ -190,7 +183,6 @@ void main() {
         query = Query.fromOptions(
           queryJob,
           externalData: null,
-          queryBowl: queryBowl,
         );
 
         final data = await query.fetch();
@@ -210,7 +202,6 @@ void main() {
         query = Query.fromOptions(
           queryJob,
           externalData: null,
-          queryBowl: queryBowl,
         );
         final data = await query.fetch();
         query.invalidate();
@@ -237,7 +228,6 @@ void main() {
         query = Query.fromOptions(
           queryJob,
           externalData: null,
-          queryBowl: queryBowl,
         );
         final data = await query.fetch();
         query.invalidate();

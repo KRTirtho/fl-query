@@ -20,7 +20,7 @@ typedef InfiniteQueryListeners<T, PageParam extends Object> = FutureOr<void>
 
 typedef InfiniteQueryPageParamFunction<T extends Object,
         PageParam extends Object>
-    = FutureOr<PageParam> Function(T lastPage, PageParam lastParam);
+    = FutureOr<PageParam?> Function(T lastPage, PageParam lastParam);
 
 class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
     extends BaseQuery<Map<PageParam, T?>, Outside, Map<PageParam, dynamic>> {
@@ -54,7 +54,6 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
     required super.externalData,
     required super.retries,
     required super.retryDelay,
-    required super.queryBowl,
     required super.status,
     required PageParam initialParam,
     super.refetchOnMount,
@@ -73,7 +72,6 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
 
   InfiniteQuery.fromOptions(
     InfiniteQueryJob<T, Outside, PageParam> options, {
-    required super.queryBowl,
     required Outside externalData,
     InfiniteQueryListeners<T, PageParam>? onData,
     InfiniteQueryListeners<dynamic, PageParam>? onError,

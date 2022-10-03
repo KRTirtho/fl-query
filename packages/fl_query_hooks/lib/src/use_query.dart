@@ -23,10 +23,15 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
   final QueryBowl queryBowl = QueryBowl.of(context);
   final ValueKey<String> uKey = useMemoized(() => ValueKey(uuid.v4()), []);
   final query = useRef(
-    Query.fromOptions(
-      job,
-      externalData: externalData,
-      queryBowl: queryBowl,
+    useMemoized(
+      () => queryBowl.addQuery<T, Outside>(
+        job,
+        externalData: externalData,
+        key: uKey,
+        onData: onData,
+        onError: onError,
+      ),
+      [],
     ),
   );
 
@@ -125,5 +130,5 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
     return null;
   });
 
-  return queryBowl.getQuery(job.queryKey) ?? query.value;
+  return query.value;
 }

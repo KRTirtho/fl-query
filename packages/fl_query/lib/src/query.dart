@@ -50,7 +50,6 @@ class Query<T extends Object, Outside> extends BaseQuery<T, Outside, dynamic> {
     required super.externalData,
     required super.retries,
     required super.retryDelay,
-    required super.queryBowl,
     required super.status,
     super.refetchOnMount,
     super.refetchOnReconnect,
@@ -65,7 +64,6 @@ class Query<T extends Object, Outside> extends BaseQuery<T, Outside, dynamic> {
 
   Query.fromOptions(
     QueryJob<T, Outside> options, {
-    required super.queryBowl,
     required Outside externalData,
     T? previousData,
     QueryListener<T>? onData,

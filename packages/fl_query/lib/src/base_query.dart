@@ -52,7 +52,6 @@ abstract class BaseQuery<T extends Object, Outside, Error>
     required Outside externalData,
     required super.retries,
     required super.retryDelay,
-    required super.queryBowl,
     required this.status,
     this.refetchOnMount,
     this.refetchOnReconnect,

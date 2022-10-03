@@ -24,10 +24,15 @@ InfiniteQuery<T, Outside, PageParam>
   final QueryBowl queryBowl = QueryBowl.of(context);
   final ValueKey<String> uKey = useMemoized(() => ValueKey(uuid.v4()), []);
   final infiniteQuery = useRef(
-    InfiniteQuery.fromOptions(
-      job,
-      externalData: externalData,
-      queryBowl: queryBowl,
+    useMemoized(
+      () => queryBowl.addInfiniteQuery<T, Outside, PageParam>(
+        job,
+        externalData: externalData,
+        key: uKey,
+        onData: onData,
+        onError: onError,
+      ),
+      [],
     ),
   );
 
@@ -129,5 +134,5 @@ InfiniteQuery<T, Outside, PageParam>
     return null;
   });
 
-  return queryBowl.getInfiniteQuery(job.queryKey) ?? infiniteQuery.value;
+  return infiniteQuery.value;
 }
