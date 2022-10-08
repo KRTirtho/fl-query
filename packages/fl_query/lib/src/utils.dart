@@ -1,6 +1,8 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_query/src/query.dart';
 import 'package:uuid/uuid.dart';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart';
 
 Future<void> callQueryListeners<T>(Set<QueryListener<T>> listeners, T data) {
   return Future.wait(listeners.map(
@@ -54,3 +56,14 @@ bool isConnectedToInternet(ConnectivityResult result) {
 String getVariable(String queryKey) {
   return queryKey.split("#").last;
 }
+
+final kIsDesktop = kIsLinux || kIsWindows || kIsMacOS;
+
+final kIsMobile = kIsAndroid || kIsIOS;
+
+final kIsMacOS = kIsWeb ? false : Platform.isMacOS;
+
+final kIsLinux = kIsWeb ? false : Platform.isLinux;
+final kIsAndroid = kIsWeb ? false : Platform.isAndroid;
+final kIsIOS = kIsWeb ? false : Platform.isIOS;
+final kIsWindows = kIsWeb ? false : Platform.isWindows;

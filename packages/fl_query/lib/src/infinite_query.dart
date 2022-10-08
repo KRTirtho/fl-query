@@ -62,6 +62,7 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
     super.enabled,
     super.previousData,
     super.connectivity,
+    super.refetchOnApplicationResume,
     InfiniteQueryListeners<T, PageParam>? super.onData,
     InfiniteQueryListeners<dynamic, PageParam>? super.onError,
     required T? initialPage,
@@ -93,6 +94,9 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
           connectivity: options.connectivity ?? Connectivity(),
           queryKey: options.queryKey,
           initialData: {options.initialParam: options.initialPage},
+          refetchOnApplicationResume: options.refetchOnApplicationResume,
+          onData: onData,
+          onError: onError,
         );
 
   List<PageParam> get pageParams => data?.keys.toList() ?? [];

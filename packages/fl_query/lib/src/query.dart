@@ -58,6 +58,7 @@ class Query<T extends Object, Outside> extends BaseQuery<T, Outside, dynamic> {
     super.previousData,
     super.connectivity,
     super.initialData,
+    super.refetchOnApplicationResume,
     QueryListener<T>? super.onData,
     QueryListener<dynamic>? super.onError,
   });
@@ -84,6 +85,9 @@ class Query<T extends Object, Outside> extends BaseQuery<T, Outside, dynamic> {
           connectivity: options.connectivity ?? Connectivity(),
           previousData: previousData,
           queryKey: options.queryKey,
+          refetchOnApplicationResume: options.refetchOnApplicationResume,
+          onData: onData,
+          onError: onError,
         );
 
   @override

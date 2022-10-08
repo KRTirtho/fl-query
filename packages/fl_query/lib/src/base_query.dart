@@ -41,6 +41,9 @@ abstract class BaseQuery<T extends Object, Outside, Error>
 
   Timer? _refetchIntervalTimer;
 
+  bool? refetchOnApplicationResume;
+  bool? refetchOnWindowFocus;
+
   Connectivity _connectivity;
 
   T? _previousData;
@@ -56,6 +59,8 @@ abstract class BaseQuery<T extends Object, Outside, Error>
     this.refetchOnMount,
     this.refetchOnReconnect,
     this.refetchInterval,
+    this.refetchOnApplicationResume,
+    this.refetchOnWindowFocus,
     this.enabled = true,
     T? previousData,
     Connectivity? connectivity,
@@ -245,6 +250,8 @@ abstract class BaseQuery<T extends Object, Outside, Error>
     Duration? cacheTime,
     bool? refetchOnMount,
     bool? refetchOnReconnect,
+    bool? refetchOnApplicationResume,
+    bool? refetchOnWindowFocus,
   }) {
     bool updated = false;
     if (this.refetchInterval == null &&
@@ -270,6 +277,15 @@ abstract class BaseQuery<T extends Object, Outside, Error>
     }
     if (this.refetchOnReconnect == null && refetchOnReconnect != null) {
       this.refetchOnReconnect = refetchOnReconnect;
+      updated = true;
+    }
+    if (this.refetchOnApplicationResume == null &&
+        refetchOnApplicationResume != null) {
+      this.refetchOnApplicationResume = refetchOnApplicationResume;
+      updated = true;
+    }
+    if (this.refetchOnWindowFocus == null && refetchOnWindowFocus != null) {
+      this.refetchOnWindowFocus = refetchOnWindowFocus;
       updated = true;
     }
     if (updated) notifyListeners();

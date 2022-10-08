@@ -18,6 +18,8 @@ class QueryJob<T extends Object, Outside> {
   final bool? refetchOnMount;
   final bool? refetchOnReconnect;
   final bool? refetchOnExternalDataChange;
+  final bool? refetchOnApplicationResume;
+  final bool? refetchOnWindowFocus;
   final bool? keepPreviousData;
   final Duration? staleTime;
   final Duration? cacheTime;
@@ -43,6 +45,8 @@ class QueryJob<T extends Object, Outside> {
     this.refetchOnExternalDataChange,
     this.connectivity,
     this.keepPreviousData,
+    this.refetchOnApplicationResume,
+    this.refetchOnWindowFocus,
   }) : _queryKey = queryKey;
 
   String get queryKey => _queryKey;
@@ -65,6 +69,8 @@ class QueryJob<T extends Object, Outside> {
     bool? refetchOnMount,
     bool? refetchOnReconnect,
     bool? refetchOnExternalDataChange,
+    bool? refetchOnApplicationResume,
+    bool? refetchOnWindowFocus,
     Connectivity? connectivity,
     bool? keepPreviousData,
   }) {
@@ -85,6 +91,8 @@ class QueryJob<T extends Object, Outside> {
         refetchOnExternalDataChange: refetchOnExternalDataChange,
         connectivity: connectivity,
         keepPreviousData: keepPreviousData,
+        refetchOnApplicationResume: refetchOnApplicationResume,
+        refetchOnWindowFocus: refetchOnWindowFocus,
       );
       query.isDynamic = true;
       return query;

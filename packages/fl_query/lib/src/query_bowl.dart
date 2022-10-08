@@ -4,6 +4,7 @@ import 'package:fl_query/src/query_cache.dart';
 import 'package:fl_query/src/utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter/services.dart';
 
 /// The widget that holds every [Query] & [Mutation] to your
 /// entire Flutter application in anywhere
@@ -35,13 +36,31 @@ class QueryBowl {
   /// refetch query when new query instance mounts
   final bool refetchOnMount;
 
-  /// for desktop & web only (DUMMY & isn't implemented yet)
+  /// refetch when desktop/web app regains Focus
   final bool refetchOnWindowFocus;
 
-  /// for mobile only (DUMMY & isn't implemented yet)
+  /// the delay to call each query when desktop/web application gets focused after
+  /// being unfocused. Using a delay after each refetch so refetching all the
+  /// queries at once won't create high CPU spikes & also wouldn't violate
+  /// rate-limit
+  ///
+  /// Though its recommended most of the time to use but it can be turned
+  /// off by passing [Duration.zero]
+  final Duration refetchOnWindowFocusDelay;
+
+  /// refetch when application resumes from the background in mobile devices
   final bool refetchOnApplicationResume;
 
-  /// refetch when user's device reconnects to the internet after no being
+  /// the delay to call each query when app resumes from the background in
+  /// mobile devices. Using a delay after each refetch so refetching all the
+  /// queries at once won't create high CPU spikes & also wouldn't violate
+  /// rate-limit
+  ///
+  /// Though its recommended most of the time to use but it can be turned
+  /// off by passing [Duration.zero]
+  final Duration refetchOnApplicationResumeDelay;
+
+  /// refetch when user's device reconnects to the internet after not being
   /// connected before
   final bool refetchOnReconnect;
 
@@ -82,6 +101,8 @@ class QueryBowl {
     this.refetchOnMount = false,
     this.refetchOnReconnect = true,
     this.refetchOnReconnectDelay = const Duration(milliseconds: 100),
+    this.refetchOnApplicationResumeDelay = const Duration(milliseconds: 100),
+    this.refetchOnWindowFocusDelay = const Duration(milliseconds: 100),
     this.refetchOnApplicationResume = true,
     this.refetchOnWindowFocus = true,
     this.refetchOnExternalDataChange = false,
@@ -103,7 +124,32 @@ class QueryBowl {
         }
       }
     });
+
+    if (kIsMobile) {
+      SystemChannels.lifecycle.setMessageHandler((msg) async {
+        if (msg == 'AppLifecycleState.resumed') {
+          if (_canNotRefetchAfterWeGotTheApp) return null;
+          for (final query in this.cache.queries) {
+            if (query.refetchOnApplicationResume == false || !query.enabled)
+              continue;
+            await query.refetch();
+            await Future.delayed(refetchOnApplicationResumeDelay);
+          }
+          for (final infiniteQuery in this.cache.infiniteQueries) {
+            if (infiniteQuery.refetchOnApplicationResume == false ||
+                !infiniteQuery.enabled) continue;
+            await infiniteQuery.refetchPages();
+            await Future.delayed(refetchOnApplicationResumeDelay);
+          }
+        } else if (msg != null) {
+          updateWeLostTheApp();
+        }
+        return null;
+      });
+    }
   }
+
+  DateTime? _weLostTheAppAt;
 
   /// Returns the number of query is currently fetching or refetching
   int get isFetching {
@@ -125,6 +171,30 @@ class QueryBowl {
         return acc;
       },
     );
+  }
+
+  bool get _canNotRefetchAfterWeGotTheApp => (_weLostTheAppAt != null &&
+      _weLostTheAppAt!.difference(DateTime.now()) <= cache.cacheTime);
+
+  @protected
+  updateWeLostTheApp() {
+    _weLostTheAppAt = DateTime.now();
+  }
+
+  @protected
+  notifyWindowFocused() async {
+    if (kIsMobile || _canNotRefetchAfterWeGotTheApp) return;
+    for (final query in this.cache.queries) {
+      if (query.refetchOnWindowFocus == false || !query.enabled) continue;
+      await query.refetch();
+      await Future.delayed(refetchOnWindowFocusDelay);
+    }
+    for (final infiniteQuery in this.cache.infiniteQueries) {
+      if (infiniteQuery.refetchOnWindowFocus == false || !infiniteQuery.enabled)
+        continue;
+      await infiniteQuery.refetchPages();
+      await Future.delayed(refetchOnWindowFocusDelay);
+    }
   }
 
   void onQueriesUpdate<T extends Object, Outside>(
@@ -271,6 +341,8 @@ class QueryBowl {
       refetchInterval: refetchInterval,
       refetchOnMount: refetchOnMount,
       refetchOnReconnect: refetchOnReconnect,
+      refetchOnApplicationResume: refetchOnApplicationResume,
+      refetchOnWindowFocus: refetchOnWindowFocus,
     );
     return query;
   }
@@ -290,6 +362,8 @@ class QueryBowl {
       refetchInterval: refetchInterval,
       refetchOnMount: refetchOnMount,
       refetchOnReconnect: refetchOnReconnect,
+      refetchOnApplicationResume: refetchOnApplicationResume,
+      refetchOnWindowFocus: refetchOnWindowFocus,
     );
     return infiniteQuery;
   }
@@ -478,7 +552,18 @@ class QueryBowlScope extends InheritedWidget {
     required this.bowl,
     required Widget child,
     Key? key,
-  }) : super(key: key, child: child);
+  }) : super(
+          key: key,
+          child: MouseRegion(
+            onEnter: (event) {
+              bowl.notifyWindowFocused();
+            },
+            onExit: (event) {
+              bowl.updateWeLostTheApp();
+            },
+            child: child,
+          ),
+        );
 
   @override
   bool updateShouldNotify(covariant oldWidget) => false;

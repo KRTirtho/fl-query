@@ -19,6 +19,8 @@ class InfiniteQueryJob<T extends Object, Outside, PageParam extends Object> {
   final bool? refetchOnMount;
   final bool? refetchOnReconnect;
   final bool? refetchOnExternalDataChange;
+  final bool? refetchOnApplicationResume;
+  final bool? refetchOnWindowFocus;
   final Duration? staleTime;
   final Duration? cacheTime;
 
@@ -46,6 +48,8 @@ class InfiniteQueryJob<T extends Object, Outside, PageParam extends Object> {
     this.refetchOnMount,
     this.refetchOnReconnect,
     this.refetchOnExternalDataChange,
+    this.refetchOnApplicationResume,
+    this.refetchOnWindowFocus,
     this.connectivity,
   }) : _queryKey = queryKey;
 
@@ -72,6 +76,8 @@ class InfiniteQueryJob<T extends Object, Outside, PageParam extends Object> {
     bool? refetchOnMount,
     bool? refetchOnReconnect,
     bool? refetchOnExternalDataChange,
+    bool? refetchOnApplicationResume,
+    bool? refetchOnWindowFocus,
     Connectivity? connectivity,
   }) {
     return (String queryKey) {
@@ -91,6 +97,8 @@ class InfiniteQueryJob<T extends Object, Outside, PageParam extends Object> {
         refetchOnMount: refetchOnMount,
         refetchOnReconnect: refetchOnReconnect,
         refetchOnExternalDataChange: refetchOnExternalDataChange,
+        refetchOnApplicationResume: refetchOnApplicationResume,
+        refetchOnWindowFocus: refetchOnWindowFocus,
         connectivity: connectivity,
         initialParam: initialParam,
       );
