@@ -18,7 +18,7 @@ typedef MutationListenerReturnable<T, R> = FutureOr<R> Function(T);
 typedef MutationListener<T, V> = FutureOr<void> Function(
   T payload,
   V variables,
-  dynamic context,
+  dynamic realData,
 );
 
 typedef MutationTaskFunction<T, V> = FutureOr<T> Function(
