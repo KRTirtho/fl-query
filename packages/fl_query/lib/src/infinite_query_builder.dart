@@ -58,18 +58,22 @@ class _InfiniteQueryBuilderState<T extends Object, Outside,
 
   void init([T? previousData]) async {
     final bowl = QueryBowl.of(context);
-
+    final prevInfiniteQuery =
+        bowl.getInfiniteQuery<T, Outside, PageParam>(widget.job.queryKey);
     infiniteQuery = bowl.addInfiniteQuery<T, Outside, PageParam>(
       widget.job,
       externalData: widget.externalData,
       key: uKey,
     );
-    final hasExternalDataChanged = infiniteQuery!.externalData != null &&
-        infiniteQuery!.prevUsedExternalData != null &&
-        !isShallowEqual(
-          infiniteQuery!.externalData!,
-          infiniteQuery!.prevUsedExternalData!,
-        );
+    final hasExternalDataChanged = prevInfiniteQuery != null
+        ? !isShallowEqual(
+            prevInfiniteQuery.externalData,
+            prevInfiniteQuery.prevUsedExternalData,
+          )
+        : !isShallowEqual(
+            infiniteQuery!.externalData,
+            infiniteQuery!.prevUsedExternalData,
+          );
 
     if (infiniteQuery!.fetched && hasExternalDataChanged) {
       await infiniteQuery!.refetchPages();
@@ -100,9 +104,7 @@ class _InfiniteQueryBuilderState<T extends Object, Outside,
       // } else {
       // init();
       // }
-    } else if (oldWidget.externalData != null &&
-        widget.externalData != null &&
-        !isShallowEqual(oldWidget.externalData!, widget.externalData!)) {
+    } else if (!isShallowEqual(oldWidget.externalData, widget.externalData)) {
       if (widget.job.refetchOnExternalDataChange ??
           queryBowl.refetchOnExternalDataChange) {
         QueryBowl.of(context).addInfiniteQuery(

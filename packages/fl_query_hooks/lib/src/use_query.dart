@@ -41,6 +41,10 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
   final oldOnError = usePrevious(onError);
 
   final init = useCallback(([T? previousData]) {
+    final hasExternalDataChanged = !isShallowEqual(
+      query.value.externalData,
+      query.value.prevUsedExternalData,
+    );
     query.value = queryBowl.addQuery<T, Outside>(
       job,
       externalData: externalData,
@@ -50,10 +54,6 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
       onError: onError,
     );
     update();
-    final hasExternalDataChanged = query.value.externalData != null &&
-        query.value.prevUsedExternalData != null &&
-        !isShallowEqual(
-            query.value.externalData!, query.value.prevUsedExternalData!);
     if (query.value.fetched && hasExternalDataChanged) {
       query.value.refetch();
     } else if (!query.value.fetched) {
@@ -82,51 +82,51 @@ Query<T, Outside> useQuery<T extends Object, Outside>({
   }, []);
 
   useEffect(() {
-    final hasOnErrorChanged = oldOnError != onError && oldOnError != null;
-    final hasOnDataChanged = oldOnData != onData && oldOnData != null;
-    if (oldJob != null && oldJob.queryKey != job.queryKey) {
-      disposeQuery();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final hasOnErrorChanged = oldOnError != onError && oldOnError != null;
+      final hasOnDataChanged = oldOnData != onData && oldOnData != null;
+      if (oldJob != null && oldJob.queryKey != job.queryKey) {
+        disposeQuery();
 
-      /// setting the new query's initial data as prev query's data
-      /// when [job.keepPreviousData] is true and both are dynamic
-      if (oldJob.isDynamic &&
-          job.isDynamic &&
-          oldJob.keepPreviousData == true &&
-          job.keepPreviousData == true) {
-        init(query.value.data);
-      } else {
-        init();
-      }
-    } else if (oldExternalData != null &&
-        externalData != null &&
-        !isShallowEqual(oldExternalData, externalData)) {
-      if (job.refetchOnExternalDataChange ??
-          queryBowl.refetchOnExternalDataChange) {
-        QueryBowl.of(context).fetchQuery(
-          job,
-          externalData: externalData,
-          onData: onData,
-          onError: onError,
-          key: uKey,
-        );
-      } else {
-        QueryBowl.of(context)
-            .getQuery(job.queryKey)
-            ?.setExternalData(externalData);
-      }
+        /// setting the new query's initial data as prev query's data
+        /// when [job.keepPreviousData] is true and both are dynamic
+        if (oldJob.isDynamic &&
+            job.isDynamic &&
+            oldJob.keepPreviousData == true &&
+            job.keepPreviousData == true) {
+          init(query.value.data);
+        } else {
+          init();
+        }
+      } else if (!isShallowEqual(oldExternalData, externalData)) {
+        if (job.refetchOnExternalDataChange ??
+            queryBowl.refetchOnExternalDataChange) {
+          QueryBowl.of(context).fetchQuery(
+            job,
+            externalData: externalData,
+            onData: onData,
+            onError: onError,
+            key: uKey,
+          );
+        } else {
+          QueryBowl.of(context)
+              .getQuery(job.queryKey)
+              ?.setExternalData(externalData);
+        }
 
-      if (hasOnDataChanged) query.value.removeDataListener(oldOnData);
-      if (hasOnErrorChanged) query.value.removeErrorListener(oldOnError);
-    } else {
-      if (hasOnDataChanged) {
-        query.value.removeDataListener(oldOnData);
-        if (onData != null) query.value.addDataListener(onData);
+        if (hasOnDataChanged) query.value.removeDataListener(oldOnData);
+        if (hasOnErrorChanged) query.value.removeErrorListener(oldOnError);
+      } else {
+        if (hasOnDataChanged) {
+          query.value.removeDataListener(oldOnData);
+          if (onData != null) query.value.addDataListener(onData);
+        }
+        if (hasOnErrorChanged) {
+          query.value.removeErrorListener(oldOnError);
+          if (onError != null) query.value.addErrorListener(onError);
+        }
       }
-      if (hasOnErrorChanged) {
-        query.value.removeErrorListener(oldOnError);
-        if (onError != null) query.value.addErrorListener(onError);
-      }
-    }
+    });
     return null;
   });
 

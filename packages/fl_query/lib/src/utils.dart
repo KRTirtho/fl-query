@@ -31,7 +31,10 @@ bool isShallowEqualMap(Map list1, Map list2) {
   });
 }
 
-bool isShallowEqual(Object obj1, Object obj2) {
+bool isShallowEqual(dynamic obj1, dynamic obj2) {
+  if (obj1 == null && obj2 == null) return true;
+  if ((obj1 == null && obj2 != null) || (obj2 == null && obj1 != null))
+    return false;
   if (obj1 is List && obj2 is List) {
     return isShallowEqualList(obj1, obj2);
   } else if (obj1 is Set && obj2 is Set) {

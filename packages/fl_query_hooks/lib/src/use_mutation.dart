@@ -75,23 +75,25 @@ Mutation<T, V> useMutation<T extends Object, V>({
   }, []);
 
   useEffect(() {
-    if (oldJob != null && oldJob.mutationKey != job.mutationKey) {
-      disposeMutation();
-      init();
-    } else {
-      if (oldOnData != onData && oldOnData != null) {
-        mutation.value.removeDataListener(oldOnData);
-        if (onData != null) mutation.value.addDataListener(onData);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (oldJob != null && oldJob.mutationKey != job.mutationKey) {
+        disposeMutation();
+        init();
+      } else {
+        if (oldOnData != onData && oldOnData != null) {
+          mutation.value.removeDataListener(oldOnData);
+          if (onData != null) mutation.value.addDataListener(onData);
+        }
+        if (oldOnError != onError && oldOnError != null) {
+          mutation.value.removeErrorListener(oldOnError);
+          if (onError != null) mutation.value.addErrorListener(onError);
+        }
+        if (oldOnMutate != onMutate && oldOnMutate != null) {
+          mutation.value.removeMutateListener(oldOnMutate);
+          if (onMutate != null) mutation.value.addMutateListener(onMutate);
+        }
       }
-      if (oldOnError != onError && oldOnError != null) {
-        mutation.value.removeErrorListener(oldOnError);
-        if (onError != null) mutation.value.addErrorListener(onError);
-      }
-      if (oldOnMutate != onMutate && oldOnMutate != null) {
-        mutation.value.removeMutateListener(oldOnMutate);
-        if (onMutate != null) mutation.value.addMutateListener(onMutate);
-      }
-    }
+    });
     return null;
   });
 

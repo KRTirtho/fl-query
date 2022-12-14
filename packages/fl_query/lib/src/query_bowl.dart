@@ -383,12 +383,10 @@ class QueryBowl {
     if (prevQuery != null) {
       // run the query if its still not called or if externalData has
       // changed
-      if (prevQuery.prevUsedExternalData != null &&
-          externalData != null &&
-          !isShallowEqual(
-            prevQuery.prevUsedExternalData!,
-            externalData,
-          )) {
+      if (!isShallowEqual(
+        prevQuery.prevUsedExternalData,
+        externalData,
+      )) {
         prevQuery.setExternalData(externalData);
       }
       prevQuery.mount(key);
@@ -425,12 +423,10 @@ class QueryBowl {
     if (prevInfiniteQuery != null) {
       // run the query if its still not called or if externalData has
       // changed
-      if (prevInfiniteQuery.prevUsedExternalData != null &&
-          externalData != null &&
-          !isShallowEqual(
-            prevInfiniteQuery.prevUsedExternalData!,
-            externalData,
-          )) {
+      if (!isShallowEqual(
+        prevInfiniteQuery.prevUsedExternalData,
+        externalData,
+      )) {
         prevInfiniteQuery.setExternalData(externalData);
       }
       prevInfiniteQuery.mount(key);
@@ -499,12 +495,10 @@ class QueryBowl {
     if (prevQuery != null) {
       // run the query if its still not called or if externalData has
       // changed
-      final hasExternalDataChanged = prevQuery.prevUsedExternalData != null &&
-          externalData != null &&
-          !isShallowEqual(
-            prevQuery.prevUsedExternalData!,
-            externalData,
-          );
+      final hasExternalDataChanged = !isShallowEqual(
+        prevQuery.prevUsedExternalData,
+        externalData,
+      );
       prevQuery.mount(key);
       if (onData != null) prevQuery.addDataListener(onData);
       if (onError != null) prevQuery.addErrorListener(onError);

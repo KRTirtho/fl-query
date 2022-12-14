@@ -42,6 +42,9 @@ InfiniteQuery<T, Outside, PageParam>
   final oldOnError = usePrevious(onError);
 
   final init = useCallback(([T? previousData]) {
+    final hasExternalDataChanged = !isShallowEqual(
+        infiniteQuery.value.externalData,
+        infiniteQuery.value.prevUsedExternalData);
     infiniteQuery.value = queryBowl.addInfiniteQuery<T, Outside, PageParam>(
       job,
       externalData: externalData,
@@ -50,10 +53,6 @@ InfiniteQuery<T, Outside, PageParam>
       onError: onError,
     );
     update();
-    final hasExternalDataChanged = infiniteQuery.value.externalData != null &&
-        infiniteQuery.value.prevUsedExternalData != null &&
-        !isShallowEqual(infiniteQuery.value.externalData!,
-            infiniteQuery.value.prevUsedExternalData!);
     if (infiniteQuery.value.fetched && hasExternalDataChanged) {
       infiniteQuery.value.refetchPages();
     } else if (!infiniteQuery.value.fetched) {
@@ -95,42 +94,42 @@ InfiniteQuery<T, Outside, PageParam>
   }, []);
 
   useEffect(() {
-    final hasOnErrorChanged = oldOnError != onError && oldOnError != null;
-    final hasOnDataChanged = oldOnData != onData && oldOnData != null;
-    if (oldJob != null && oldJob.queryKey != job.queryKey) {
-      disposeQuery();
-      init();
-    } else if (oldExternalData != null &&
-        externalData != null &&
-        !isShallowEqual(oldExternalData, externalData)) {
-      if (job.refetchOnExternalDataChange ??
-          queryBowl.refetchOnExternalDataChange) {
-        QueryBowl.of(context).addInfiniteQuery(
-          job,
-          externalData: externalData,
-          key: uKey,
-          onData: onData,
-          onError: onError,
-        )..refetchPages();
-      } else {
-        QueryBowl.of(context)
-            .getQuery(job.queryKey)
-            ?.setExternalData(externalData);
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final hasOnErrorChanged = oldOnError != onError && oldOnError != null;
+      final hasOnDataChanged = oldOnData != onData && oldOnData != null;
+      if (oldJob != null && oldJob.queryKey != job.queryKey) {
+        disposeQuery();
+        init();
+      } else if (!isShallowEqual(oldExternalData, externalData)) {
+        if (job.refetchOnExternalDataChange ??
+            queryBowl.refetchOnExternalDataChange) {
+          QueryBowl.of(context).addInfiniteQuery(
+            job,
+            externalData: externalData,
+            key: uKey,
+            onData: onData,
+            onError: onError,
+          )..refetchPages();
+        } else {
+          QueryBowl.of(context)
+              .getQuery(job.queryKey)
+              ?.setExternalData(externalData);
+        }
 
-      if (hasOnDataChanged) infiniteQuery.value.removeDataListener(oldOnData);
-      if (hasOnErrorChanged)
-        infiniteQuery.value.removeErrorListener(oldOnError);
-    } else {
-      if (hasOnDataChanged) {
-        infiniteQuery.value.removeDataListener(oldOnData);
-        if (onData != null) infiniteQuery.value.addDataListener(onData);
+        if (hasOnDataChanged) infiniteQuery.value.removeDataListener(oldOnData);
+        if (hasOnErrorChanged)
+          infiniteQuery.value.removeErrorListener(oldOnError);
+      } else {
+        if (hasOnDataChanged) {
+          infiniteQuery.value.removeDataListener(oldOnData);
+          if (onData != null) infiniteQuery.value.addDataListener(onData);
+        }
+        if (hasOnErrorChanged) {
+          infiniteQuery.value.removeErrorListener(oldOnError);
+          if (onError != null) infiniteQuery.value.addErrorListener(onError);
+        }
       }
-      if (hasOnErrorChanged) {
-        infiniteQuery.value.removeErrorListener(oldOnError);
-        if (onError != null) infiniteQuery.value.addErrorListener(onError);
-      }
-    }
+    });
     return null;
   });
 

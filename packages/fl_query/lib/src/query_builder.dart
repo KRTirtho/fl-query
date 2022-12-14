@@ -58,6 +58,7 @@ class _QueryBuilderState<T extends Object, Outside>
 
   void init([T? previousData]) async {
     final bowl = QueryBowl.of(context);
+    final prevQuery = bowl.getQuery<T, Outside>(widget.job.queryKey);
     query = bowl.addQuery<T, Outside>(
       widget.job,
       externalData: widget.externalData,
@@ -66,13 +67,15 @@ class _QueryBuilderState<T extends Object, Outside>
       onData: widget.onData,
       onError: widget.onError,
     );
-
-    final hasExternalDataChanged = query!.externalData != null &&
-        query!.prevUsedExternalData != null &&
-        !isShallowEqual(
-          query!.externalData!,
-          query!.prevUsedExternalData!,
-        );
+    final hasExternalDataChanged = prevQuery != null
+        ? !isShallowEqual(
+            prevQuery.externalData,
+            prevQuery.prevUsedExternalData,
+          )
+        : !isShallowEqual(
+            query!.externalData,
+            query!.prevUsedExternalData,
+          );
 
     if (query!.fetched && hasExternalDataChanged) {
       await query!.refetch();
@@ -103,9 +106,7 @@ class _QueryBuilderState<T extends Object, Outside>
       } else {
         init();
       }
-    } else if (oldWidget.externalData != null &&
-        widget.externalData != null &&
-        !isShallowEqual(oldWidget.externalData!, widget.externalData!)) {
+    } else if (!isShallowEqual(oldWidget.externalData, widget.externalData)) {
       if (widget.job.refetchOnExternalDataChange ??
           bowl.refetchOnExternalDataChange) {
         bowl.fetchQuery(
