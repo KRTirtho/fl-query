@@ -2,10 +2,15 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_query/src/query.dart';
 import 'package:flutter/widgets.dart';
 
+typedef SerializeFunction<T extends Object> = String Function(T data);
+typedef DeserializeFunction<T extends Object> = T Function(String raw);
+
 class QueryJob<T extends Object, Outside> {
   // all params
   String _queryKey;
   QueryTaskFunction<T, Outside> task;
+  final SerializeFunction<T>? serialize;
+  final DeserializeFunction<T>? deserialize;
   final int? retries;
   final Duration? retryDelay;
   T? initialData;
@@ -47,7 +52,14 @@ class QueryJob<T extends Object, Outside> {
     this.keepPreviousData,
     this.refetchOnApplicationResume,
     this.refetchOnWindowFocus,
-  }) : _queryKey = queryKey;
+    this.deserialize,
+    this.serialize,
+  })  : assert(
+          serialize == null && deserialize == null ||
+              (serialize != null && deserialize != null && enabled != false),
+          "Both or none of the serialize and deserialize function must be provided and enabled must be true if you want to use disk caching",
+        ),
+        _queryKey = queryKey;
 
   String get queryKey => _queryKey;
 
@@ -73,6 +85,8 @@ class QueryJob<T extends Object, Outside> {
     bool? refetchOnWindowFocus,
     Connectivity? connectivity,
     bool? keepPreviousData,
+    SerializeFunction<T>? serialize,
+    DeserializeFunction<T>? deserialize,
   }) {
     return (String queryKey) {
       if (preQueryKey != null) queryKey = "$preQueryKey#$queryKey";
@@ -93,6 +107,8 @@ class QueryJob<T extends Object, Outside> {
         keepPreviousData: keepPreviousData,
         refetchOnApplicationResume: refetchOnApplicationResume,
         refetchOnWindowFocus: refetchOnWindowFocus,
+        serialize: serialize,
+        deserialize: deserialize,
       );
       query.isDynamic = true;
       return query;

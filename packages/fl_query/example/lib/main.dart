@@ -2,15 +2,19 @@ import 'package:fl_query_example/components/basic_infinite_query.dart';
 import 'package:fl_query_example/components/basic_mutation.dart';
 import 'package:fl_query/fl_query.dart';
 import 'package:fl_query_example/components/basic_query.dart';
+import 'package:fl_query_example/components/infinite_query_disk_cache.dart';
 import 'package:fl_query_example/components/lazy_query.dart';
 import 'package:fl_query_example/components/mutation_variable_key.dart';
+import 'package:fl_query_example/components/query_disk_cache.dart';
 import 'package:fl_query_example/components/query_external_data.dart';
 import 'package:fl_query_example/components/query_previous_data.dart';
 import 'package:fl_query_example/components/query_variable_key.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeFlQuery(cacheKey: "example");
   debugRepaintRainbowEnabled = true;
   runApp(const MyApp());
 }
@@ -70,6 +74,8 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                 );
               },
             ),
+            const QueryDiskCacheExample(),
+            const InfiniteQueryDiskCacheExample(),
             const Divider(),
             const BasicMutationExample(),
             const MutationVariableKeyExample(),

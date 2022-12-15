@@ -5,6 +5,7 @@ import 'package:fl_query/src/utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/services.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 /// The widget that holds every [Query] & [Mutation] to your
 /// entire Flutter application in anywhere

@@ -1,9 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:fl_query/fl_query.dart';
 import 'package:fl_query/src/base_query.dart';
-import 'package:fl_query/src/models/infinite_query_job.dart';
-import 'package:fl_query/src/query.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:queue/queue.dart';
 
@@ -46,6 +46,12 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
   final Set<InfiniteQueryListeners<dynamic, PageParam>> onErrorListeners =
       Set();
 
+  final SerializeFunction<T>? _serializePage;
+  final DeserializeFunction<T>? _deserializePage;
+
+  final SerializeFunction<PageParam>? serializePageParam;
+  final DeserializeFunction<PageParam>? deserializePageParam;
+
   InfiniteQuery({
     required super.queryKey,
     required this.task,
@@ -63,13 +69,21 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
     super.previousData,
     super.connectivity,
     super.refetchOnApplicationResume,
+    DeserializeFunction<T>? deserialize,
+    SerializeFunction<T>? serialize,
     InfiniteQueryListeners<T, PageParam>? super.onData,
     InfiniteQueryListeners<dynamic, PageParam>? super.onError,
     required T? initialPage,
     this.getNextPageParam,
     this.getPreviousPageParam,
+    this.serializePageParam,
+    this.deserializePageParam,
   })  : _currentParam = initialParam,
-        super(initialData: {initialParam: initialPage});
+        _serializePage = serialize,
+        _deserializePage = deserialize,
+        super(
+          initialData: {initialParam: initialPage},
+        );
 
   InfiniteQuery.fromOptions(
     InfiniteQueryJob<T, Outside, PageParam> options, {
@@ -80,6 +94,10 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
         _currentParam = options.initialParam,
         getNextPageParam = options.getNextPageParam,
         getPreviousPageParam = options.getPreviousPageParam,
+        _serializePage = options.serialize,
+        _deserializePage = options.deserialize,
+        serializePageParam = options.serializePageParam,
+        deserializePageParam = options.deserializePageParam,
         super(
           cacheTime: options.cacheTime ?? const Duration(minutes: 5),
           retries: options.retries ?? 3,
@@ -273,4 +291,37 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
 
   @override
   bool get hasData => data?[_currentParam] != null;
+
+  @override
+  bool get canCacheToDisk =>
+      _serializePage != null &&
+      _deserializePage != null &&
+      serializePageParam != null &&
+      deserializePageParam != null;
+
+  @override
+  deserialize(String rawData) {
+    if (deserializePageParam == null || _deserializePage == null) return null;
+    return Map.from(jsonDecode(rawData)).cast<String, String>().map(
+      (key, value) {
+        return MapEntry(deserializePageParam!(key), _deserializePage!(value));
+      },
+    );
+  }
+
+  @override
+  serialize(data) {
+    if (serializePageParam == null || _serializePage == null) return null;
+
+    data.removeWhere((key, value) => value == null);
+
+    return jsonEncode(data.map(
+      (key, value) {
+        return MapEntry(
+          serializePageParam!(key),
+          _serializePage!(value!),
+        );
+      },
+    ));
+  }
 }

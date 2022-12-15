@@ -1,11 +1,12 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:fl_query/fl_query.dart';
 import 'package:fl_query/src/base_operation.dart';
 import 'package:fl_query/src/mixins/autocast.dart';
-import 'package:fl_query/src/query.dart';
 import 'package:fl_query/src/utils.dart';
 import 'package:flutter/widgets.dart';
+import 'package:hive/hive.dart';
 
 abstract class BaseQuery<T extends Object, Outside, Error>
     extends BaseOperation<T, Error> with AutoCast {
@@ -79,6 +80,9 @@ abstract class BaseQuery<T extends Object, Outside, Error>
     if (refetchInterval != null && refetchInterval != Duration.zero) {
       _refetchIntervalTimer = createRefetchTimer();
     }
+    if (canCacheToDisk) {
+      loadFromDisk();
+    }
   }
   // all getters & setters
 
@@ -88,6 +92,33 @@ abstract class BaseQuery<T extends Object, Outside, Error>
   @protected
   Timer createRefetchTimer();
 
+  @protected
+  Future<void> loadFromDisk() async {
+    final box = await Hive.lazyBox<String>(kFlQueryBoxKey);
+    final rawData = await box.get(queryKey);
+    if (rawData == null) return;
+    data = deserialize(rawData);
+    if (!isLoading && !isRefetching) {
+      status = QueryStatus.cached;
+    }
+    updatedAt = DateTime.now();
+    await notifyDataListeners();
+    notifyListeners();
+  }
+
+  Future<void> saveToDisk({bool delete = false}) async {
+    if (!canCacheToDisk) return;
+    if (!hasData) {
+      if (delete) {
+        final box = await Hive.lazyBox<String>(kFlQueryBoxKey);
+        await box.delete(queryKey);
+      }
+      return;
+    }
+    final box = await Hive.lazyBox<String>(kFlQueryBoxKey);
+    await box.put(queryKey, serialize(data!)!);
+  }
+
   /// Calls the task function & doesn't check if there's already
   /// cached data available
   @protected
@@ -95,6 +126,7 @@ abstract class BaseQuery<T extends Object, Outside, Error>
     try {
       retryAttempts = 0;
       await setData();
+      await saveToDisk();
       _prevUsedExternalData = _externalData;
       updatedAt = DateTime.now();
       status = QueryStatus.success;
@@ -112,6 +144,7 @@ abstract class BaseQuery<T extends Object, Outside, Error>
           await Future.delayed(retryDelay);
           try {
             await setData();
+            await saveToDisk();
             _prevUsedExternalData = _externalData;
             status = QueryStatus.success;
             await notifyDataListeners();
@@ -159,6 +192,15 @@ abstract class BaseQuery<T extends Object, Outside, Error>
   Future<T?> fetch() async {
     if (!enabled) return null;
 
+    if (isCachedData) {
+      status = QueryStatus.loading;
+      await execute().then((_) {
+        fetched = true;
+      });
+      notifyListeners();
+      return data;
+    }
+
     /// if isLoading/isRefetching is true that means its already fetching/
     /// refetching. So [_execute] again can create a race condition
     if (isLoading || isRefetching || (hasData && !isPreviousData)) return data;
@@ -196,6 +238,15 @@ abstract class BaseQuery<T extends Object, Outside, Error>
   }
 
   @protected
+  String? serialize(T data);
+
+  @protected
+  T? deserialize(String rawData);
+
+  @protected
+  bool get canCacheToDisk;
+
+  @protected
   FutureOr<void> setData();
   @protected
   void setError(dynamic);
@@ -229,6 +280,7 @@ abstract class BaseQuery<T extends Object, Outside, Error>
   void reset() {
     refetchCount = 0;
     data = _previousData ?? _initialData;
+    saveToDisk(delete: true);
     error = null;
     fetched = false;
     status = QueryStatus.idle;
@@ -236,6 +288,12 @@ abstract class BaseQuery<T extends Object, Outside, Error>
     onDataListeners.clear();
     onErrorListeners.clear();
     mounts.clear();
+  }
+
+  @override
+  void dispose() async {
+    await Hive.openLazyBox(kFlQueryBoxKey).then((box) => box.delete(queryKey));
+    super.dispose();
   }
 
   /// Update configurations of the query
@@ -314,6 +372,7 @@ abstract class BaseQuery<T extends Object, Outside, Error>
     final newData = await updateFn(data);
     if (data == newData) return;
     data = newData;
+    await saveToDisk();
     status = QueryStatus.success;
     notifyListeners();
   }
@@ -347,6 +406,7 @@ abstract class BaseQuery<T extends Object, Outside, Error>
   bool get isLoading => status == QueryStatus.loading;
   bool get isRefetching => status == QueryStatus.refetching;
   bool get isSuccess => status == QueryStatus.success;
+  bool get isCachedData => status == QueryStatus.cached;
   bool get isPreviousData {
     return _previousData != null ? _previousData == data : false;
   }

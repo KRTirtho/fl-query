@@ -1,11 +1,16 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_query/src/infinite_query.dart';
+import 'package:fl_query/src/models/query_job.dart';
 import 'package:flutter/widgets.dart';
 
 class InfiniteQueryJob<T extends Object, Outside, PageParam extends Object> {
   // all params
   String _queryKey;
   InfiniteQueryTaskFunction<T, Outside, PageParam> task;
+  SerializeFunction<T>? serialize;
+  DeserializeFunction<T>? deserialize;
+  SerializeFunction<PageParam>? serializePageParam;
+  DeserializeFunction<PageParam>? deserializePageParam;
   final int? retries;
   final Duration? retryDelay;
   T? initialPage;
@@ -51,7 +56,23 @@ class InfiniteQueryJob<T extends Object, Outside, PageParam extends Object> {
     this.refetchOnApplicationResume,
     this.refetchOnWindowFocus,
     this.connectivity,
-  }) : _queryKey = queryKey;
+    this.deserialize,
+    this.serialize,
+    this.serializePageParam,
+    this.deserializePageParam,
+  })  : assert(
+          serialize == null &&
+                  deserialize == null &&
+                  serializePageParam == null &&
+                  deserializePageParam == null ||
+              (serialize != null &&
+                  deserialize != null &&
+                  serializePageParam != null &&
+                  deserializePageParam != null &&
+                  enabled != false),
+          "All or none of the serialize, deserialize, serializePageParam & deserializePageParam function must be provided. And `enabled` must be true if all of them are provided.",
+        ),
+        _queryKey = queryKey;
 
   String get queryKey => _queryKey;
 
@@ -79,6 +100,10 @@ class InfiniteQueryJob<T extends Object, Outside, PageParam extends Object> {
     bool? refetchOnApplicationResume,
     bool? refetchOnWindowFocus,
     Connectivity? connectivity,
+    SerializeFunction<T>? serialize,
+    DeserializeFunction<T>? deserialize,
+    SerializeFunction<PageParam>? serializePageParam,
+    DeserializeFunction<PageParam>? deserializePageParam,
   }) {
     return (String queryKey) {
       if (preQueryKey != null) queryKey = "$preQueryKey#$queryKey";
@@ -101,6 +126,10 @@ class InfiniteQueryJob<T extends Object, Outside, PageParam extends Object> {
         refetchOnWindowFocus: refetchOnWindowFocus,
         connectivity: connectivity,
         initialParam: initialParam,
+        serialize: serialize,
+        deserialize: deserialize,
+        serializePageParam: serializePageParam,
+        deserializePageParam: deserializePageParam,
       );
       query.isDynamic = true;
       return query;

@@ -22,7 +22,10 @@ enum QueryStatus {
   idle,
 
   /// when the query is refetching (rerunning)
-  refetching;
+  refetching,
+
+  /// when the query data is loaded from cache
+  cached,
 }
 
 typedef QueryTaskFunction<T extends Object, Outside> = FutureOr<T> Function(
@@ -42,6 +45,9 @@ class Query<T extends Object, Outside> extends BaseQuery<T, Outside, dynamic> {
   final Set<QueryListener<T>> onDataListeners = Set();
   final Set<QueryListener<dynamic>> onErrorListeners = Set();
 
+  final SerializeFunction<T>? _serialize;
+  final DeserializeFunction<T>? _deserialize;
+
   Query({
     required super.queryKey,
     required this.task,
@@ -59,9 +65,12 @@ class Query<T extends Object, Outside> extends BaseQuery<T, Outside, dynamic> {
     super.connectivity,
     super.initialData,
     super.refetchOnApplicationResume,
+    SerializeFunction<T>? serialize,
+    DeserializeFunction<T>? deserialize,
     QueryListener<T>? super.onData,
     QueryListener<dynamic>? super.onError,
-  });
+  })  : _deserialize = deserialize,
+        _serialize = serialize;
 
   Query.fromOptions(
     QueryJob<T, Outside> options, {
@@ -70,6 +79,8 @@ class Query<T extends Object, Outside> extends BaseQuery<T, Outside, dynamic> {
     QueryListener<T>? onData,
     QueryListener<dynamic>? onError,
   })  : task = options.task,
+        _deserialize = options.deserialize,
+        _serialize = options.serialize,
         super(
           cacheTime: options.cacheTime ?? const Duration(minutes: 5),
           retries: options.retries ?? 3,
@@ -133,4 +144,19 @@ class Query<T extends Object, Outside> extends BaseQuery<T, Outside, dynamic> {
   void setError(e) {
     error = e;
   }
+
+  @override
+  deserialize(rawData) {
+    if (_deserialize == null) return null;
+    return _deserialize!(rawData);
+  }
+
+  @override
+  serialize(data) {
+    if (_serialize == null) return null;
+    return _serialize!(data);
+  }
+
+  @override
+  bool get canCacheToDisk => _serialize != null && _deserialize != null;
 }

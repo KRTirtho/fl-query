@@ -40,7 +40,13 @@ class QueryCache {
   _listenToQueryChanges(Query query) {
     query.addListener(() {
       if (query.isInactive) {
-        _queries.removeWhere((el) => el.queryKey != query.queryKey);
+        _queries.removeWhere((el) {
+          if (el.queryKey != query.queryKey) {
+            el.dispose();
+            return true;
+          }
+          return false;
+        });
         _notifyListeners(CacheEvent.query, null);
       } else {
         _notifyListeners(CacheEvent.query, query);
@@ -51,8 +57,13 @@ class QueryCache {
   _listenToInfiniteQueryChanges(InfiniteQuery infiniteQuery) {
     infiniteQuery.addListener(() {
       if (infiniteQuery.isInactive) {
-        _infiniteQueries
-            .removeWhere((el) => el.queryKey != infiniteQuery.queryKey);
+        _infiniteQueries.removeWhere((el) {
+          if (el.queryKey != infiniteQuery.queryKey) {
+            el.dispose();
+            return true;
+          }
+          return false;
+        });
         _notifyListeners(CacheEvent.infiniteQuery, null);
       } else {
         _notifyListeners(CacheEvent.infiniteQuery, infiniteQuery);
@@ -64,7 +75,13 @@ class QueryCache {
     mutation.addListener(() {
       if (mutation.isInactive) {
         _mutations.removeWhere(
-          (el) => el.mutationKey != mutation.mutationKey,
+          (el) {
+            if (el.mutationKey != mutation.mutationKey) {
+              el.dispose();
+              return true;
+            }
+            return false;
+          },
         );
         _notifyListeners(CacheEvent.mutation, null);
       } else {
@@ -92,21 +109,27 @@ class QueryCache {
   }
 
   void removeQuery(Query query) {
+    query.dispose();
     _queries.remove(query);
     _notifyListeners(CacheEvent.query, null);
   }
 
   void removeInfiniteQuery(InfiniteQuery infiniteQuery) {
+    infiniteQuery.dispose();
     _infiniteQueries.remove(infiniteQuery);
     _notifyListeners(CacheEvent.infiniteQuery, null);
   }
 
   void removeMutation(Mutation mutation) {
+    mutation.dispose();
     _mutations.remove(mutation);
     _notifyListeners(CacheEvent.mutation, null);
   }
 
   void clearCache() {
+    _infiniteQueries.forEach((el) => el.dispose());
+    _queries.forEach((el) => el.dispose());
+    _mutations.forEach((el) => el.dispose());
     _infiniteQueries.clear();
     _queries.clear();
     _mutations.clear();
