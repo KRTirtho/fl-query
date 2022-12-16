@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_query/fl_query.dart';
 
 class MutationJob<T extends Object, V> {
@@ -6,10 +7,12 @@ class MutationJob<T extends Object, V> {
   final int? retries;
   final Duration? retryDelay;
   final Duration? cacheTime;
+  final Connectivity? connectivity;
 
   MutationJob({
     required String mutationKey,
     required this.task,
+    this.connectivity,
     this.retries,
     this.retryDelay,
     this.cacheTime,
@@ -28,6 +31,7 @@ class MutationJob<T extends Object, V> {
     int? retries,
     Duration? retryDelay,
     Duration? cacheTime,
+    Connectivity? connectivity,
   }) {
     return (String mutationKey) {
       if (preMutationKey != null) mutationKey = "$preMutationKey#$mutationKey";
@@ -37,6 +41,7 @@ class MutationJob<T extends Object, V> {
         retries: retries,
         retryDelay: retryDelay,
         cacheTime: cacheTime,
+        connectivity: connectivity,
       );
     };
   }

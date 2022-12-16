@@ -129,7 +129,7 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
       (_) async {
         // only refetch if its connected to the internet or refetch will
         // always result in error while there's no internet
-        if (isStale && await isInternetConnected()) await refetchPages();
+        if (isStale && await isNetworkOnline) await refetchPages();
       },
     );
   }
@@ -241,7 +241,7 @@ class InfiniteQuery<T extends Object, Outside, PageParam extends Object>
     /// also checking if the is stale or not
     /// no need to refetch a valid query for no reason
     if (refetchOnMount == true && isStale) {
-      this.isInternetConnected().then((isConnected) async {
+      isNetworkOnline.then((isConnected) async {
         if (isConnected) await refetchPages();
       });
     }

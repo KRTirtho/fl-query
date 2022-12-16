@@ -1,10 +1,8 @@
 import 'dart:async';
 
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_query/fl_query.dart';
 import 'package:fl_query/src/base_operation.dart';
 import 'package:fl_query/src/mixins/autocast.dart';
-import 'package:fl_query/src/utils.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hive/hive.dart';
 
@@ -45,8 +43,6 @@ abstract class BaseQuery<T extends Object, Outside, Error>
   bool? refetchOnApplicationResume;
   bool? refetchOnWindowFocus;
 
-  Connectivity _connectivity;
-
   T? _previousData;
 
   BaseQuery({
@@ -57,6 +53,7 @@ abstract class BaseQuery<T extends Object, Outside, Error>
     required super.retries,
     required super.retryDelay,
     required this.status,
+    super.connectivity,
     this.refetchOnMount,
     this.refetchOnReconnect,
     this.refetchInterval,
@@ -64,14 +61,12 @@ abstract class BaseQuery<T extends Object, Outside, Error>
     this.refetchOnWindowFocus,
     this.enabled = true,
     T? previousData,
-    Connectivity? connectivity,
     T? initialData,
     onData,
     onError,
   })  : _staleTime = staleTime,
         _initialData = initialData,
         _externalData = externalData,
-        _connectivity = connectivity ?? Connectivity(),
         _previousData = previousData,
         super(data: previousData ?? initialData) {
     if (onData != null) onDataListeners.add(onData);
@@ -203,7 +198,10 @@ abstract class BaseQuery<T extends Object, Outside, Error>
 
     /// if isLoading/isRefetching is true that means its already fetching/
     /// refetching. So [_execute] again can create a race condition
-    if (isLoading || isRefetching || (hasData && !isPreviousData)) return data;
+    if (isLoading ||
+        isRefetching ||
+        !(await isNetworkOnline) ||
+        (hasData && !isPreviousData)) return data;
     status = QueryStatus.loading;
     notifyListeners();
     return execute().then((_) {
@@ -227,7 +225,7 @@ abstract class BaseQuery<T extends Object, Outside, Error>
   Future<T?> refetch() async {
     /// if isLoading/isRefetching is true that means its already fetching/
     /// refetching. So [_execute] again can create a race condition
-    if (isRefetching || isLoading) return data;
+    if (isRefetching || isLoading || !(await isNetworkOnline)) return data;
     if (enabled && !fetched) return await fetch();
     status = QueryStatus.refetching;
     refetchCount++;
@@ -347,16 +345,6 @@ abstract class BaseQuery<T extends Object, Outside, Error>
       updated = true;
     }
     if (updated) notifyListeners();
-  }
-
-  /// checks if the application is connected to internet in any mean
-  ///
-  /// It's true when any one this is connected -
-  /// - ethernet
-  /// - mobile
-  /// - wifi
-  Future<bool> isInternetConnected() async {
-    return isConnectedToInternet(await _connectivity.checkConnectivity());
   }
 
   /// can be used to update the data manually. Can be useful when used

@@ -50,6 +50,7 @@ class Mutation<T extends Object, V> extends BaseOperation<T, dynamic>
     required this.task,
     required super.retries,
     required super.retryDelay,
+    super.connectivity,
     required Duration cacheTime,
     MutationListener<T, V>? onData,
     MutationListener<dynamic, V>? onError,
@@ -73,6 +74,7 @@ class Mutation<T extends Object, V> extends BaseOperation<T, dynamic>
           retries: options.retries ?? 3,
           retryDelay: options.retryDelay ?? const Duration(milliseconds: 200),
           cacheTime: options.cacheTime ?? const Duration(minutes: 5),
+          connectivity: options.connectivity,
         ) {
     if (onData != null) _onDataListeners.add(onData);
     if (onError != null) _onErrorListeners.add(onError);
@@ -105,6 +107,7 @@ class Mutation<T extends Object, V> extends BaseOperation<T, dynamic>
           onError(error, variables, _sideEffectContext);
         }
         notifyListeners();
+        throw e;
       } else {
         // retrying for retry count if failed for the first time
         while (retryAttempts <= retries) {
@@ -128,6 +131,7 @@ class Mutation<T extends Object, V> extends BaseOperation<T, dynamic>
                 onError(error, variables, _sideEffectContext);
               }
               notifyListeners();
+              throw e;
             }
             retryAttempts++;
           }
@@ -168,10 +172,14 @@ class Mutation<T extends Object, V> extends BaseOperation<T, dynamic>
     _variables = variables;
     if (onData != null) _onDataListeners.add(onData);
     if (onError != null) _onErrorListeners.add(onError);
-    _execute(variables).then((_) {
-      _onDataListeners.remove(onData);
-      _onErrorListeners.remove(onError);
-    });
+    try {
+      _execute(variables).then((_) {
+        _onDataListeners.remove(onData);
+        _onErrorListeners.remove(onError);
+      });
+    } catch (e) {
+      return;
+    }
   }
 
   Future<T?> mutateAsync(V variables) async {

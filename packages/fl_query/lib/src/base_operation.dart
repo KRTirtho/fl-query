@@ -1,3 +1,5 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:fl_query/src/utils.dart';
 import 'package:flutter/widgets.dart';
 
 abstract class BaseOperation<Data, Error> extends ChangeNotifier {
@@ -9,6 +11,8 @@ abstract class BaseOperation<Data, Error> extends ChangeNotifier {
   // got from global options
   @protected
   Duration cacheTime;
+
+  Connectivity _connectivity;
 
   // all properties
   Data? data;
@@ -31,7 +35,9 @@ abstract class BaseOperation<Data, Error> extends ChangeNotifier {
     required this.retries,
     required this.retryDelay,
     this.data,
-  }) : updatedAt = DateTime.now();
+    Connectivity? connectivity,
+  })  : updatedAt = DateTime.now(),
+        _connectivity = connectivity ?? Connectivity();
 
   void mount(ValueKey<String> uKey) {
     _mounts.add(uKey);
@@ -51,6 +57,28 @@ abstract class BaseOperation<Data, Error> extends ChangeNotifier {
   }
 
   Set<ValueKey<String>> get mounts => _mounts;
+
+  /// checks if the application is connected to internet in any mean
+  ///
+  /// It's true when any one this is connected -
+  /// - ethernet
+  /// - mobile
+  /// - wifi
+  ///
+  /// Deprecated: Use [isNetworkOnline] instead
+  @deprecated
+  Future<bool> isInternetConnected() async {
+    return isNetworkOnline;
+  }
+
+  /// checks if the application is connected to internet in any mean
+  ///
+  /// It's true when any one this is connected -
+  /// - ethernet
+  /// - mobile
+  /// - wifi
+  Future<bool> get isNetworkOnline =>
+      _connectivity.checkConnectivity().then((v) => isConnectedToInternet(v));
 
   bool get isInactive => mounts.isEmpty;
   bool get hasData => data != null;

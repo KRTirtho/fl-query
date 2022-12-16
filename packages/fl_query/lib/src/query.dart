@@ -108,7 +108,7 @@ class Query<T extends Object, Outside> extends BaseQuery<T, Outside, dynamic> {
       (_) async {
         // only refetch if its connected to the internet or refetch will
         // always result in error while there's no internet
-        if (isStale && await isInternetConnected()) await refetch();
+        if (isStale && await isNetworkOnline) await refetch();
       },
     );
   }
@@ -123,7 +123,7 @@ class Query<T extends Object, Outside> extends BaseQuery<T, Outside, dynamic> {
     /// also checking if the is stale or not
     /// no need to refetch a valid query for no reason
     if (refetchOnMount == true && isStale) {
-      this.isInternetConnected().then((isConnected) async {
+      isNetworkOnline.then((isConnected) async {
         if (isConnected) await refetch();
       });
     }

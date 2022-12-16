@@ -112,12 +112,12 @@ class QueryBowl {
         .onConnectivityChanged
         .listen((ConnectivityResult result) async {
       if (isConnectedToInternet(result)) {
-        for (final query in this.cache.queries) {
+        for (final query in this.cache.queries.toList()) {
           if (query.refetchOnReconnect == false || !query.enabled) continue;
           await query.refetch();
           await Future.delayed(refetchOnReconnectDelay);
         }
-        for (final infiniteQuery in this.cache.infiniteQueries) {
+        for (final infiniteQuery in this.cache.infiniteQueries.toList()) {
           if (infiniteQuery.refetchOnReconnect == false ||
               !infiniteQuery.enabled) continue;
           await infiniteQuery.refetchPages();
@@ -130,13 +130,13 @@ class QueryBowl {
       SystemChannels.lifecycle.setMessageHandler((msg) async {
         if (msg == 'AppLifecycleState.resumed') {
           if (_canNotRefetchAfterWeGotTheApp) return null;
-          for (final query in this.cache.queries) {
+          for (final query in this.cache.queries.toList()) {
             if (query.refetchOnApplicationResume == false || !query.enabled)
               continue;
             await query.refetch();
             await Future.delayed(refetchOnApplicationResumeDelay);
           }
-          for (final infiniteQuery in this.cache.infiniteQueries) {
+          for (final infiniteQuery in this.cache.infiniteQueries.toList()) {
             if (infiniteQuery.refetchOnApplicationResume == false ||
                 !infiniteQuery.enabled) continue;
             await infiniteQuery.refetchPages();
@@ -185,12 +185,12 @@ class QueryBowl {
   @protected
   notifyWindowFocused() async {
     if (kIsMobile || _canNotRefetchAfterWeGotTheApp) return;
-    for (final query in this.cache.queries) {
+    for (final query in this.cache.queries.toList()) {
       if (query.refetchOnWindowFocus == false || !query.enabled) continue;
       await query.refetch();
       await Future.delayed(refetchOnWindowFocusDelay);
     }
-    for (final infiniteQuery in this.cache.infiniteQueries) {
+    for (final infiniteQuery in this.cache.infiniteQueries.toList()) {
       if (infiniteQuery.refetchOnWindowFocus == false || !infiniteQuery.enabled)
         continue;
       await infiniteQuery.refetchPages();

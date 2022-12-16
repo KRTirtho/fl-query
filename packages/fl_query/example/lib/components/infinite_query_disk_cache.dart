@@ -66,8 +66,9 @@ class _InfiniteQueryDiskCacheExampleState
                   job: infiniteQueryDiskCacheExampleQuery,
                   externalData: null,
                   builder: (context, query) {
-                    final data =
-                        query.pages.expand((page) => page!.toList()).toList();
+                    final data = query.pages
+                        .expand((page) => page?.toList() ?? [])
+                        .toList();
                     return Scaffold(
                       floatingActionButton: FloatingActionButton(
                         child: const Icon(Icons.download_rounded),
