@@ -83,9 +83,13 @@ InfiniteQuery<T, Outside, PageParam>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       init();
       QueryBowl.of(context).onInfiniteQueriesUpdate<T, Outside, PageParam>(
-        (newInfiniteQuery) {
+        (newInfiniteQuery) async {
           if (newInfiniteQuery.queryKey != job.queryKey || !mounted()) return;
           infiniteQuery.value = newInfiniteQuery;
+          if (!infiniteQuery.value.fetched &&
+              infiniteQuery.value.isCachedData) {
+            await infiniteQuery.value.refetchPages();
+          }
           update();
         },
       );

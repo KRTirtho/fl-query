@@ -195,13 +195,13 @@ abstract class BaseQuery<T extends Object, Outside, Error>
       notifyListeners();
       return data;
     }
+    final x = hasData && !isPreviousData;
+    var isOnline = await isNetworkOnline;
 
     /// if isLoading/isRefetching is true that means its already fetching/
     /// refetching. So [_execute] again can create a race condition
-    if (isLoading ||
-        isRefetching ||
-        !(await isNetworkOnline) ||
-        (hasData && !isPreviousData)) return data;
+    if (isLoading || isRefetching || !isOnline || (hasData && !isPreviousData))
+      return data;
     status = QueryStatus.loading;
     notifyListeners();
     return execute().then((_) {

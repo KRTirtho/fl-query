@@ -45,12 +45,14 @@ class _InfiniteQueryBuilderState<T extends Object, Outside,
     WidgetsBinding.instance.addPostFrameCallback((_) {
       init();
       QueryBowl.of(context).onInfiniteQueriesUpdate<T, Outside, PageParam>(
-        (infiniteQuery) {
+        (infiniteQuery) async {
           if (infiniteQuery.queryKey != widget.job.queryKey) return;
           if (mounted)
             setState(() {
               this.infiniteQuery = infiniteQuery;
             });
+          if (infiniteQuery.isCachedData && !infiniteQuery.fetched)
+            await infiniteQuery.refetchPages();
         },
       );
     });

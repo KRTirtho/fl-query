@@ -11,5 +11,8 @@ const uuid = Uuid();
 
 useForceUpdate() {
   final state = useState(false);
-  return () => state.value = !state.value;
+  final isMounted = useIsMounted();
+  return () {
+    if (isMounted()) state.value = !state.value;
+  };
 }

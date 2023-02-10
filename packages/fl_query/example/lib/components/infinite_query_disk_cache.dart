@@ -1,12 +1,36 @@
 import 'dart:convert';
 
 import 'package:fl_query/fl_query.dart';
-import 'package:fl_query_example/components/query_disk_cache.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+class Todo {
+  int? userId;
+  int? id;
+  String? title;
+  bool? completed;
+
+  Todo({this.userId, this.id, this.title, this.completed});
+
+  Todo.fromJson(Map<String, dynamic> json) {
+    userId = json['userId'];
+    id = json['id'];
+    title = json['title'];
+    completed = json['completed'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = {};
+    data['userId'] = userId;
+    data['id'] = id;
+    data['title'] = title;
+    data['completed'] = completed;
+    return data;
+  }
+}
+
 final infiniteQueryDiskCacheExampleQuery =
-    InfiniteQueryJob<List<User>, void, int>(
+    InfiniteQueryJob<List<Todo>, void, int>(
   queryKey: 'infiniteQueryDiskCacheExampleQuery',
   initialParam: 0,
   getNextPageParam: (lastPage, lastParam) {
@@ -18,11 +42,11 @@ final infiniteQueryDiskCacheExampleQuery =
     return firstParam - 5;
   },
   serialize: (data) {
-    return jsonEncode(data.map((user) => user.toJson()).toList());
+    return jsonEncode(data.map((todo) => todo.toJson()).toList());
   },
   deserialize: (raw) {
     return List.from(jsonDecode(raw))
-        .map((user) => User.fromJson(user))
+        .map((todo) => Todo.fromJson(todo))
         .toList();
   },
   serializePageParam: (param) => param.toString(),
@@ -30,10 +54,10 @@ final infiniteQueryDiskCacheExampleQuery =
   task: (_, pageParam, __) async {
     final res = await http.get(
       Uri.parse(
-          "https://jsonplaceholder.typicode.com/users?_start=$pageParam&_end=${pageParam + 5}"),
+          "https://jsonplaceholder.typicode.com/todos?_start=$pageParam&_end=${pageParam + 5}"),
     );
     final body = List.from(jsonDecode(res.body))
-        .map((user) => User.fromJson(user))
+        .map((todo) => Todo.fromJson(todo))
         .toList()
       ..shuffle();
     if (pageParam == 0) await Future.delayed(const Duration(seconds: 5));
@@ -62,12 +86,12 @@ class _InfiniteQueryDiskCacheExampleState
               return Scaffold(
                 appBar: AppBar(
                     title: const Text("Infinite Query Disk Cache Example")),
-                body: InfiniteQueryBuilder<List<User>, void, int>(
+                body: InfiniteQueryBuilder<List<Todo>, void, int>(
                   job: infiniteQueryDiskCacheExampleQuery,
                   externalData: null,
                   builder: (context, query) {
                     final data = query.pages
-                        .expand((page) => page?.toList() ?? [])
+                        .expand((page) => page?.toList() ?? <Todo>[])
                         .toList();
                     return Scaffold(
                       floatingActionButton: FloatingActionButton(
@@ -81,9 +105,12 @@ class _InfiniteQueryDiskCacheExampleState
                       body: ListView.builder(
                         itemCount: data.length,
                         itemBuilder: (context, index) {
-                          return ListTile(
-                            title: Text(data[index].name!),
-                            subtitle: Text(data[index].email!),
+                          return CheckboxListTile(
+                            value: data[index].completed == true,
+                            title: Text(data[index].title ?? ""),
+                            dense: true,
+                            secondary: Text(data[index].id.toString()),
+                            onChanged: null,
                           );
                         },
                       ),
