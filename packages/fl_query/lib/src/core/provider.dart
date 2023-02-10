@@ -1,4 +1,4 @@
-import 'package:fl_query/src/client.dart';
+import 'package:fl_query/src/core/client.dart';
 import 'package:flutter/material.dart';
 
 class QueryClientProvider extends InheritedWidget {

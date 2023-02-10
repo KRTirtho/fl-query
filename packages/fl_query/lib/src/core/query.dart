@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:fl_query/src/constants.dart';
-import 'package:fl_query/src/retryer.dart';
+import 'package:fl_query/src/collections/default_configs.dart';
+import 'package:fl_query/src/core/retryer.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:mutex/mutex.dart';
@@ -76,8 +76,8 @@ class Query<T, E, K> extends StateNotifier<QueryState<T, E>>
     this.key,
     QueryFn<T> queryFn, {
     this.initial,
-    this.retryConfig = Constants.defaultRetryConfig,
-    this.refreshConfig = Constants.defaultRefreshConfig,
+    this.retryConfig = DefaultConstants.retryConfig,
+    this.refreshConfig = DefaultConstants.refreshConfig,
     this.jsonConfig,
   })  : _box = Hive.lazyBox("cache"),
         super(QueryState<T, E>(
