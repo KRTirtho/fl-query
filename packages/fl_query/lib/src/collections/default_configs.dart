@@ -1,5 +1,5 @@
-import 'package:fl_query/src/core/query.dart';
-import 'package:fl_query/src/core/retryer.dart';
+import 'package:fl_query/src/collections/refresh_config.dart';
+import 'package:fl_query/src/collections/retry_config.dart';
 
 abstract class DefaultConstants {
   static const RetryConfig retryConfig = RetryConfig(
@@ -11,5 +11,6 @@ abstract class DefaultConstants {
   static const RefreshConfig refreshConfig = RefreshConfig(
     staleDuration: Duration(seconds: 10),
     refreshInterval: Duration(seconds: 5),
+    refreshOnMount: true,
   );
 }

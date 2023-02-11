@@ -1,18 +1,7 @@
 import 'dart:async';
 
+import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:flutter/foundation.dart';
-
-class RetryConfig {
-  final int maxRetries;
-  final Duration retryDelay;
-  final Duration timeout;
-
-  const RetryConfig({
-    required this.maxRetries,
-    required this.retryDelay,
-    required this.timeout,
-  });
-}
 
 mixin Retryer<T, E> {
   VoidCallback retryOperation(

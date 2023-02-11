@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:fl_query/src/collections/default_configs.dart';
+import 'package:fl_query/src/collections/json_config.dart';
+import 'package:fl_query/src/collections/refresh_config.dart';
+import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/retryer.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:hive_flutter/adapters.dart';
@@ -12,7 +15,7 @@ typedef QueryFn<T> = FutureOr<T?> Function();
 class QueryState<T, E> {
   final T? data;
   final E? error;
-  final QueryFn<T>? queryFn;
+  final QueryFn<T> queryFn;
 
   final DateTime updatedAt;
   final Duration staleDuration;
@@ -20,7 +23,7 @@ class QueryState<T, E> {
   const QueryState({
     this.data,
     this.error,
-    this.queryFn,
+    required this.queryFn,
     required this.updatedAt,
     required this.staleDuration,
   });
@@ -42,26 +45,6 @@ class QueryState<T, E> {
       queryFn: queryFn ?? this.queryFn,
     );
   }
-}
-
-class JsonConfig<T> {
-  final Map<String, dynamic> Function(T data) toJson;
-  final T Function(Map<String, dynamic> json) fromJson;
-
-  const JsonConfig({
-    required this.toJson,
-    required this.fromJson,
-  });
-}
-
-class RefreshConfig {
-  final Duration staleDuration;
-  final Duration refreshInterval;
-
-  const RefreshConfig({
-    required this.staleDuration,
-    required this.refreshInterval,
-  });
 }
 
 class Query<T, E, K> extends StateNotifier<QueryState<T, E>>
@@ -112,10 +95,13 @@ class Query<T, E, K> extends StateNotifier<QueryState<T, E>>
   bool get hasData => state.data != null;
   bool get hasError => state.error != null;
 
+  T? get data => state.data;
+  E? get error => state.error;
+
   Future<void> _operate() {
     return _mutex.protect(() async {
       retryOperation(
-        state.queryFn!,
+        state.queryFn,
         config: retryConfig,
         onSuccessful: (T? data) {
           state = state.copyWith(data: data);
@@ -134,12 +120,20 @@ class Query<T, E, K> extends StateNotifier<QueryState<T, E>>
   }
 
   Future<T?> fetch() async {
-    if (_mutex.isLocked || hasData) return state.data;
+    if (_mutex.isLocked || hasData || hasError) return state.data;
     return _operate().then((_) => state.data);
   }
 
   Future<T?> refresh() async {
     if (_mutex.isLocked) return state.data;
     return _operate().then((_) => state.data);
+  }
+
+  void updateQueryFn(QueryFn<T> queryFn) {
+    state = state.copyWith(queryFn: queryFn);
+  }
+
+  void setData(T data) {
+    state = state.copyWith(data: data);
   }
 }
