@@ -1,39 +1,39 @@
 import 'dart:async';
 
 import 'package:fl_query/src/collections/retry_config.dart';
-import 'package:flutter/foundation.dart';
 
 mixin Retryer<T, E> {
-  VoidCallback retryOperation(
+  void retryOperation(
     FutureOr<T?> Function() operation, {
     required RetryConfig config,
-    required Function(T?) onSuccessful,
-    required Function(E?) onFailed,
-  }) {
-    int retries = 0;
-    late Timer timer;
-    VoidCallback? cancel;
-
-    void retry() {
-      if (retries < config.maxRetries) {
-        retries++;
-        timer = Timer(config.retryDelay, () async {
-          await Future.value(operation()).then((T? data) {
-            onSuccessful(data);
-          }).catchError((error) {
-            if (error is E) onFailed(error);
-            retry();
-          });
-        });
-      } else {
-        cancel?.call();
+    required void Function(T?) onSuccessful,
+    required void Function(E?) onFailed,
+  }) async {
+    for (int attempts = 0; attempts < config.maxRetries; attempts++) {
+      final completer = Completer<T?>();
+      await Future.delayed(
+        attempts == 0 ? Duration.zero : config.retryDelay,
+        operation,
+      ).then(completer.complete).catchError(completer.completeError);
+      await Future.delayed(config.timeout, () {
+        if (!completer.isCompleted) {
+          completer.completeError(
+            TimeoutException(
+              'Operation timed out after ${config.timeout.inSeconds} seconds',
+            ),
+            StackTrace.current,
+          );
+        }
+      });
+      try {
+        final result = await completer.future;
+        onSuccessful(result);
+        break;
+      } catch (e) {
+        if (attempts == config.maxRetries - 1 && e is E?) {
+          onFailed(e as E?);
+        }
       }
     }
-
-    cancel = timer.cancel;
-
-    timer = Timer(config.timeout, retry);
-
-    return cancel;
   }
 }

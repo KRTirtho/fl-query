@@ -12,5 +12,8 @@ abstract class DefaultConstants {
     staleDuration: Duration(seconds: 10),
     refreshInterval: Duration(seconds: 5),
     refreshOnMount: true,
+    refreshOnQueryFnChange: false,
   );
+
+  static const Duration cacheDuration = Duration(minutes: 5);
 }

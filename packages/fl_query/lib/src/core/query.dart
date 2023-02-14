@@ -5,17 +5,17 @@ import 'package:fl_query/src/collections/json_config.dart';
 import 'package:fl_query/src/collections/refresh_config.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/retryer.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' hide Listener;
 import 'package:hive_flutter/adapters.dart';
 import 'package:mutex/mutex.dart';
 import 'package:state_notifier/state_notifier.dart';
 
-typedef QueryFn<T> = FutureOr<T?> Function();
+typedef QueryFn<DataType> = FutureOr<DataType?> Function();
 
-class QueryState<T, E> {
-  final T? data;
-  final E? error;
-  final QueryFn<T> queryFn;
+class QueryState<DataType, ErrorType> {
+  final DataType? data;
+  final ErrorType? error;
+  final QueryFn<DataType> queryFn;
 
   final DateTime updatedAt;
   final Duration staleDuration;
@@ -32,12 +32,12 @@ class QueryState<T, E> {
     return DateTime.now().difference(updatedAt) > staleDuration;
   }
 
-  QueryState<T, E> copyWith({
-    T? data,
-    E? error,
-    QueryFn<T>? queryFn,
+  QueryState<DataType, ErrorType> copyWith({
+    DataType? data,
+    ErrorType? error,
+    QueryFn<DataType>? queryFn,
   }) {
-    return QueryState<T, E>(
+    return QueryState<DataType, ErrorType>(
       updatedAt: DateTime.now(),
       staleDuration: staleDuration,
       data: data ?? this.data,
@@ -47,23 +47,26 @@ class QueryState<T, E> {
   }
 }
 
-class Query<T, E, K> extends StateNotifier<QueryState<T, E>>
-    with Retryer<T, E> {
-  final ValueKey<K> key;
-  final T? initial;
+class Query<DataType, ErrorType, KeyType>
+    extends StateNotifier<QueryState<DataType, ErrorType>>
+    with Retryer<DataType, ErrorType> {
+  final ValueKey<KeyType> key;
+  final DataType? initial;
 
   final RefreshConfig refreshConfig;
   final RetryConfig retryConfig;
-  final JsonConfig<T>? jsonConfig;
+  final JsonConfig<DataType>? jsonConfig;
   Query(
     this.key,
-    QueryFn<T> queryFn, {
+    QueryFn<DataType> queryFn, {
     this.initial,
     this.retryConfig = DefaultConstants.retryConfig,
     this.refreshConfig = DefaultConstants.refreshConfig,
     this.jsonConfig,
   })  : _box = Hive.lazyBox("cache"),
-        super(QueryState<T, E>(
+        _dataController = StreamController<DataType>.broadcast(),
+        _errorController = StreamController<ErrorType>.broadcast(),
+        super(QueryState<DataType, ErrorType>(
           updatedAt: DateTime.now(),
           staleDuration: refreshConfig.staleDuration,
           data: initial,
@@ -71,9 +74,13 @@ class Query<T, E, K> extends StateNotifier<QueryState<T, E>>
         )) {
     if (jsonConfig != null) {
       _mutex.protect(() async {
-        final json = await _box.get(key);
+        final json = await _box.get(key.toString());
         if (json != null) {
-          state = state.copyWith(data: jsonConfig!.fromJson(json));
+          state = state.copyWith(
+            data: jsonConfig!.fromJson(
+              Map.castFrom<dynamic, dynamic, String, dynamic>(json),
+            ),
+          );
         }
       });
 
@@ -87,53 +94,86 @@ class Query<T, E, K> extends StateNotifier<QueryState<T, E>>
 
   final LazyBox _box;
   final _mutex = Mutex();
+  final StreamController<DataType> _dataController;
+  final StreamController<ErrorType> _errorController;
 
   bool get isInitial => state.data == initial;
   bool get isLoading => isInitial ? _mutex.isLocked : !hasData && !hasError;
   bool get isRefreshing =>
       ((!isInitial && hasData) || hasError) && _mutex.isLocked;
+  bool get isInactive => !hasListeners;
   bool get hasData => state.data != null;
   bool get hasError => state.error != null;
 
-  T? get data => state.data;
-  E? get error => state.error;
+  DataType? get data => state.data;
+  ErrorType? get error => state.error;
+  Stream<DataType> get dataStream => _dataController.stream;
+  Stream<ErrorType> get errorStream => _errorController.stream;
 
   Future<void> _operate() {
     return _mutex.protect(() async {
       retryOperation(
         state.queryFn,
         config: retryConfig,
-        onSuccessful: (T? data) {
+        onSuccessful: (DataType? data) {
           state = state.copyWith(data: data);
-          if (jsonConfig != null) {
+          if (data != null) _dataController.add(data);
+          if (jsonConfig != null && data != null) {
             _box.put(
-              key,
-              jsonConfig!.toJson(data!),
+              key.toString(),
+              jsonConfig!.toJson(data),
             );
           }
         },
-        onFailed: (E? error) {
+        onFailed: (ErrorType? error) {
           state = state.copyWith(error: error);
+          if (error != null) _errorController.add(error);
         },
       );
     });
   }
 
-  Future<T?> fetch() async {
+  Future<DataType?> fetch() async {
     if (_mutex.isLocked || hasData || hasError) return state.data;
     return _operate().then((_) => state.data);
   }
 
-  Future<T?> refresh() async {
+  Future<DataType?> refresh() async {
     if (_mutex.isLocked) return state.data;
     return _operate().then((_) => state.data);
   }
 
-  void updateQueryFn(QueryFn<T> queryFn) {
+  void updateQueryFn(QueryFn<DataType> queryFn) {
     state = state.copyWith(queryFn: queryFn);
+    if (state.isStale || refreshConfig.refreshOnQueryFnChange) {
+      refresh();
+    }
   }
 
-  void setData(T data) {
+  void setData(DataType data) {
     state = state.copyWith(data: data);
+  }
+
+  @override
+  RemoveListener addListener(Listener<QueryState<DataType, ErrorType>> listener,
+      {bool fireImmediately = true}) {
+    if (state.isStale || refreshConfig.refreshOnMount) {
+      refresh();
+    }
+    return super.addListener(listener, fireImmediately: fireImmediately);
+  }
+
+  @override
+  operator ==(Object other) {
+    return identical(this, other) ||
+        (other is Query && key.value == other.key.value);
+  }
+
+  @override
+  int get hashCode => key.hashCode;
+
+  Query<NewDataType, NewErrorType, NewKeyType>
+      cast<NewDataType, NewErrorType, NewKeyType>() {
+    return this as Query<NewDataType, NewErrorType, NewKeyType>;
   }
 }
