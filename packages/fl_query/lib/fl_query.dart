@@ -12,3 +12,4 @@ export 'src/core/provider.dart';
 export 'src/core/query.dart';
 
 export 'src/widgets/query_builder.dart';
+export 'src/widgets/query_listenable.dart';

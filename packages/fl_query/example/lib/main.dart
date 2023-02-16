@@ -21,6 +21,18 @@ class MainApp extends StatelessWidget {
     final value = Random().nextInt(200000);
     return MaterialApp(
       home: Scaffold(
+        floatingActionButton: QueryListenable<String, dynamic, String>(
+            const ValueKey('hello'), builder: (context, query) {
+          if (query == null) {
+            return const SizedBox();
+          }
+          return FloatingActionButton(
+            onPressed: () {
+              query.refresh();
+            },
+            child: Text(query.data ?? 'No Data'),
+          );
+        }),
         body: QueryBuilder<String, dynamic, String>(
           const ValueKey('hello'),
           () {
