@@ -153,8 +153,12 @@ class Query<DataType, ErrorType, KeyType>
   }
 
   void updateQueryFn(QueryFn<DataType> queryFn) {
+    if (state.queryFn == queryFn) return;
+    // updatedAt is updated with copyWith so storing it
+    // here to check if the query is stale later
+    final stale = state.isStale;
     state = state.copyWith(queryFn: queryFn);
-    if (state.isStale || refreshConfig.refreshOnQueryFnChange) {
+    if (stale || refreshConfig.refreshOnQueryFnChange) {
       refresh();
     }
   }

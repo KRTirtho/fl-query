@@ -35,6 +35,7 @@ class QueryClient {
           ),
         )
         .cast<DataType, ErrorType, KeyType>();
+    query.updateQueryFn(queryFn);
     cache.addQuery(query);
     return query;
   }
