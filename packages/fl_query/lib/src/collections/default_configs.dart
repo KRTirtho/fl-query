@@ -5,12 +5,11 @@ abstract class DefaultConstants {
   static const RetryConfig retryConfig = RetryConfig(
     maxRetries: 3,
     retryDelay: Duration(seconds: 1),
-    timeout: Duration(seconds: 5),
   );
 
   static const RefreshConfig refreshConfig = RefreshConfig(
     staleDuration: Duration(seconds: 10),
-    refreshInterval: Duration(seconds: 5),
+    refreshInterval: Duration.zero,
     refreshOnMount: true,
     refreshOnQueryFnChange: false,
   );

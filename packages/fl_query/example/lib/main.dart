@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';
 
@@ -16,21 +18,26 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final value = Random().nextInt(200000);
     return MaterialApp(
       home: Scaffold(
-        body: QueryBuilder<String, void, String>(
+        body: QueryBuilder<String, dynamic, String>(
           const ValueKey('hello'),
           () {
             return Future.delayed(
-              const Duration(seconds: 5),
-              () => 'Hello World!',
-            );
+                const Duration(seconds: 6), () => 'Hello World! $value');
           },
           initial: 'Hello',
-          // jsonConfig: JsonConfig(
-          //   fromJson: (json) => json['data'],
-          //   toJson: (data) => {'data': data},
-          // ),
+          jsonConfig: JsonConfig(
+            fromJson: (json) => json['data'],
+            toJson: (data) => {'data': data},
+          ),
+          onData: (value) {
+            print('onData: $value');
+          },
+          onError: (error) {
+            print('onError: $error');
+          },
           builder: (context, query) {
             if (query.isLoading) {
               return const Center(

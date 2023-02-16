@@ -7,6 +7,7 @@ import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/client.dart';
 import 'package:fl_query/src/core/query.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/src/foundation/diagnostics.dart';
 
 typedef QueryBuilderFn<DataType, ErrorType, KeyType> = Widget Function(
   BuildContext context,
@@ -42,7 +43,10 @@ class QueryBuilder<DataType, ErrorType, KeyType> extends StatefulWidget {
     this.onError,
     this.enabled = true,
     super.key,
-  });
+  }) : assert(
+          enabled && jsonConfig != null,
+          'jsonConfig is only supported when enabled is true',
+        );
 
   @override
   State<QueryBuilder<DataType, ErrorType, KeyType>> createState() =>
@@ -131,5 +135,42 @@ class _QueryBuilderState<DataType, ErrorType, KeyType>
       return const SizedBox.shrink();
     }
     return widget.builder(context, query!);
+  }
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(
+      DiagnosticsProperty<Query<DataType, ErrorType, KeyType>>('query', query),
+    );
+    properties.add(
+      DiagnosticsProperty<ValueKey<KeyType>>('queryKey', widget.queryKey),
+    );
+    properties.add(
+      DiagnosticsProperty<QueryBuilderFn>('builder', widget.builder),
+    );
+    properties.add(DiagnosticsProperty<DataType>('initial', widget.initial));
+    properties.add(
+      DiagnosticsProperty<RetryConfig>('retryConfig', widget.retryConfig),
+    );
+    properties.add(
+      DiagnosticsProperty<RefreshConfig>(
+        'refreshConfig',
+        widget.refreshConfig,
+      ),
+    );
+    properties.add(
+      DiagnosticsProperty<JsonConfig<DataType>>(
+        'jsonConfig',
+        widget.jsonConfig,
+      ),
+    );
+    properties.add(
+      DiagnosticsProperty<ValueChanged<DataType>>('onData', widget.onData),
+    );
+    properties.add(
+      DiagnosticsProperty<ValueChanged<ErrorType>>('onError', widget.onError),
+    );
+    properties.add(DiagnosticsProperty<bool>('enabled', widget.enabled));
   }
 }

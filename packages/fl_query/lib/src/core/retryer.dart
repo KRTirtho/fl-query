@@ -15,16 +15,6 @@ mixin Retryer<T, E> {
         attempts == 0 ? Duration.zero : config.retryDelay,
         operation,
       ).then(completer.complete).catchError(completer.completeError);
-      await Future.delayed(config.timeout, () {
-        if (!completer.isCompleted) {
-          completer.completeError(
-            TimeoutException(
-              'Operation timed out after ${config.timeout.inSeconds} seconds',
-            ),
-            StackTrace.current,
-          );
-        }
-      });
       try {
         final result = await completer.future;
         onSuccessful(result);

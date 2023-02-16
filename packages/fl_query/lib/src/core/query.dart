@@ -51,21 +51,22 @@ class Query<DataType, ErrorType, KeyType>
     extends StateNotifier<QueryState<DataType, ErrorType>>
     with Retryer<DataType, ErrorType> {
   final ValueKey<KeyType> key;
-  final DataType? initial;
 
   final RefreshConfig refreshConfig;
   final RetryConfig retryConfig;
   final JsonConfig<DataType>? jsonConfig;
+
   Query(
     this.key,
     QueryFn<DataType> queryFn, {
-    this.initial,
+    DataType? initial,
     this.retryConfig = DefaultConstants.retryConfig,
     this.refreshConfig = DefaultConstants.refreshConfig,
     this.jsonConfig,
   })  : _box = Hive.lazyBox("cache"),
         _dataController = StreamController<DataType>.broadcast(),
         _errorController = StreamController<ErrorType>.broadcast(),
+        _initial = initial,
         super(QueryState<DataType, ErrorType>(
           updatedAt: DateTime.now(),
           staleDuration: refreshConfig.staleDuration,
@@ -76,28 +77,35 @@ class Query<DataType, ErrorType, KeyType>
       _mutex.protect(() async {
         final json = await _box.get(key.toString());
         if (json != null) {
-          state = state.copyWith(
-            data: jsonConfig!.fromJson(
-              Map.castFrom<dynamic, dynamic, String, dynamic>(json),
-            ),
+          _initial = jsonConfig!.fromJson(
+            Map.castFrom<dynamic, dynamic, String, dynamic>(json),
           );
+          state = state.copyWith(data: _initial);
+        }
+      }).then((_) {
+        if (hasListeners) {
+          return fetch();
         }
       });
+    } else {
+      _initial = initial;
+    }
 
+    if (refreshConfig.refreshInterval > Duration.zero)
       Timer.periodic(refreshConfig.refreshInterval, (_) async {
         if (state.isStale) {
           await refresh();
         }
       });
-    }
   }
 
+  DataType? _initial;
   final LazyBox _box;
   final _mutex = Mutex();
   final StreamController<DataType> _dataController;
   final StreamController<ErrorType> _errorController;
 
-  bool get isInitial => state.data == initial;
+  bool get isInitial => hasData && state.data == _initial;
   bool get isLoading => isInitial ? _mutex.isLocked : !hasData && !hasError;
   bool get isRefreshing =>
       ((!isInitial && hasData) || hasError) && _mutex.isLocked;
@@ -134,7 +142,8 @@ class Query<DataType, ErrorType, KeyType>
   }
 
   Future<DataType?> fetch() async {
-    if (_mutex.isLocked || hasData || hasError) return state.data;
+    if (_mutex.isLocked || (hasData && !isInitial) || hasError)
+      return state.data;
     return _operate().then((_) => state.data);
   }
 

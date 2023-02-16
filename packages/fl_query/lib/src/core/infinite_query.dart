@@ -131,7 +131,8 @@ class InfiniteQuery<DataType, ErrorType, KeyType, PageType>
           );
         }
       });
-
+    }
+    if (refreshConfig.refreshInterval > Duration.zero)
       Timer.periodic(refreshConfig.refreshInterval, (_) async {
         await Future.wait(
           state.pages.map((page) async {
@@ -141,7 +142,6 @@ class InfiniteQuery<DataType, ErrorType, KeyType, PageType>
           }),
         );
       });
-    }
   }
 
   final _mutex = Mutex();
