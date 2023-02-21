@@ -40,6 +40,15 @@ class _InfiniteQueryPageWidgetState extends State<InfiniteQueryPageWidget> {
       appBar: AppBar(
         title: const Text('Infinite Query'),
       ),
+      floatingActionButton: InfiniteQueryListenable(const ValueKey("products"),
+          builder: (context, query) {
+        return FloatingActionButton(
+          onPressed: () {
+            query?.fetchNext();
+          },
+          child: Text(query?.pages.length.toString() ?? "-69"),
+        );
+      }),
       body: InfiniteQueryBuilder<PagedProducts, ClientException, String, int>(
         const ValueKey("products"),
         (page) async {

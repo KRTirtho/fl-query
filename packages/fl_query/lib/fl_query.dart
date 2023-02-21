@@ -14,3 +14,4 @@ export 'src/core/query.dart';
 export 'src/widgets/query_builder.dart';
 export 'src/widgets/query_listenable.dart';
 export 'src/widgets/infinite_query_builder.dart';
+export 'src/widgets/infinite_query_listenable.dart';
