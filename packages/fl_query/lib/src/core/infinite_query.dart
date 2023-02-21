@@ -6,6 +6,7 @@ import 'package:fl_query/src/collections/json_config.dart';
 import 'package:fl_query/src/collections/refresh_config.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/retryer.dart';
+import 'package:fl_query/src/core/validation.dart';
 import 'package:flutter/material.dart' hide Listener;
 import 'package:hive_flutter/adapters.dart';
 import 'package:mutex/mutex.dart';
@@ -18,7 +19,7 @@ typedef InfiniteQueryNextPage<DataType, PageType> = PageType? Function(
   List<DataType> pages,
 );
 
-class InfiniteQueryPage<DataType, ErrorType, PageType> {
+class InfiniteQueryPage<DataType, ErrorType, PageType> with Invalidation {
   final PageType page;
   final DataType? data;
   final ErrorType? error;
@@ -33,8 +34,6 @@ class InfiniteQueryPage<DataType, ErrorType, PageType> {
     required this.updatedAt,
     required this.staleDuration,
   });
-
-  bool get isStale => DateTime.now().difference(updatedAt) > staleDuration;
 
   InfiniteQueryPage<DataType, ErrorType, PageType> copyWith({
     DataType? data,

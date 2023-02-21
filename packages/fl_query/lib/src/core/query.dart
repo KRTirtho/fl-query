@@ -5,6 +5,7 @@ import 'package:fl_query/src/collections/json_config.dart';
 import 'package:fl_query/src/collections/refresh_config.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/retryer.dart';
+import 'package:fl_query/src/core/validation.dart';
 import 'package:flutter/material.dart' hide Listener;
 import 'package:hive_flutter/adapters.dart';
 import 'package:mutex/mutex.dart';
@@ -12,7 +13,7 @@ import 'package:state_notifier/state_notifier.dart';
 
 typedef QueryFn<DataType> = FutureOr<DataType?> Function();
 
-class QueryState<DataType, ErrorType> {
+class QueryState<DataType, ErrorType> with Invalidation {
   final DataType? data;
   final ErrorType? error;
   final QueryFn<DataType> queryFn;
@@ -27,10 +28,6 @@ class QueryState<DataType, ErrorType> {
     required this.updatedAt,
     required this.staleDuration,
   });
-
-  bool get isStale {
-    return DateTime.now().difference(updatedAt) > staleDuration;
-  }
 
   QueryState<DataType, ErrorType> copyWith({
     DataType? data,
