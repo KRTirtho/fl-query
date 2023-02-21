@@ -8,9 +8,9 @@ abstract class DefaultConstants {
   );
 
   static const RefreshConfig refreshConfig = RefreshConfig(
-    staleDuration: Duration(seconds: 10),
+    staleDuration: Duration(minutes: 2, milliseconds: 250),
     refreshInterval: Duration.zero,
-    refreshOnMount: true,
+    refreshOnMount: false,
     refreshOnQueryFnChange: false,
   );
 

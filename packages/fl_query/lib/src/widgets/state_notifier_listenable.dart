@@ -26,7 +26,7 @@ class _StateNotifierListenableState<T>
 
   void initialize() {
     removeListener = widget.notifier.addListener((_) {
-      setState(() {});
+      if (mounted) setState(() {});
     });
   }
 

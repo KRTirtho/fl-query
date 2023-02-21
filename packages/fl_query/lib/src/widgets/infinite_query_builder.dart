@@ -5,37 +5,40 @@ import 'package:fl_query/src/collections/json_config.dart';
 import 'package:fl_query/src/collections/refresh_config.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/client.dart';
-import 'package:fl_query/src/core/query.dart';
+import 'package:fl_query/src/core/infinite_query.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/foundation/diagnostics.dart';
 
-typedef QueryBuilderFn<DataType, ErrorType, KeyType> = Widget Function(
+typedef InfiniteQueryBuilderFn<DataType, ErrorType, KeyType, PageType> = Widget
+    Function(
   BuildContext context,
-  Query<DataType, ErrorType, KeyType> query,
+  InfiniteQuery<DataType, ErrorType, KeyType, PageType> query,
 );
 
-class QueryBuilder<DataType, ErrorType, KeyType> extends StatefulWidget {
-  final QueryFn<DataType> queryFn;
+class InfiniteQueryBuilder<DataType, ErrorType, KeyType, PageType>
+    extends StatefulWidget {
+  final InfiniteQueryFn<DataType, PageType> queryFn;
   final ValueKey<KeyType> queryKey;
 
-  final DataType? initial;
+  final PageType initialPage;
+  final InfiniteQueryNextPage<DataType, PageType> nextPage;
 
   final RetryConfig retryConfig;
   final RefreshConfig refreshConfig;
   final JsonConfig<DataType>? jsonConfig;
 
-  final ValueChanged<DataType>? onData;
-  final ValueChanged<ErrorType>? onError;
+  final ValueChanged<PageEvent<DataType, PageType>>? onData;
+  final ValueChanged<PageEvent<ErrorType, PageType>>? onError;
 
   // widget specific
   final bool enabled;
-  final QueryBuilderFn<DataType, ErrorType, KeyType> builder;
+  final InfiniteQueryBuilderFn<DataType, ErrorType, KeyType, PageType> builder;
 
-  const QueryBuilder(
+  const InfiniteQueryBuilder(
     this.queryKey,
     this.queryFn, {
+    required this.nextPage,
     required this.builder,
-    this.initial,
+    required this.initialPage,
     this.retryConfig = DefaultConstants.retryConfig,
     this.refreshConfig = DefaultConstants.refreshConfig,
     this.jsonConfig,
@@ -49,18 +52,20 @@ class QueryBuilder<DataType, ErrorType, KeyType> extends StatefulWidget {
         );
 
   @override
-  State<QueryBuilder<DataType, ErrorType, KeyType>> createState() =>
-      _QueryBuilderState<DataType, ErrorType, KeyType>();
+  State<InfiniteQueryBuilder<DataType, ErrorType, KeyType, PageType>>
+      createState() =>
+          _InfiniteQueryBuilderState<DataType, ErrorType, KeyType, PageType>();
 }
 
-class _QueryBuilderState<DataType, ErrorType, KeyType>
-    extends State<QueryBuilder<DataType, ErrorType, KeyType>> {
-  Query<DataType, ErrorType, KeyType>? query;
+class _InfiniteQueryBuilderState<DataType, ErrorType, KeyType, PageType>
+    extends State<
+        InfiniteQueryBuilder<DataType, ErrorType, KeyType, PageType>> {
+  InfiniteQuery<DataType, ErrorType, KeyType, PageType>? query;
 
   VoidCallback? removeListener;
 
-  StreamSubscription<DataType>? dataSubscription;
-  StreamSubscription<ErrorType>? errorSubscription;
+  StreamSubscription<PageEvent<DataType, PageType>>? dataSubscription;
+  StreamSubscription<PageEvent<ErrorType, PageType>>? errorSubscription;
 
   void update(_) {
     if (mounted) setState(() {});
@@ -68,10 +73,11 @@ class _QueryBuilderState<DataType, ErrorType, KeyType>
 
   Future<void> initialize() async {
     setState(() {
-      query = QueryClient.of(context).createQuery(
+      query = QueryClient.of(context).createInfiniteQuery(
         widget.queryKey,
         widget.queryFn,
-        initial: widget.initial,
+        initialParam: widget.initialPage,
+        nextPage: widget.nextPage,
         retryConfig: widget.retryConfig,
         refreshConfig: widget.refreshConfig,
         jsonConfig: widget.jsonConfig,
@@ -90,8 +96,8 @@ class _QueryBuilderState<DataType, ErrorType, KeyType>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await initialize();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      initialize();
     });
   }
 
@@ -104,9 +110,7 @@ class _QueryBuilderState<DataType, ErrorType, KeyType>
   }
 
   @override
-  void didUpdateWidget(
-    QueryBuilder<DataType, ErrorType, KeyType> oldWidget,
-  ) {
+  void didUpdateWidget(oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     if (oldWidget.queryKey != widget.queryKey) {
@@ -120,6 +124,9 @@ class _QueryBuilderState<DataType, ErrorType, KeyType>
     }
     if (oldWidget.queryFn != widget.queryFn) {
       query!.updateQueryFn(widget.queryFn);
+    }
+    if (oldWidget.nextPage != widget.nextPage) {
+      query!.updateNextPageFn(widget.nextPage);
     }
     if (oldWidget.onData != widget.onData) {
       dataSubscription?.cancel();
@@ -137,43 +144,5 @@ class _QueryBuilderState<DataType, ErrorType, KeyType>
       return const SizedBox.shrink();
     }
     return widget.builder(context, query!);
-  }
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(
-      DiagnosticsProperty<Query<DataType, ErrorType, KeyType>>('query', query),
-    );
-    properties.add(
-      DiagnosticsProperty<ValueKey<KeyType>>('queryKey', widget.queryKey),
-    );
-    properties.add(
-      DiagnosticsProperty<QueryBuilderFn<DataType, ErrorType, KeyType>>(
-          'builder', widget.builder),
-    );
-    properties.add(DiagnosticsProperty<DataType>('initial', widget.initial));
-    properties.add(
-      DiagnosticsProperty<RetryConfig>('retryConfig', widget.retryConfig),
-    );
-    properties.add(
-      DiagnosticsProperty<RefreshConfig>(
-        'refreshConfig',
-        widget.refreshConfig,
-      ),
-    );
-    properties.add(
-      DiagnosticsProperty<JsonConfig<DataType>>(
-        'jsonConfig',
-        widget.jsonConfig,
-      ),
-    );
-    properties.add(
-      DiagnosticsProperty<ValueChanged<DataType>>('onData', widget.onData),
-    );
-    properties.add(
-      DiagnosticsProperty<ValueChanged<ErrorType>>('onError', widget.onError),
-    );
-    properties.add(DiagnosticsProperty<bool>('enabled', widget.enabled));
   }
 }

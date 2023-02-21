@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fl_query/src/collections/retry_config.dart';
+import 'package:flutter/material.dart';
 
 mixin Retryer<T, E> {
   void retryOperation(
@@ -19,9 +20,20 @@ mixin Retryer<T, E> {
         final result = await completer.future;
         onSuccessful(result);
         break;
-      } catch (e) {
-        if (attempts == config.maxRetries - 1 && e is E?) {
-          onFailed(e as E?);
+      } catch (e, stack) {
+        if (attempts == config.maxRetries - 1) {
+          if (e is E?) {
+            onFailed(e as E?);
+          } else {
+            FlutterError.reportError(
+              FlutterErrorDetails(
+                exception: e,
+                library: 'fl_query',
+                context: ErrorDescription('retryOperation'),
+                stack: stack,
+              ),
+            );
+          }
         }
       }
     }

@@ -35,10 +35,11 @@ class QueryState<DataType, ErrorType> {
   QueryState<DataType, ErrorType> copyWith({
     DataType? data,
     ErrorType? error,
+    DateTime? updatedAt,
     QueryFn<DataType>? queryFn,
   }) {
     return QueryState<DataType, ErrorType>(
-      updatedAt: DateTime.now(),
+      updatedAt: updatedAt ?? this.updatedAt,
       staleDuration: staleDuration,
       data: data ?? this.data,
       error: error ?? this.error,
@@ -80,7 +81,7 @@ class Query<DataType, ErrorType, KeyType>
           _initial = jsonConfig!.fromJson(
             Map.castFrom<dynamic, dynamic, String, dynamic>(json),
           );
-          state = state.copyWith(data: _initial);
+          state = state.copyWith(data: _initial, updatedAt: DateTime.now());
         }
       }).then((_) {
         if (hasListeners) {
@@ -124,7 +125,10 @@ class Query<DataType, ErrorType, KeyType>
         state.queryFn,
         config: retryConfig,
         onSuccessful: (DataType? data) {
-          state = state.copyWith(data: data);
+          state = state.copyWith(
+            data: data,
+            updatedAt: DateTime.now(),
+          );
           if (data != null) _dataController.add(data);
           if (jsonConfig != null && data != null) {
             _box.put(
@@ -134,7 +138,7 @@ class Query<DataType, ErrorType, KeyType>
           }
         },
         onFailed: (ErrorType? error) {
-          state = state.copyWith(error: error);
+          state = state.copyWith(error: error, updatedAt: DateTime.now());
           if (error != null) _errorController.add(error);
         },
       );
@@ -154,17 +158,14 @@ class Query<DataType, ErrorType, KeyType>
 
   void updateQueryFn(QueryFn<DataType> queryFn) {
     if (state.queryFn == queryFn) return;
-    // updatedAt is updated with copyWith so storing it
-    // here to check if the query is stale later
-    final stale = state.isStale;
     state = state.copyWith(queryFn: queryFn);
-    if (stale || refreshConfig.refreshOnQueryFnChange) {
+    if (state.isStale || refreshConfig.refreshOnQueryFnChange) {
       refresh();
     }
   }
 
   void setData(DataType data) {
-    state = state.copyWith(data: data);
+    state = state.copyWith(data: data, updatedAt: DateTime.now());
   }
 
   @override

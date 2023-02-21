@@ -64,17 +64,20 @@ class InfiniteQueryPage<DataType, ErrorType, PageType> {
 class InfiniteQueryState<DataType, ErrorType, PageType> {
   final Set<InfiniteQueryPage<DataType, ErrorType, PageType>> pages;
   final InfiniteQueryFn<DataType, PageType> queryFn;
-  final InfiniteQueryNextPage<DataType, PageType> nextPage;
+  final InfiniteQueryNextPage<DataType, PageType> _nextPage;
 
   const InfiniteQueryState({
     required this.pages,
     required this.queryFn,
-    required this.nextPage,
-  });
+    required InfiniteQueryNextPage<DataType, PageType> nextPage,
+  }) : _nextPage = nextPage;
 
   PageType get lastPage => pages.last.page;
-  PageType? get getNextPage =>
-      nextPage(lastPage, pages.map((e) => e.data!).toList());
+  PageType? get getNextPage => _nextPage(
+        lastPage,
+        pages.map((e) => e.data).whereType<DataType>().toList(),
+      );
+
   bool get hasNextPage => getNextPage != null;
 
   InfiniteQueryState<DataType, ErrorType, PageType> copyWith({
@@ -85,8 +88,20 @@ class InfiniteQueryState<DataType, ErrorType, PageType> {
     return InfiniteQueryState<DataType, ErrorType, PageType>(
       pages: pages ?? this.pages,
       queryFn: queryFn ?? this.queryFn,
-      nextPage: nextPage ?? this.nextPage,
+      nextPage: nextPage ?? this._nextPage,
     );
+  }
+}
+
+class PageEvent<T, P> {
+  final P page;
+  final T data;
+  const PageEvent(this.page, this.data);
+
+  factory PageEvent.fromPage(
+    InfiniteQueryPage page,
+  ) {
+    return PageEvent(page.page as P, page.data as T);
   }
 }
 
@@ -106,7 +121,9 @@ class InfiniteQuery<DataType, ErrorType, KeyType, PageType>
     this.retryConfig = DefaultConstants.retryConfig,
     this.refreshConfig = DefaultConstants.refreshConfig,
     this.jsonConfig,
-  }) : super(InfiniteQueryState<DataType, ErrorType, PageType>(
+  })  : _dataController = StreamController.broadcast(),
+        _errorController = StreamController.broadcast(),
+        super(InfiniteQueryState<DataType, ErrorType, PageType>(
           pages: {
             InfiniteQueryPage<DataType, ErrorType, PageType>(
               page: initialParam,
@@ -119,16 +136,29 @@ class InfiniteQuery<DataType, ErrorType, KeyType, PageType>
         )) {
     if (jsonConfig != null) {
       _mutex.protect(() async {
-        final json = await _box.get(key.toString());
+        final Map? json = await _box.get(key.value);
         if (json != null) {
           state = state.copyWith(
-            pages: json.map(
-              (key, value) => MapEntry(
-                key as PageType,
-                jsonConfig!.fromJson(value),
-              ),
-            ),
+            pages: json.entries
+                .map(
+                  (entry) => InfiniteQueryPage<DataType, ErrorType, PageType>(
+                    page: entry.key as PageType,
+                    data: jsonConfig!.fromJson(
+                        Map.castFrom<dynamic, dynamic, String, dynamic>(
+                      entry.value,
+                    )),
+                    // this makes the page loaded from cache `stale`
+                    updatedAt:
+                        DateTime.now().subtract(refreshConfig.staleDuration),
+                    staleDuration: refreshConfig.staleDuration,
+                  ),
+                )
+                .toSet(),
           );
+        }
+      }).then((_) {
+        if (hasListeners) {
+          return fetch();
         }
       });
     }
@@ -146,12 +176,18 @@ class InfiniteQuery<DataType, ErrorType, KeyType, PageType>
 
   final _mutex = Mutex();
   final _box = Hive.lazyBox("cache");
+  final StreamController<PageEvent<DataType, PageType>> _dataController;
+  final StreamController<PageEvent<ErrorType, PageType>> _errorController;
 
   List<DataType> get pages =>
       state.pages.map((e) => e.data).whereType<DataType>().toList();
   List<ErrorType> get errors =>
       state.pages.map((e) => e.error).whereType<ErrorType>().toList();
   PageType get lastPage => state.lastPage;
+  Stream<PageEvent<DataType, PageType>> get dataStream =>
+      _dataController.stream;
+  Stream<PageEvent<ErrorType, PageType>> get errorStream =>
+      _errorController.stream;
 
   bool get isLoadingPage => !hasPageData && !hasPageError && _mutex.isLocked;
   bool get isRefreshingPage => (hasPageData || hasPageError) && _mutex.isLocked;
@@ -160,8 +196,8 @@ class InfiniteQuery<DataType, ErrorType, KeyType, PageType>
   bool get hasPages => pages.isNotEmpty;
   bool get hasErrors => errors.isNotEmpty;
 
-  bool get hasPageData => state.pages.last.data != null;
-  bool get hasPageError => state.pages.last.error != null;
+  bool get hasPageData => !hasPages ? false : state.pages.last.data != null;
+  bool get hasPageError => !hasPages ? false : state.pages.last.error != null;
 
   bool get hasNextPage => state.hasNextPage;
 
@@ -171,51 +207,54 @@ class InfiniteQuery<DataType, ErrorType, KeyType, PageType>
         () => state.queryFn(page),
         config: retryConfig,
         onSuccessful: (data) async {
+          final dataPage = state.pages
+              .firstWhere(
+                (e) => e.page == page,
+                orElse: () => InfiniteQueryPage<DataType, ErrorType, PageType>(
+                  page: page,
+                  updatedAt: DateTime.now(),
+                  staleDuration: refreshConfig.staleDuration,
+                ),
+              )
+              .copyWith(data: data);
           state = state.copyWith(
-            pages: {
-              ...state.pages,
-              state.pages
-                  .firstWhere(
-                    (e) => e.page == page,
-                    orElse: () =>
-                        InfiniteQueryPage<DataType, ErrorType, PageType>(
-                      page: page,
-                      updatedAt: DateTime.now(),
-                      staleDuration: refreshConfig.staleDuration,
-                    ),
-                  )
-                  .copyWith(data: data),
-            },
+            pages: {...state.pages..remove(dataPage), dataPage},
           );
+          if (dataPage.data != null)
+            _dataController.add(PageEvent.fromPage(dataPage));
           if (jsonConfig != null) {
             await _box.put(
-              key.toString(),
-              state.pages.map(
-                (e) => MapEntry(
-                  e.page,
-                  e.data != null ? jsonConfig!.toJson(e.data!) : null,
+              key.value,
+              Map.fromEntries(
+                state.pages.map(
+                  (e) => MapEntry(
+                    e.page,
+                    e.data != null ? jsonConfig!.toJson(e.data!) : null,
+                  ),
                 ),
               ),
             );
           }
         },
         onFailed: (error) {
+          final errorPage = state.pages
+              .firstWhere(
+                (e) => e.page == page,
+                orElse: () => InfiniteQueryPage<DataType, ErrorType, PageType>(
+                  page: page,
+                  updatedAt: DateTime.now(),
+                  staleDuration: refreshConfig.staleDuration,
+                ),
+              )
+              .copyWith(error: error);
           state = state.copyWith(
             pages: {
-              ...state.pages,
-              state.pages
-                  .firstWhere(
-                    (e) => e.page == page,
-                    orElse: () =>
-                        InfiniteQueryPage<DataType, ErrorType, PageType>(
-                      page: page,
-                      updatedAt: DateTime.now(),
-                      staleDuration: refreshConfig.staleDuration,
-                    ),
-                  )
-                  .copyWith(error: error),
+              ...state.pages..remove(errorPage),
+              errorPage,
             },
           );
+          if (errorPage.error != null)
+            _errorController.add(PageEvent.fromPage(errorPage));
         },
       );
     });
@@ -246,12 +285,52 @@ class InfiniteQuery<DataType, ErrorType, KeyType, PageType>
 
   Future<DataType?> fetchNext() async {
     final nextPage = state.getNextPage;
-    if (_mutex.isLocked || nextPage != null) {
-      return state.pages.firstWhereOrNull((e) => e.page == nextPage)?.data;
+    if (_mutex.isLocked || nextPage == null) {
+      return state.pages.lastOrNull?.data;
     }
-    return await _operation(nextPage!).then((_) {
+    return await _operation(nextPage).then((_) {
       return state.pages.firstWhereOrNull((e) => e.page == nextPage)?.data;
     });
+  }
+
+  void updateQueryFn(InfiniteQueryFn<DataType, PageType> queryFn) {
+    if (state.queryFn == queryFn) return;
+    state = state.copyWith(queryFn: queryFn);
+    if (refreshConfig.refreshOnQueryFnChange) {
+      refreshAll();
+    } else {
+      Future.wait(
+        state.pages.map((page) async {
+          if (page.isStale) {
+            return await refresh(page.page);
+          }
+        }),
+      );
+    }
+  }
+
+  void updateNextPageFn(InfiniteQueryNextPage<DataType, PageType> nextPage) {
+    state = state.copyWith(nextPage: nextPage);
+  }
+
+  void setPageData(PageType page, DataType data) {
+    final newPage = state.pages
+        .firstWhere(
+          (e) => e.page == page,
+          orElse: () => InfiniteQueryPage<DataType, ErrorType, PageType>(
+            page: page,
+            updatedAt: DateTime.now(),
+            staleDuration: refreshConfig.staleDuration,
+          ),
+        )
+        .copyWith(data: data);
+
+    state = state.copyWith(
+      pages: {
+        ...state.pages..remove(newPage),
+        newPage,
+      },
+    );
   }
 
   @override
@@ -276,4 +355,13 @@ class InfiniteQuery<DataType, ErrorType, KeyType, PageType>
   @override
   operator ==(Object other) =>
       identical(this, other) || other is InfiniteQuery && key == other.key;
+
+  @override
+  int get hashCode => key.hashCode;
+
+  InfiniteQuery<NewDataType, NewErrorType, NewKeyType, NewPageType>
+      cast<NewDataType, NewErrorType, NewKeyType, NewPageType>() {
+    return this
+        as InfiniteQuery<NewDataType, NewErrorType, NewKeyType, NewPageType>;
+  }
 }

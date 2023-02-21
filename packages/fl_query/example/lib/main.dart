@@ -1,5 +1,4 @@
-import 'dart:math';
-
+import 'package:example/router.dart';
 import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';
 
@@ -18,54 +17,10 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final value = Random().nextInt(200000);
-    return MaterialApp(
-      home: Scaffold(
-        floatingActionButton: QueryListenable<String, dynamic, String>(
-            const ValueKey('hello'), builder: (context, query) {
-          if (query == null) {
-            return const SizedBox();
-          }
-          return FloatingActionButton(
-            onPressed: () {
-              query.refresh();
-            },
-            child: Text(query.data ?? 'No Data'),
-          );
-        }),
-        body: QueryBuilder<String, dynamic, String>(
-          const ValueKey('hello'),
-          () {
-            return Future.delayed(
-                const Duration(seconds: 6), () => 'Hello World! $value');
-          },
-          initial: 'Hello',
-          jsonConfig: JsonConfig(
-            fromJson: (json) => json['data'],
-            toJson: (data) => {'data': data},
-          ),
-          onData: (value) {
-            print('onData: $value');
-          },
-          onError: (error) {
-            print('onError: $error');
-          },
-          builder: (context, query) {
-            if (query.isLoading) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            } else if (query.hasError) {
-              return Center(
-                child: Text(query.error.toString()),
-              );
-            }
-            return Center(
-              child: Text(query.data),
-            );
-          },
-        ),
-      ),
+    return MaterialApp.router(
+      title: 'FL Query Example',
+      showPerformanceOverlay: true,
+      routerConfig: router,
     );
   }
 }
