@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:example/models/product.dart';
+import 'package:fl_query_example/models/product.dart';
 import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';

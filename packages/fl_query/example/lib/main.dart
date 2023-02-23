@@ -1,4 +1,4 @@
-import 'package:example/router.dart';
+import 'package:fl_query_example/router.dart';
 import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';
 

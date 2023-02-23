@@ -1,7 +1,7 @@
-import "package:example/pages/home.dart";
-import "package:example/pages/infinite_query.dart";
-import "package:example/pages/mutation/mutation.dart";
-import "package:example/pages/query.dart";
+import "package:fl_query_example/pages/home.dart";
+import "package:fl_query_example/pages/infinite_query.dart";
+import "package:fl_query_example/pages/mutation/mutation.dart";
+import "package:fl_query_example/pages/query.dart";
 import "package:go_router/go_router.dart";
 
 final router = GoRouter(
