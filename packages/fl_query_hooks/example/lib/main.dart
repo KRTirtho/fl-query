@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await QueryClient.initialize(cachePrefix: 'fl_query_example');
+  await QueryClient.initialize(cachePrefix: 'fl_query_hooks_example');
   runApp(
     QueryClientProvider(
       child: const MainApp(),
