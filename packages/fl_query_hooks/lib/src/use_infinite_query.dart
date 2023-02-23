@@ -1,11 +1,6 @@
 import 'dart:async';
 
-import 'package:fl_query/src/collections/default_configs.dart';
-import 'package:fl_query/src/collections/json_config.dart';
-import 'package:fl_query/src/collections/refresh_config.dart';
-import 'package:fl_query/src/collections/retry_config.dart';
-import 'package:fl_query/src/core/client.dart';
-import 'package:fl_query/src/core/infinite_query.dart';
+import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/foundation/diagnostics.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -22,6 +17,7 @@ InfiniteQuery<DataType, ErrorType, PageType>
   ValueChanged<PageEvent<DataType, PageType>>? onData,
   ValueChanged<PageEvent<ErrorType, PageType>>? onError,
   bool enabled = true,
+  List<Object?>? keys,
 }) {
   return use(UseInfiniteQuery(
     queryKey,
@@ -34,6 +30,7 @@ InfiniteQuery<DataType, ErrorType, PageType>
     onData: onData,
     onError: onError,
     enabled: enabled,
+    keys: keys,
   ));
 }
 
