@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:fl_query/src/collections/default_configs.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/retryer.dart';
-import 'package:flutter/material.dart';
 import 'package:mutex/mutex.dart';
 import 'package:state_notifier/state_notifier.dart';
 
@@ -39,10 +38,10 @@ class MutationState<DataType, ErrorType, VariablesType> {
   }
 }
 
-class Mutation<DataType, ErrorType, KeyType, VariablesType>
+class Mutation<DataType, ErrorType, VariablesType>
     extends StateNotifier<MutationState<DataType, ErrorType, VariablesType>>
     with Retryer<DataType, ErrorType> {
-  final ValueKey<KeyType> key;
+  final String key;
   final MutationFn<DataType, VariablesType> mutationFn;
 
   final RetryConfig retryConfig;
@@ -123,16 +122,14 @@ class Mutation<DataType, ErrorType, KeyType, VariablesType>
 
   @override
   operator ==(Object other) {
-    return identical(this, other) ||
-        (other is Mutation && key.value == other.key.value);
+    return identical(this, other) || (other is Mutation && key == other.key);
   }
 
   @override
   int get hashCode => key.hashCode;
 
-  Mutation<NewDataType, NewErrorType, NewKeyType, NewVariablesType>
-      cast<NewDataType, NewErrorType, NewKeyType, NewVariablesType>() {
-    return this
-        as Mutation<NewDataType, NewErrorType, NewKeyType, NewVariablesType>;
+  Mutation<NewDataType, NewErrorType, NewVariablesType>
+      cast<NewDataType, NewErrorType, NewVariablesType>() {
+    return this as Mutation<NewDataType, NewErrorType, NewVariablesType>;
   }
 }

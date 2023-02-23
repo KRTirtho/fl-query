@@ -9,14 +9,14 @@ import 'package:fl_query/src/core/query.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/foundation/diagnostics.dart';
 
-typedef QueryBuilderFn<DataType, ErrorType, KeyType> = Widget Function(
+typedef QueryBuilderFn<DataType, ErrorType> = Widget Function(
   BuildContext context,
-  Query<DataType, ErrorType, KeyType> query,
+  Query<DataType, ErrorType> query,
 );
 
-class QueryBuilder<DataType, ErrorType, KeyType> extends StatefulWidget {
+class QueryBuilder<DataType, ErrorType> extends StatefulWidget {
   final QueryFn<DataType> queryFn;
-  final ValueKey<KeyType> queryKey;
+  final String queryKey;
 
   final DataType? initial;
 
@@ -29,7 +29,7 @@ class QueryBuilder<DataType, ErrorType, KeyType> extends StatefulWidget {
 
   // widget specific
   final bool enabled;
-  final QueryBuilderFn<DataType, ErrorType, KeyType> builder;
+  final QueryBuilderFn<DataType, ErrorType> builder;
 
   const QueryBuilder(
     this.queryKey,
@@ -49,13 +49,13 @@ class QueryBuilder<DataType, ErrorType, KeyType> extends StatefulWidget {
         );
 
   @override
-  State<QueryBuilder<DataType, ErrorType, KeyType>> createState() =>
-      _QueryBuilderState<DataType, ErrorType, KeyType>();
+  State<QueryBuilder<DataType, ErrorType>> createState() =>
+      _QueryBuilderState<DataType, ErrorType>();
 }
 
-class _QueryBuilderState<DataType, ErrorType, KeyType>
-    extends State<QueryBuilder<DataType, ErrorType, KeyType>> {
-  Query<DataType, ErrorType, KeyType>? query;
+class _QueryBuilderState<DataType, ErrorType>
+    extends State<QueryBuilder<DataType, ErrorType>> {
+  Query<DataType, ErrorType>? query;
 
   VoidCallback? removeListener;
 
@@ -107,7 +107,7 @@ class _QueryBuilderState<DataType, ErrorType, KeyType>
 
   @override
   void didUpdateWidget(
-    QueryBuilder<DataType, ErrorType, KeyType> oldWidget,
+    QueryBuilder<DataType, ErrorType> oldWidget,
   ) {
     super.didUpdateWidget(oldWidget);
 
@@ -147,13 +147,13 @@ class _QueryBuilderState<DataType, ErrorType, KeyType>
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(
-      DiagnosticsProperty<Query<DataType, ErrorType, KeyType>>('query', query),
+      DiagnosticsProperty<Query<DataType, ErrorType>>('query', query),
     );
     properties.add(
-      DiagnosticsProperty<ValueKey<KeyType>>('queryKey', widget.queryKey),
+      DiagnosticsProperty<String>('queryKey', widget.queryKey),
     );
     properties.add(
-      DiagnosticsProperty<QueryBuilderFn<DataType, ErrorType, KeyType>>(
+      DiagnosticsProperty<QueryBuilderFn<DataType, ErrorType>>(
           'builder', widget.builder),
     );
     properties.add(DiagnosticsProperty<DataType>('initial', widget.initial));

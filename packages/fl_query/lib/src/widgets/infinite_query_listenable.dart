@@ -4,17 +4,16 @@ import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_query/src/widgets/state_notifier_listenable.dart';
 
-typedef InfiniteQueryListenableBuilder<DataType, ErrorType, KeyType, PageType>
-    = Widget Function(
+typedef InfiniteQueryListenableBuilder<DataType, ErrorType, PageType> = Widget
+    Function(
   BuildContext context,
-  InfiniteQuery<DataType, ErrorType, KeyType, PageType>? query,
+  InfiniteQuery<DataType, ErrorType, PageType>? query,
 );
 
-class InfiniteQueryListenable<DataType, ErrorType, KeyType, PageType>
+class InfiniteQueryListenable<DataType, ErrorType, PageType>
     extends StatefulWidget {
-  final ValueKey<KeyType> queryKey;
-  final InfiniteQueryListenableBuilder<DataType, ErrorType, KeyType, PageType>
-      builder;
+  final String queryKey;
+  final InfiniteQueryListenableBuilder<DataType, ErrorType, PageType> builder;
   const InfiniteQueryListenable(
     this.queryKey, {
     required this.builder,
@@ -22,14 +21,12 @@ class InfiniteQueryListenable<DataType, ErrorType, KeyType, PageType>
   });
 
   @override
-  State<InfiniteQueryListenable<DataType, ErrorType, KeyType, PageType>>
-      createState() => _InfiniteQueryListenableState<DataType, ErrorType,
-          KeyType, PageType>();
+  State<InfiniteQueryListenable<DataType, ErrorType, PageType>> createState() =>
+      _InfiniteQueryListenableState<DataType, ErrorType, PageType>();
 }
 
-class _InfiniteQueryListenableState<DataType, ErrorType, KeyType, PageType>
-    extends State<
-        InfiniteQueryListenable<DataType, ErrorType, KeyType, PageType>> {
+class _InfiniteQueryListenableState<DataType, ErrorType, PageType>
+    extends State<InfiniteQueryListenable<DataType, ErrorType, PageType>> {
   StreamSubscription<QueryCacheEvent>? _subscription;
 
   @override
@@ -60,8 +57,7 @@ class _InfiniteQueryListenableState<DataType, ErrorType, KeyType, PageType>
   @override
   Widget build(BuildContext context) {
     final query = QueryClient.of(context)
-        .getInfiniteQuery<DataType, ErrorType, KeyType, PageType>(
-            widget.queryKey);
+        .getInfiniteQuery<DataType, ErrorType, PageType>(widget.queryKey);
 
     if (query == null) {
       return widget.builder(context, null);
@@ -70,8 +66,7 @@ class _InfiniteQueryListenableState<DataType, ErrorType, KeyType, PageType>
         InfiniteQueryState<DataType, ErrorType, PageType>>(
       notifier: query,
       builder: (context, notifier) {
-        final query =
-            notifier as InfiniteQuery<DataType, ErrorType, KeyType, PageType>;
+        final query = notifier as InfiniteQuery<DataType, ErrorType, PageType>;
         return widget.builder(context, query);
       },
     );

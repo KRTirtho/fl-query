@@ -13,8 +13,8 @@ class QueryPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Query'),
       ),
-      floatingActionButton: QueryListenable<String, dynamic, String>(
-          const ValueKey('hello'), builder: (context, query) {
+      floatingActionButton:
+          QueryListenable<String, dynamic>('hello', builder: (context, query) {
         if (query == null) {
           return const SizedBox();
         }
@@ -25,8 +25,8 @@ class QueryPage extends StatelessWidget {
           child: Text(query.data ?? 'No Data'),
         );
       }),
-      body: QueryBuilder<String, dynamic, String>(
-        const ValueKey('hello'),
+      body: QueryBuilder<String, dynamic>(
+        'hello',
         () {
           return Future.delayed(
               const Duration(seconds: 6), () => 'Hello World! $value');

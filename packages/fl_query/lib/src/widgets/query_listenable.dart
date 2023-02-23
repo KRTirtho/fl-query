@@ -4,14 +4,14 @@ import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_query/src/widgets/state_notifier_listenable.dart';
 
-typedef QueryListenableBuilder<DataType, ErrorType, KeyType> = Widget Function(
+typedef QueryListenableBuilder<DataType, ErrorType> = Widget Function(
   BuildContext context,
-  Query<DataType, ErrorType, KeyType>? query,
+  Query<DataType, ErrorType>? query,
 );
 
-class QueryListenable<DataType, ErrorType, KeyType> extends StatefulWidget {
-  final ValueKey<KeyType> queryKey;
-  final QueryListenableBuilder<DataType, ErrorType, KeyType> builder;
+class QueryListenable<DataType, ErrorType> extends StatefulWidget {
+  final String queryKey;
+  final QueryListenableBuilder<DataType, ErrorType> builder;
   const QueryListenable(
     this.queryKey, {
     required this.builder,
@@ -19,12 +19,12 @@ class QueryListenable<DataType, ErrorType, KeyType> extends StatefulWidget {
   });
 
   @override
-  State<QueryListenable<DataType, ErrorType, KeyType>> createState() =>
-      _QueryListenableState<DataType, ErrorType, KeyType>();
+  State<QueryListenable<DataType, ErrorType>> createState() =>
+      _QueryListenableState<DataType, ErrorType>();
 }
 
-class _QueryListenableState<DataType, ErrorType, KeyType>
-    extends State<QueryListenable<DataType, ErrorType, KeyType>> {
+class _QueryListenableState<DataType, ErrorType>
+    extends State<QueryListenable<DataType, ErrorType>> {
   StreamSubscription<QueryCacheEvent>? _subscription;
 
   @override
@@ -53,8 +53,8 @@ class _QueryListenableState<DataType, ErrorType, KeyType>
 
   @override
   Widget build(BuildContext context) {
-    final query = QueryClient.of(context)
-        .getQuery<DataType, ErrorType, KeyType>(widget.queryKey);
+    final query =
+        QueryClient.of(context).getQuery<DataType, ErrorType>(widget.queryKey);
 
     if (query == null) {
       return widget.builder(context, null);
@@ -62,7 +62,7 @@ class _QueryListenableState<DataType, ErrorType, KeyType>
     return StateNotifierListenable<QueryState<DataType, ErrorType>>(
       notifier: query,
       builder: (context, notifier) {
-        final query = notifier as Query<DataType, ErrorType, KeyType>;
+        final query = notifier as Query<DataType, ErrorType>;
         return widget.builder(context, query);
       },
     );

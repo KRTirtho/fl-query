@@ -21,8 +21,7 @@ class _InfiniteQueryPageWidgetState extends State<InfiniteQueryPageWidget> {
     super.initState();
     controller.addListener(() async {
       if (controller.position.pixels == controller.position.maxScrollExtent) {
-        final query = QueryClient.of(context)
-            .getInfiniteQuery(const ValueKey("products"));
+        final query = QueryClient.of(context).getInfiniteQuery("products");
         await query?.fetchNext();
       }
     });
@@ -40,8 +39,8 @@ class _InfiniteQueryPageWidgetState extends State<InfiniteQueryPageWidget> {
       appBar: AppBar(
         title: const Text('Infinite Query'),
       ),
-      floatingActionButton: InfiniteQueryListenable(const ValueKey("products"),
-          builder: (context, query) {
+      floatingActionButton:
+          InfiniteQueryListenable("products", builder: (context, query) {
         return FloatingActionButton(
           onPressed: () {
             query?.fetchNext();
@@ -49,8 +48,8 @@ class _InfiniteQueryPageWidgetState extends State<InfiniteQueryPageWidget> {
           child: Text(query?.pages.length.toString() ?? "-69"),
         );
       }),
-      body: InfiniteQueryBuilder<PagedProducts, ClientException, String, int>(
-        const ValueKey("products"),
+      body: InfiniteQueryBuilder<PagedProducts, ClientException, int>(
+        "products",
         (page) async {
           final res = await get(Uri.parse(
             "https://dummyjson.com/products?limit=10&skip=${page * 10}",

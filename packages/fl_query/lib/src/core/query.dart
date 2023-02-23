@@ -6,7 +6,6 @@ import 'package:fl_query/src/collections/refresh_config.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/retryer.dart';
 import 'package:fl_query/src/core/validation.dart';
-import 'package:flutter/material.dart' hide Listener;
 import 'package:hive_flutter/adapters.dart';
 import 'package:mutex/mutex.dart';
 import 'package:state_notifier/state_notifier.dart';
@@ -45,10 +44,10 @@ class QueryState<DataType, ErrorType> with Invalidation {
   }
 }
 
-class Query<DataType, ErrorType, KeyType>
+class Query<DataType, ErrorType>
     extends StateNotifier<QueryState<DataType, ErrorType>>
     with Retryer<DataType, ErrorType> {
-  final ValueKey<KeyType> key;
+  final String key;
 
   final RefreshConfig refreshConfig;
   final RetryConfig retryConfig;
@@ -178,15 +177,13 @@ class Query<DataType, ErrorType, KeyType>
 
   @override
   operator ==(Object other) {
-    return identical(this, other) ||
-        (other is Query && key.value == other.key.value);
+    return identical(this, other) || (other is Query && key == other.key);
   }
 
   @override
   int get hashCode => key.hashCode;
 
-  Query<NewDataType, NewErrorType, NewKeyType>
-      cast<NewDataType, NewErrorType, NewKeyType>() {
-    return this as Query<NewDataType, NewErrorType, NewKeyType>;
+  Query<NewDataType, NewErrorType> cast<NewDataType, NewErrorType>() {
+    return this as Query<NewDataType, NewErrorType>;
   }
 }

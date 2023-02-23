@@ -35,9 +35,9 @@ class _MutationPageState extends State<MutationPage> {
       appBar: AppBar(
         title: const Text('Mutation'),
       ),
-      body: MutationBuilder<Map<String, dynamic>, dynamic, String,
-          Map<String, dynamic>, dynamic>(
-        const ValueKey('sign-up'),
+      body: MutationBuilder<Map<String, dynamic>, dynamic, Map<String, dynamic>,
+          dynamic>(
+        'sign-up',
         (variables) {
           return Future.delayed(
             const Duration(seconds: 1),
@@ -56,9 +56,7 @@ class _MutationPageState extends State<MutationPage> {
           print('onData: $data');
           print('recoveryData: $recoveryData');
         },
-        refreshQueries: const [
-          ValueKey('hello'),
-        ],
+        refreshQueries: const ['hello'],
         builder: (context, mutation) {
           if (mutation.hasData) {
             return ListView(

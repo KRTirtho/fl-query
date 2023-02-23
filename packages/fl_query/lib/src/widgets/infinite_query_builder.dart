@@ -8,16 +8,15 @@ import 'package:fl_query/src/core/client.dart';
 import 'package:fl_query/src/core/infinite_query.dart';
 import 'package:flutter/material.dart';
 
-typedef InfiniteQueryBuilderFn<DataType, ErrorType, KeyType, PageType> = Widget
-    Function(
+typedef InfiniteQueryBuilderFn<DataType, ErrorType, PageType> = Widget Function(
   BuildContext context,
-  InfiniteQuery<DataType, ErrorType, KeyType, PageType> query,
+  InfiniteQuery<DataType, ErrorType, PageType> query,
 );
 
-class InfiniteQueryBuilder<DataType, ErrorType, KeyType, PageType>
+class InfiniteQueryBuilder<DataType, ErrorType, PageType>
     extends StatefulWidget {
   final InfiniteQueryFn<DataType, PageType> queryFn;
-  final ValueKey<KeyType> queryKey;
+  final String queryKey;
 
   final PageType initialPage;
   final InfiniteQueryNextPage<DataType, PageType> nextPage;
@@ -31,7 +30,7 @@ class InfiniteQueryBuilder<DataType, ErrorType, KeyType, PageType>
 
   // widget specific
   final bool enabled;
-  final InfiniteQueryBuilderFn<DataType, ErrorType, KeyType, PageType> builder;
+  final InfiniteQueryBuilderFn<DataType, ErrorType, PageType> builder;
 
   const InfiniteQueryBuilder(
     this.queryKey,
@@ -52,15 +51,13 @@ class InfiniteQueryBuilder<DataType, ErrorType, KeyType, PageType>
         );
 
   @override
-  State<InfiniteQueryBuilder<DataType, ErrorType, KeyType, PageType>>
-      createState() =>
-          _InfiniteQueryBuilderState<DataType, ErrorType, KeyType, PageType>();
+  State<InfiniteQueryBuilder<DataType, ErrorType, PageType>> createState() =>
+      _InfiniteQueryBuilderState<DataType, ErrorType, PageType>();
 }
 
-class _InfiniteQueryBuilderState<DataType, ErrorType, KeyType, PageType>
-    extends State<
-        InfiniteQueryBuilder<DataType, ErrorType, KeyType, PageType>> {
-  InfiniteQuery<DataType, ErrorType, KeyType, PageType>? query;
+class _InfiniteQueryBuilderState<DataType, ErrorType, PageType>
+    extends State<InfiniteQueryBuilder<DataType, ErrorType, PageType>> {
+  InfiniteQuery<DataType, ErrorType, PageType>? query;
 
   VoidCallback? removeListener;
 

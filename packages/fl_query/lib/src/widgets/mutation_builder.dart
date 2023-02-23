@@ -7,10 +7,9 @@ import 'package:fl_query/src/core/mutation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/foundation/diagnostics.dart';
 
-typedef MutationBuilderFn<DataType, ErrorType, KeyType, VariablesType> = Widget
-    Function(
+typedef MutationBuilderFn<DataType, ErrorType, VariablesType> = Widget Function(
   BuildContext context,
-  Mutation<DataType, ErrorType, KeyType, VariablesType> mutation,
+  Mutation<DataType, ErrorType, VariablesType> mutation,
 );
 typedef MutationOnDataFn<DataType, RecoveryType> = void Function(
   DataType data,
@@ -25,10 +24,10 @@ typedef MutationOnMutationFn<VariablesType, RecoveryType>
   VariablesType variables,
 );
 
-class MutationBuilder<DataType, ErrorType, KeyType, VariablesType, RecoveryType>
+class MutationBuilder<DataType, ErrorType, VariablesType, RecoveryType>
     extends StatefulWidget {
   final MutationFn<DataType, VariablesType> mutationFn;
-  final ValueKey<KeyType> mutationKey;
+  final String mutationKey;
 
   final RetryConfig retryConfig;
 
@@ -37,9 +36,9 @@ class MutationBuilder<DataType, ErrorType, KeyType, VariablesType, RecoveryType>
   final MutationOnMutationFn<VariablesType, RecoveryType>? onMutate;
 
   // widget specific
-  final MutationBuilderFn<DataType, ErrorType, KeyType, VariablesType> builder;
-  final List<ValueKey>? refreshQueries;
-  final List<ValueKey>? refreshInfiniteQueries;
+  final MutationBuilderFn<DataType, ErrorType, VariablesType> builder;
+  final List<String>? refreshQueries;
+  final List<String>? refreshInfiniteQueries;
 
   const MutationBuilder(
     this.mutationKey,
@@ -55,18 +54,15 @@ class MutationBuilder<DataType, ErrorType, KeyType, VariablesType, RecoveryType>
   });
 
   @override
-  State<
-      MutationBuilder<DataType, ErrorType, KeyType, VariablesType,
-          RecoveryType>> createState() => _MutationBuilderState<DataType,
-      ErrorType, KeyType, VariablesType, RecoveryType>();
+  State<MutationBuilder<DataType, ErrorType, VariablesType, RecoveryType>>
+      createState() => _MutationBuilderState<DataType, ErrorType, VariablesType,
+          RecoveryType>();
 }
 
-class _MutationBuilderState<DataType, ErrorType, KeyType, VariablesType,
-        RecoveryType>
+class _MutationBuilderState<DataType, ErrorType, VariablesType, RecoveryType>
     extends State<
-        MutationBuilder<DataType, ErrorType, KeyType, VariablesType,
-            RecoveryType>> {
-  Mutation<DataType, ErrorType, KeyType, VariablesType>? mutation;
+        MutationBuilder<DataType, ErrorType, VariablesType, RecoveryType>> {
+  Mutation<DataType, ErrorType, VariablesType>? mutation;
 
   VoidCallback? removeListener;
 
@@ -162,8 +158,7 @@ class _MutationBuilderState<DataType, ErrorType, KeyType, VariablesType,
 
   @override
   void didUpdateWidget(
-    MutationBuilder<DataType, ErrorType, KeyType, VariablesType, RecoveryType>
-        oldWidget,
+    MutationBuilder<DataType, ErrorType, VariablesType, RecoveryType> oldWidget,
   ) {
     super.didUpdateWidget(oldWidget);
 
@@ -208,12 +203,11 @@ class _MutationBuilderState<DataType, ErrorType, KeyType, VariablesType,
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(
-      DiagnosticsProperty<
-              Mutation<DataType, ErrorType, KeyType, VariablesType>>(
+      DiagnosticsProperty<Mutation<DataType, ErrorType, VariablesType>>(
           'mutation', mutation),
     );
     properties.add(
-      DiagnosticsProperty<ValueKey<KeyType>>('mutationKey', widget.mutationKey),
+      DiagnosticsProperty<String>('mutationKey', widget.mutationKey),
     );
     properties.add(
       DiagnosticsProperty<MutationFn<DataType, VariablesType>>(
@@ -242,7 +236,7 @@ class _MutationBuilderState<DataType, ErrorType, KeyType, VariablesType,
     );
     properties.add(
       DiagnosticsProperty<
-          MutationBuilderFn<DataType, ErrorType, KeyType, VariablesType>>(
+          MutationBuilderFn<DataType, ErrorType, VariablesType>>(
         'builder',
         widget.builder,
       ),

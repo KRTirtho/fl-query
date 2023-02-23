@@ -7,7 +7,6 @@ import 'package:fl_query/src/collections/refresh_config.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/retryer.dart';
 import 'package:fl_query/src/core/validation.dart';
-import 'package:flutter/material.dart' hide Listener;
 import 'package:hive_flutter/adapters.dart';
 import 'package:mutex/mutex.dart';
 import 'package:state_notifier/state_notifier.dart';
@@ -104,10 +103,10 @@ class PageEvent<T, P> {
   }
 }
 
-class InfiniteQuery<DataType, ErrorType, KeyType, PageType>
+class InfiniteQuery<DataType, ErrorType, PageType>
     extends StateNotifier<InfiniteQueryState<DataType, ErrorType, PageType>>
     with Retryer<DataType, ErrorType> {
-  final ValueKey<KeyType> key;
+  final String key;
   final RetryConfig retryConfig;
   final RefreshConfig refreshConfig;
   final JsonConfig<DataType>? jsonConfig;
@@ -135,7 +134,7 @@ class InfiniteQuery<DataType, ErrorType, KeyType, PageType>
         )) {
     if (jsonConfig != null) {
       _mutex.protect(() async {
-        final Map? json = await _box.get(key.value);
+        final Map? json = await _box.get(key);
         if (json != null) {
           state = state.copyWith(
             pages: json.entries
@@ -223,7 +222,7 @@ class InfiniteQuery<DataType, ErrorType, KeyType, PageType>
             _dataController.add(PageEvent.fromPage(dataPage));
             if (jsonConfig != null) {
               await _box.put(
-                key.value,
+                key,
                 Map.fromEntries(
                   state.pages.map(
                     (e) => MapEntry(
@@ -359,9 +358,8 @@ class InfiniteQuery<DataType, ErrorType, KeyType, PageType>
   @override
   int get hashCode => key.hashCode;
 
-  InfiniteQuery<NewDataType, NewErrorType, NewKeyType, NewPageType>
-      cast<NewDataType, NewErrorType, NewKeyType, NewPageType>() {
-    return this
-        as InfiniteQuery<NewDataType, NewErrorType, NewKeyType, NewPageType>;
+  InfiniteQuery<NewDataType, NewErrorType, NewPageType>
+      cast<NewDataType, NewErrorType, NewPageType>() {
+    return this as InfiniteQuery<NewDataType, NewErrorType, NewPageType>;
   }
 }
