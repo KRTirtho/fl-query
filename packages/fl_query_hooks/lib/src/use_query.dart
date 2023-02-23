@@ -83,17 +83,20 @@ class _UseQueryState<DataType, ErrorType> extends HookState<
     setState(() {});
   }
 
+  void _createQuery() {
+    query = QueryClient.of(context).createQuery(
+      hook.queryKey,
+      hook.queryFn,
+      initial: hook.initial,
+      retryConfig: hook.retryConfig,
+      refreshConfig: hook.refreshConfig,
+      jsonConfig: hook.jsonConfig,
+    );
+  }
+
   Future<void> initialize() async {
     setState(() {
-      query = QueryClient.of(context).createQuery(
-        hook.queryKey,
-        hook.queryFn,
-        initial: hook.initial,
-        retryConfig: hook.retryConfig,
-        refreshConfig: hook.refreshConfig,
-        jsonConfig: hook.jsonConfig,
-      );
-
+      _createQuery();
       if (hook.onData != null)
         dataSubscription = query!.dataStream.listen(hook.onData);
       if (hook.onData != null)
@@ -155,14 +158,7 @@ class _UseQueryState<DataType, ErrorType> extends HookState<
   @override
   Query<DataType, ErrorType> build(BuildContext context) {
     if (query == null) {
-      query = QueryClient.of(context).createQuery(
-        hook.queryKey,
-        hook.queryFn,
-        initial: hook.initial,
-        retryConfig: hook.retryConfig,
-        refreshConfig: hook.refreshConfig,
-        jsonConfig: hook.jsonConfig,
-      );
+      _createQuery();
     }
     return query!;
   }

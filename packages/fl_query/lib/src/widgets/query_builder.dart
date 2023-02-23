@@ -63,17 +63,20 @@ class _QueryBuilderState<DataType, ErrorType>
   StreamSubscription<DataType>? dataSubscription;
   StreamSubscription<ErrorType>? errorSubscription;
 
+  void _createQuery() {
+    query = QueryClient.of(context).createQuery(
+      widget.queryKey,
+      widget.queryFn,
+      initial: widget.initial,
+      retryConfig: widget.retryConfig,
+      refreshConfig: widget.refreshConfig,
+      jsonConfig: widget.jsonConfig,
+    );
+  }
+
   Future<void> initialize() async {
     setState(() {
-      query = QueryClient.of(context).createQuery(
-        widget.queryKey,
-        widget.queryFn,
-        initial: widget.initial,
-        retryConfig: widget.retryConfig,
-        refreshConfig: widget.refreshConfig,
-        jsonConfig: widget.jsonConfig,
-      );
-
+      _createQuery();
       if (widget.onData != null)
         dataSubscription = query!.dataStream.listen(widget.onData);
       if (widget.onData != null)
@@ -135,7 +138,7 @@ class _QueryBuilderState<DataType, ErrorType>
   @override
   Widget build(BuildContext context) {
     if (query == null) {
-      return const SizedBox.shrink();
+      _createQuery();
     }
     return widget.builder(context, query!);
   }

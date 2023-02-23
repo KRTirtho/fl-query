@@ -123,16 +123,20 @@ class _MutationBuilderState<DataType, ErrorType, VariablesType, RecoveryType>
 
   Future<void> initialize() async {
     setState(() {
-      mutation = QueryClient.of(context).createMutation(
-        widget.mutationKey,
-        widget.mutationFn,
-        retryConfig: widget.retryConfig,
-      );
+      _createMutation();
       subscribeOnMutate();
       subscribeOnData();
       subscribeOnError();
       removeListener = mutation!.addListener(rebuild);
     });
+  }
+
+  void _createMutation() {
+    mutation = QueryClient.of(context).createMutation(
+      widget.mutationKey,
+      widget.mutationFn,
+      retryConfig: widget.retryConfig,
+    );
   }
 
   @override
@@ -190,7 +194,7 @@ class _MutationBuilderState<DataType, ErrorType, VariablesType, RecoveryType>
   @override
   Widget build(BuildContext context) {
     if (mutation == null) {
-      return const SizedBox.shrink();
+      _createMutation();
     }
     return widget.builder(context, mutation!);
   }
