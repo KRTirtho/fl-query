@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await QueryClient.initialize();
+  await QueryClient.initialize(cachePrefix: 'fl_query_example');
   runApp(
     QueryClientProvider(
       child: const MainApp(),
@@ -23,7 +23,6 @@ class MainApp extends StatelessWidget {
         useMaterial3: true,
       ),
       title: 'FL Query Example',
-      // showPerformanceOverlay: true,
       routerConfig: router,
     );
   }

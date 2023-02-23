@@ -4,6 +4,7 @@ import 'package:fl_query/src/collections/default_configs.dart';
 import 'package:fl_query/src/collections/json_config.dart';
 import 'package:fl_query/src/collections/refresh_config.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
+import 'package:fl_query/src/core/client.dart';
 import 'package:fl_query/src/core/retryer.dart';
 import 'package:fl_query/src/core/validation.dart';
 import 'package:hive_flutter/adapters.dart';
@@ -60,7 +61,7 @@ class Query<DataType, ErrorType>
     this.retryConfig = DefaultConstants.retryConfig,
     this.refreshConfig = DefaultConstants.refreshConfig,
     this.jsonConfig,
-  })  : _box = Hive.lazyBox("cache"),
+  })  : _box = Hive.lazyBox(QueryClient.queryCachePrefix),
         _dataController = StreamController<DataType>.broadcast(),
         _errorController = StreamController<ErrorType>.broadcast(),
         _initial = initial,
@@ -117,6 +118,7 @@ class Query<DataType, ErrorType>
 
   Future<void> _operate() {
     return _mutex.protect(() async {
+      state = state.copyWith();
       return await retryOperation(
         state.queryFn,
         config: retryConfig,

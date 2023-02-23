@@ -6,6 +6,7 @@ import 'package:fl_query/src/collections/refresh_config.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/client.dart';
 import 'package:fl_query/src/core/query.dart';
+import 'package:fl_query/src/widgets/mixins/rebuilder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/foundation/diagnostics.dart';
 
@@ -54,17 +55,13 @@ class QueryBuilder<DataType, ErrorType> extends StatefulWidget {
 }
 
 class _QueryBuilderState<DataType, ErrorType>
-    extends State<QueryBuilder<DataType, ErrorType>> {
+    extends State<QueryBuilder<DataType, ErrorType>> with SafeRebuild {
   Query<DataType, ErrorType>? query;
 
   VoidCallback? removeListener;
 
   StreamSubscription<DataType>? dataSubscription;
   StreamSubscription<ErrorType>? errorSubscription;
-
-  void update(_) {
-    if (mounted) setState(() {});
-  }
 
   Future<void> initialize() async {
     setState(() {
@@ -82,7 +79,7 @@ class _QueryBuilderState<DataType, ErrorType>
       if (widget.onData != null)
         errorSubscription = query!.errorStream.listen(widget.onError);
 
-      removeListener = query!.addListener(update);
+      removeListener = query!.addListener(rebuild);
     });
     if (widget.enabled) {
       await query!.fetch();

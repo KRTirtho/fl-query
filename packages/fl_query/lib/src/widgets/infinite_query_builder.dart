@@ -6,6 +6,7 @@ import 'package:fl_query/src/collections/refresh_config.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/client.dart';
 import 'package:fl_query/src/core/infinite_query.dart';
+import 'package:fl_query/src/widgets/mixins/rebuilder.dart';
 import 'package:flutter/material.dart';
 
 typedef InfiniteQueryBuilderFn<DataType, ErrorType, PageType> = Widget Function(
@@ -56,17 +57,14 @@ class InfiniteQueryBuilder<DataType, ErrorType, PageType>
 }
 
 class _InfiniteQueryBuilderState<DataType, ErrorType, PageType>
-    extends State<InfiniteQueryBuilder<DataType, ErrorType, PageType>> {
+    extends State<InfiniteQueryBuilder<DataType, ErrorType, PageType>>
+    with SafeRebuild {
   InfiniteQuery<DataType, ErrorType, PageType>? query;
 
   VoidCallback? removeListener;
 
   StreamSubscription<PageEvent<DataType, PageType>>? dataSubscription;
   StreamSubscription<PageEvent<ErrorType, PageType>>? errorSubscription;
-
-  void update(_) {
-    if (mounted) setState(() {});
-  }
 
   Future<void> initialize() async {
     setState(() {
@@ -85,7 +83,7 @@ class _InfiniteQueryBuilderState<DataType, ErrorType, PageType>
       if (widget.onError != null)
         errorSubscription = query!.errorStream.listen(widget.onError);
 
-      removeListener = query!.addListener(update);
+      removeListener = query!.addListener(rebuild);
     });
     if (widget.enabled) {
       await query!.fetch();

@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:collection/collection.dart';
 import 'package:fl_query/src/collections/default_configs.dart';
+import 'package:fl_query/src/core/client.dart';
 import 'package:fl_query/src/core/infinite_query.dart';
 import 'package:fl_query/src/core/mutation.dart';
 import 'package:fl_query/src/core/query.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 enum QueryCacheEventType {
   addQuery,
@@ -113,4 +115,14 @@ class QueryCache {
       QueryCacheEvent(QueryCacheEventType.removeMutation, mutation),
     );
   }
+
+  void clear() {
+    _queries.clear();
+    _infiniteQueries.clear();
+    _mutations.clear();
+  }
+
+  LazyBox get queryHiveBox => Hive.lazyBox(QueryClient.queryCachePrefix);
+  LazyBox get infiniteQueryHiveBox =>
+      Hive.lazyBox(QueryClient.infiniteQueryCachePrefix);
 }

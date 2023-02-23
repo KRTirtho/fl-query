@@ -1,10 +1,7 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
-import 'package:fl_query/src/collections/default_configs.dart';
-import 'package:fl_query/src/collections/json_config.dart';
-import 'package:fl_query/src/collections/refresh_config.dart';
-import 'package:fl_query/src/collections/retry_config.dart';
+import 'package:fl_query/fl_query.dart';
 import 'package:fl_query/src/core/retryer.dart';
 import 'package:fl_query/src/core/validation.dart';
 import 'package:hive_flutter/adapters.dart';
@@ -121,6 +118,7 @@ class InfiniteQuery<DataType, ErrorType, PageType>
     this.jsonConfig,
   })  : _dataController = StreamController.broadcast(),
         _errorController = StreamController.broadcast(),
+        _box = Hive.lazyBox(QueryClient.infiniteQueryCachePrefix),
         super(InfiniteQueryState<DataType, ErrorType, PageType>(
           pages: {
             InfiniteQueryPage<DataType, ErrorType, PageType>(
@@ -173,7 +171,7 @@ class InfiniteQuery<DataType, ErrorType, PageType>
   }
 
   final _mutex = Mutex();
-  final _box = Hive.lazyBox("cache");
+  final LazyBox _box;
   final StreamController<PageEvent<DataType, PageType>> _dataController;
   final StreamController<PageEvent<ErrorType, PageType>> _errorController;
 
@@ -201,6 +199,7 @@ class InfiniteQuery<DataType, ErrorType, PageType>
 
   Future<void> _operation(PageType page) {
     return _mutex.protect(() async {
+      state = state.copyWith();
       return await retryOperation(
         () => state.queryFn(page),
         config: retryConfig,

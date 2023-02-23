@@ -4,6 +4,7 @@ import 'package:fl_query/src/collections/default_configs.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/client.dart';
 import 'package:fl_query/src/core/mutation.dart';
+import 'package:fl_query/src/widgets/mixins/rebuilder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/foundation/diagnostics.dart';
 
@@ -61,7 +62,8 @@ class MutationBuilder<DataType, ErrorType, VariablesType, RecoveryType>
 
 class _MutationBuilderState<DataType, ErrorType, VariablesType, RecoveryType>
     extends State<
-        MutationBuilder<DataType, ErrorType, VariablesType, RecoveryType>> {
+        MutationBuilder<DataType, ErrorType, VariablesType, RecoveryType>>
+    with SafeRebuild {
   Mutation<DataType, ErrorType, VariablesType>? mutation;
 
   VoidCallback? removeListener;
@@ -71,12 +73,6 @@ class _MutationBuilderState<DataType, ErrorType, VariablesType, RecoveryType>
   StreamSubscription<ErrorType>? errorSubscription;
 
   RecoveryType? recoveryData;
-
-  void update(_) {
-    if (mounted) {
-      setState(() {});
-    }
-  }
 
   void subscribeOnMutate() {
     if (widget.onMutate != null)
@@ -135,7 +131,7 @@ class _MutationBuilderState<DataType, ErrorType, VariablesType, RecoveryType>
       subscribeOnMutate();
       subscribeOnData();
       subscribeOnError();
-      removeListener = mutation!.addListener(update);
+      removeListener = mutation!.addListener(rebuild);
     });
   }
 

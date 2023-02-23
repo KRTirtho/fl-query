@@ -77,6 +77,7 @@ class Mutation<DataType, ErrorType, VariablesType>
 
   Future<void> _operate(VariablesType variables) {
     return _mutex.protect(() async {
+      state = state.copyWith();
       return await retryOperation(
         () {
           _mutationController.add(variables);

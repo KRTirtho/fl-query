@@ -240,8 +240,19 @@ class QueryClient {
         ?.client;
   }
 
-  static Future<void> initialize({String? cacheDir}) async {
+  static String _cachePrefix = 'fl_query';
+
+  static String get queryCachePrefix => '$_cachePrefix.cache.queries';
+  static String get infiniteQueryCachePrefix =>
+      '$_cachePrefix.cache.infinite_queries';
+
+  static Future<void> initialize({
+    required String cachePrefix,
+    String? cacheDir,
+  }) async {
     await Hive.initFlutter(cacheDir);
-    await Hive.openLazyBox('cache');
+    _cachePrefix = cachePrefix;
+    await Hive.openLazyBox(queryCachePrefix);
+    await Hive.openLazyBox(infiniteQueryCachePrefix);
   }
 }
