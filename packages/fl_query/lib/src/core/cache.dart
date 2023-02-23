@@ -3,13 +3,16 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:fl_query/src/collections/default_configs.dart';
 import 'package:fl_query/src/core/infinite_query.dart';
+import 'package:fl_query/src/core/mutation.dart';
 import 'package:fl_query/src/core/query.dart';
 
 enum QueryCacheEventType {
   addQuery,
   addInfiniteQuery,
+  addMutation,
   removeQuery,
   removeInfiniteQuery,
+  removeMutation,
 }
 
 class QueryCacheEvent {
@@ -22,6 +25,7 @@ class QueryCacheEvent {
 class QueryCache {
   final Set<Query> _queries;
   final Set<InfiniteQuery> _infiniteQueries;
+  final Set<Mutation> _mutations;
 
   final Duration cacheDuration;
 
@@ -30,16 +34,41 @@ class QueryCache {
   QueryCache({
     this.cacheDuration = DefaultConstants.cacheDuration,
   })  : _queries = Set<Query>(),
-        _infiniteQueries = Set<InfiniteQuery>() {
+        _infiniteQueries = Set<InfiniteQuery>(),
+        _mutations = Set<Mutation>() {
     Timer.periodic(cacheDuration, (timer) {
-      _queries.removeWhere((query) => query.isInactive);
-      _infiniteQueries.removeWhere((query) => query.isInactive);
+      _queries.removeWhere((query) {
+        if (query.isInactive) {
+          _eventController.add(
+            QueryCacheEvent(QueryCacheEventType.removeQuery, query),
+          );
+        }
+        return query.isInactive;
+      });
+      _infiniteQueries.removeWhere((query) {
+        if (query.isInactive) {
+          _eventController.add(
+            QueryCacheEvent(QueryCacheEventType.removeInfiniteQuery, query),
+          );
+        }
+        return query.isInactive;
+      });
+      _mutations.removeWhere((mutation) {
+        if (mutation.isInactive) {
+          _eventController.add(
+            QueryCacheEvent(QueryCacheEventType.removeMutation, mutation),
+          );
+        }
+        return mutation.isInactive;
+      });
     });
   }
 
   UnmodifiableSetView<Query> get queries => UnmodifiableSetView(_queries);
   UnmodifiableSetView<InfiniteQuery> get infiniteQueries =>
       UnmodifiableSetView(_infiniteQueries);
+  UnmodifiableSetView<Mutation> get mutations =>
+      UnmodifiableSetView(_mutations);
 
   Stream<QueryCacheEvent> get events => _eventController.stream;
 
@@ -68,6 +97,20 @@ class QueryCache {
     _infiniteQueries.remove(query);
     _eventController.add(
       QueryCacheEvent(QueryCacheEventType.removeInfiniteQuery, query),
+    );
+  }
+
+  void addMutation(Mutation mutation) {
+    _mutations.add(mutation);
+    _eventController.add(
+      QueryCacheEvent(QueryCacheEventType.addMutation, mutation),
+    );
+  }
+
+  void removeMutation(Mutation mutation) {
+    _mutations.remove(mutation);
+    _eventController.add(
+      QueryCacheEvent(QueryCacheEventType.removeMutation, mutation),
     );
   }
 }

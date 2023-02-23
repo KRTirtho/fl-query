@@ -202,7 +202,7 @@ class InfiniteQuery<DataType, ErrorType, KeyType, PageType>
 
   Future<void> _operation(PageType page) {
     return _mutex.protect(() async {
-      retryOperation(
+      return await retryOperation(
         () => state.queryFn(page),
         config: retryConfig,
         onSuccessful: (data) async {
@@ -219,20 +219,21 @@ class InfiniteQuery<DataType, ErrorType, KeyType, PageType>
           state = state.copyWith(
             pages: {...state.pages..remove(dataPage), dataPage},
           );
-          if (dataPage.data != null)
+          if (dataPage.data is DataType) {
             _dataController.add(PageEvent.fromPage(dataPage));
-          if (jsonConfig != null) {
-            await _box.put(
-              key.value,
-              Map.fromEntries(
-                state.pages.map(
-                  (e) => MapEntry(
-                    e.page,
-                    e.data != null ? jsonConfig!.toJson(e.data!) : null,
+            if (jsonConfig != null) {
+              await _box.put(
+                key.value,
+                Map.fromEntries(
+                  state.pages.map(
+                    (e) => MapEntry(
+                      e.page,
+                      e.data != null ? jsonConfig!.toJson(e.data!) : null,
+                    ),
                   ),
                 ),
-              ),
-            );
+              );
+            }
           }
         },
         onFailed: (error) {
@@ -252,7 +253,7 @@ class InfiniteQuery<DataType, ErrorType, KeyType, PageType>
               errorPage,
             },
           );
-          if (errorPage.error != null)
+          if (errorPage.error is ErrorType)
             _errorController.add(PageEvent.fromPage(errorPage));
         },
       );

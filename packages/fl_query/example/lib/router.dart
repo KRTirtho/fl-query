@@ -1,5 +1,6 @@
 import "package:example/pages/home.dart";
 import "package:example/pages/infinite_query.dart";
+import "package:example/pages/mutation/mutation.dart";
 import "package:example/pages/query.dart";
 import "package:go_router/go_router.dart";
 
@@ -17,6 +18,10 @@ final router = GoRouter(
     GoRoute(
       path: '/infinite-query',
       builder: (context, state) => const InfiniteQueryPageWidget(),
+    ),
+    GoRoute(
+      path: '/mutation',
+      builder: (context, state) => const MutationPage(),
     ),
   ],
 );

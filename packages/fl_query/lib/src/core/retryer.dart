@@ -4,7 +4,7 @@ import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:flutter/material.dart';
 
 mixin Retryer<T, E> {
-  void retryOperation(
+  Future<void> retryOperation(
     FutureOr<T?> Function() operation, {
     required RetryConfig config,
     required void Function(T?) onSuccessful,
@@ -21,19 +21,19 @@ mixin Retryer<T, E> {
         onSuccessful(result);
         break;
       } catch (e, stack) {
-        if (attempts == config.maxRetries - 1) {
-          if (e is E?) {
+        if (e is E?) {
+          if (attempts == config.maxRetries - 1) {
             onFailed(e as E?);
-          } else {
-            FlutterError.reportError(
-              FlutterErrorDetails(
-                exception: e,
-                library: 'fl_query',
-                context: ErrorDescription('retryOperation'),
-                stack: stack,
-              ),
-            );
           }
+        } else {
+          FlutterError.reportError(
+            FlutterErrorDetails(
+              exception: e,
+              library: 'fl_query',
+              context: ErrorDescription('retryOperation'),
+              stack: stack,
+            ),
+          );
         }
       }
     }

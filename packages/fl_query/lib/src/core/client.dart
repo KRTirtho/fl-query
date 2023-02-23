@@ -5,6 +5,7 @@ import 'package:fl_query/src/collections/refresh_config.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/cache.dart';
 import 'package:fl_query/src/core/infinite_query.dart';
+import 'package:fl_query/src/core/mutation.dart';
 import 'package:fl_query/src/core/provider.dart';
 import 'package:fl_query/src/core/query.dart';
 import 'package:flutter/material.dart';
@@ -174,6 +175,60 @@ class QueryClient {
     return await Future.wait(queries.map(
             (query) async => MapEntry(query.key, await query.refreshAll())))
         .then((qs) => Map.fromEntries(qs));
+  }
+
+  Mutation<DataType, ErrorType, KeyType, VariablesType>
+      createMutation<DataType, ErrorType, KeyType, VariablesType>(
+    ValueKey<KeyType> key,
+    MutationFn<DataType, VariablesType> mutationFn, {
+    RetryConfig retryConfig = DefaultConstants.retryConfig,
+  }) {
+    final mutation = cache.mutations
+        .firstWhere(
+          (query) => query.key == key,
+          orElse: () => Mutation<DataType, ErrorType, KeyType, VariablesType>(
+            key,
+            mutationFn,
+            retryConfig: retryConfig,
+          ),
+        )
+        .cast<DataType, ErrorType, KeyType, VariablesType>();
+
+    mutation.updateMutationFn(mutationFn);
+    cache.addMutation(mutation);
+    return mutation;
+  }
+
+  Future<DataType?> mutateMutation<DataType, ErrorType, KeyType, VariablesType>(
+    ValueKey<KeyType> key,
+    VariablesType variables, {
+    MutationFn<DataType, VariablesType>? mutationFn,
+    RetryConfig retryConfig = DefaultConstants.retryConfig,
+    List<ValueKey> refreshQueries = const [],
+    List<ValueKey> refreshInfiniteQueries = const [],
+  }) async {
+    final mutation = getMutation<DataType, ErrorType, KeyType, VariablesType>(
+          key,
+        ) ??
+        (mutationFn != null
+            ? createMutation<DataType, ErrorType, KeyType, VariablesType>(
+                key,
+                mutationFn,
+                retryConfig: retryConfig,
+              )
+            : null);
+    final result = await mutation?.mutate(variables);
+    await this.refreshQueries(refreshQueries);
+    await refreshInfiniteQueriesAllPages(refreshInfiniteQueries);
+    return result;
+  }
+
+  Mutation<DataType, ErrorType, KeyType, VariablesType>?
+      getMutation<DataType, ErrorType, KeyType, VariablesType>(
+          ValueKey<KeyType> key) {
+    return cache.mutations
+        .firstWhereOrNull((query) => query.key == key)
+        ?.cast<DataType, ErrorType, KeyType, VariablesType>();
   }
 
   static QueryClient of(BuildContext context) {

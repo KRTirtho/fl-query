@@ -10,8 +10,10 @@ export 'src/core/client.dart';
 export 'src/core/infinite_query.dart';
 export 'src/core/provider.dart';
 export 'src/core/query.dart';
+export 'src/core/mutation.dart';
 
 export 'src/widgets/query_builder.dart';
 export 'src/widgets/query_listenable.dart';
 export 'src/widgets/infinite_query_builder.dart';
 export 'src/widgets/infinite_query_listenable.dart';
+export 'src/widgets/mutation_builder.dart';

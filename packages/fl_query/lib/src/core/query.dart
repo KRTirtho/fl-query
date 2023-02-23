@@ -118,7 +118,7 @@ class Query<DataType, ErrorType, KeyType>
 
   Future<void> _operate() {
     return _mutex.protect(() async {
-      retryOperation(
+      return await retryOperation(
         state.queryFn,
         config: retryConfig,
         onSuccessful: (DataType? data) {
@@ -126,17 +126,19 @@ class Query<DataType, ErrorType, KeyType>
             data: data,
             updatedAt: DateTime.now(),
           );
-          if (data != null) _dataController.add(data);
-          if (jsonConfig != null && data != null) {
-            _box.put(
-              key.toString(),
-              jsonConfig!.toJson(data),
-            );
+          if (data is DataType) {
+            _dataController.add(data);
+            if (jsonConfig != null) {
+              _box.put(
+                key.toString(),
+                jsonConfig!.toJson(data),
+              );
+            }
           }
         },
         onFailed: (ErrorType? error) {
           state = state.copyWith(error: error, updatedAt: DateTime.now());
-          if (error != null) _errorController.add(error);
+          if (error is ErrorType) _errorController.add(error);
         },
       );
     });

@@ -83,8 +83,10 @@ class _InfiniteQueryBuilderState<DataType, ErrorType, KeyType, PageType>
         jsonConfig: widget.jsonConfig,
       );
 
-      dataSubscription = query!.dataStream.listen(widget.onData);
-      errorSubscription = query!.errorStream.listen(widget.onError);
+      if (widget.onData != null)
+        dataSubscription = query!.dataStream.listen(widget.onData);
+      if (widget.onError != null)
+        errorSubscription = query!.errorStream.listen(widget.onError);
 
       removeListener = query!.addListener(update);
     });
@@ -130,11 +132,13 @@ class _InfiniteQueryBuilderState<DataType, ErrorType, KeyType, PageType>
     }
     if (oldWidget.onData != widget.onData) {
       dataSubscription?.cancel();
-      dataSubscription = query!.dataStream.listen(widget.onData);
+      if (widget.onData != null)
+        dataSubscription = query!.dataStream.listen(widget.onData);
     }
     if (oldWidget.onError != widget.onError) {
       errorSubscription?.cancel();
-      errorSubscription = query!.errorStream.listen(widget.onError);
+      if (widget.onError != null)
+        errorSubscription = query!.errorStream.listen(widget.onError);
     }
   }
 

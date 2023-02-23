@@ -20,6 +20,10 @@ class HomePage extends StatelessWidget {
             title: const Text('Infinite Query'),
             onTap: () => GoRouter.of(context).push('/infinite-query'),
           ),
+          ListTile(
+            title: const Text('Mutation'),
+            onTap: () => GoRouter.of(context).push('/mutation'),
+          ),
         ],
       ),
     );

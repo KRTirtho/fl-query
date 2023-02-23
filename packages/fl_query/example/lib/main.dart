@@ -18,8 +18,12 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
+      theme: ThemeData(
+        colorSchemeSeed: Colors.red[100],
+        useMaterial3: true,
+      ),
       title: 'FL Query Example',
-      showPerformanceOverlay: true,
+      // showPerformanceOverlay: true,
       routerConfig: router,
     );
   }
