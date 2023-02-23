@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:async/async.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:flutter/material.dart';
 
@@ -37,5 +38,21 @@ mixin Retryer<T, E> {
         }
       }
     }
+  }
+
+  CancelableOperation<void> cancellableRetryOperation(
+    FutureOr<T?> Function() operation, {
+    required RetryConfig config,
+    required void Function(T?) onSuccessful,
+    required void Function(E?) onFailed,
+  }) {
+    return CancelableOperation.fromFuture(
+      retryOperation(
+        operation,
+        config: config,
+        onSuccessful: onSuccessful,
+        onFailed: onFailed,
+      ),
+    );
   }
 }

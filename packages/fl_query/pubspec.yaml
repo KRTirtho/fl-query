@@ -20,8 +20,7 @@ dependencies:
   hive_flutter: ^1.1.0
   state_notifier: ^0.7.2+1
   mutex: ^3.0.1
-  queue: ^3.1.0+1
-  uuid: ^3.0.6
+  async: ^2.10.0
 
 dev_dependencies:
   flutter_test:

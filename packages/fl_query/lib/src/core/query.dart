@@ -5,11 +5,12 @@ import 'package:fl_query/src/collections/json_config.dart';
 import 'package:fl_query/src/collections/refresh_config.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/client.dart';
-import 'package:fl_query/src/core/retryer.dart';
-import 'package:fl_query/src/core/validation.dart';
+import 'package:fl_query/src/core/mixins/retryer.dart';
+import 'package:fl_query/src/core/mixins/validation.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:mutex/mutex.dart';
 import 'package:state_notifier/state_notifier.dart';
+import 'package:async/async.dart';
 
 typedef QueryFn<DataType> = FutureOr<DataType?> Function();
 
@@ -73,7 +74,7 @@ class Query<DataType, ErrorType>
         )) {
     if (jsonConfig != null) {
       _mutex.protect(() async {
-        final json = await _box.get(key.toString());
+        final json = await _box.get(key);
         if (json != null) {
           _initial = jsonConfig!.fromJson(
             Map.castFrom<dynamic, dynamic, String, dynamic>(json),
@@ -116,10 +117,12 @@ class Query<DataType, ErrorType>
   Stream<DataType> get dataStream => _dataController.stream;
   Stream<ErrorType> get errorStream => _errorController.stream;
 
+  CancelableOperation<void>? _operation;
+
   Future<void> _operate() {
     return _mutex.protect(() async {
       state = state.copyWith();
-      return await retryOperation(
+      _operation = cancellableRetryOperation(
         state.queryFn,
         config: retryConfig,
         onSuccessful: (DataType? data) {
@@ -131,7 +134,7 @@ class Query<DataType, ErrorType>
             _dataController.add(data);
             if (jsonConfig != null) {
               _box.put(
-                key.toString(),
+                key,
                 jsonConfig!.toJson(data),
               );
             }
@@ -166,6 +169,12 @@ class Query<DataType, ErrorType>
 
   void setData(DataType data) {
     state = state.copyWith(data: data, updatedAt: DateTime.now());
+  }
+
+  Future<void> reset() async {
+    await _operation?.cancel();
+    state = state.copyWith(data: _initial, updatedAt: DateTime.now());
+    _box.delete(key);
   }
 
   @override

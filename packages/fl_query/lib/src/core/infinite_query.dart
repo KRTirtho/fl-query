@@ -1,9 +1,10 @@
 import 'dart:async';
 
+import 'package:async/async.dart';
 import 'package:collection/collection.dart';
 import 'package:fl_query/fl_query.dart';
-import 'package:fl_query/src/core/retryer.dart';
-import 'package:fl_query/src/core/validation.dart';
+import 'package:fl_query/src/core/mixins/retryer.dart';
+import 'package:fl_query/src/core/mixins/validation.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:mutex/mutex.dart';
 import 'package:state_notifier/state_notifier.dart';
@@ -108,6 +109,8 @@ class InfiniteQuery<DataType, ErrorType, PageType>
   final RefreshConfig refreshConfig;
   final JsonConfig<DataType>? jsonConfig;
 
+  final PageType _initialParam;
+
   InfiniteQuery(
     this.key,
     InfiniteQueryFn<DataType, PageType> queryFn, {
@@ -116,7 +119,8 @@ class InfiniteQuery<DataType, ErrorType, PageType>
     this.retryConfig = DefaultConstants.retryConfig,
     this.refreshConfig = DefaultConstants.refreshConfig,
     this.jsonConfig,
-  })  : _dataController = StreamController.broadcast(),
+  })  : _initialParam = initialParam,
+        _dataController = StreamController.broadcast(),
         _errorController = StreamController.broadcast(),
         _box = Hive.lazyBox(QueryClient.infiniteQueryCachePrefix),
         super(InfiniteQueryState<DataType, ErrorType, PageType>(
@@ -175,6 +179,8 @@ class InfiniteQuery<DataType, ErrorType, PageType>
   final StreamController<PageEvent<DataType, PageType>> _dataController;
   final StreamController<PageEvent<ErrorType, PageType>> _errorController;
 
+  CancelableOperation<void>? _operation;
+
   List<DataType> get pages =>
       state.pages.map((e) => e.data).whereType<DataType>().toList();
   List<ErrorType> get errors =>
@@ -197,10 +203,10 @@ class InfiniteQuery<DataType, ErrorType, PageType>
 
   bool get hasNextPage => state.hasNextPage;
 
-  Future<void> _operation(PageType page) {
+  Future<void> _operate(PageType page) {
     return _mutex.protect(() async {
       state = state.copyWith();
-      return await retryOperation(
+      _operation = cancellableRetryOperation(
         () => state.queryFn(page),
         config: retryConfig,
         onSuccessful: (data) async {
@@ -262,14 +268,14 @@ class InfiniteQuery<DataType, ErrorType, PageType>
     final lastPage = state.lastPage;
     if (_mutex.isLocked || hasPageData || hasPageError)
       return state.pages.last.data;
-    return await _operation(lastPage).then((_) => state.pages.last.data);
+    return await _operate(lastPage).then((_) => state.pages.last.data);
   }
 
   Future<DataType?> refresh([PageType? page]) async {
     page ??= lastPage;
     if (_mutex.isLocked)
       return state.pages.firstWhereOrNull((e) => e.page == page)?.data;
-    return await _operation(page!).then((_) {
+    return await _operate(page!).then((_) {
       return state.pages.firstWhereOrNull((e) => e.page == page)?.data;
     });
   }
@@ -277,7 +283,7 @@ class InfiniteQuery<DataType, ErrorType, PageType>
   Future<List<DataType>?> refreshAll() async {
     if (_mutex.isLocked) return pages;
     return await Future.wait(
-      state.pages.map((e) => _operation(e.page)),
+      state.pages.map((e) => _operate(e.page)),
     ).then((_) => pages);
   }
 
@@ -286,7 +292,7 @@ class InfiniteQuery<DataType, ErrorType, PageType>
     if (_mutex.isLocked || nextPage == null) {
       return state.pages.lastOrNull?.data;
     }
-    return await _operation(nextPage).then((_) {
+    return await _operate(nextPage).then((_) {
       return state.pages.firstWhereOrNull((e) => e.page == nextPage)?.data;
     });
   }
@@ -329,6 +335,18 @@ class InfiniteQuery<DataType, ErrorType, PageType>
         newPage,
       },
     );
+  }
+
+  Future<void> reset() async {
+    await _operation?.cancel();
+    state = state.copyWith(pages: {
+      InfiniteQueryPage<DataType, ErrorType, PageType>(
+        page: _initialParam,
+        updatedAt: DateTime.now(),
+        staleDuration: refreshConfig.staleDuration,
+      )
+    });
+    _box.delete(key);
   }
 
   @override

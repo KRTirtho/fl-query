@@ -1,8 +1,9 @@
 import 'dart:async';
 
+import 'package:async/async.dart';
 import 'package:fl_query/src/collections/default_configs.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
-import 'package:fl_query/src/core/retryer.dart';
+import 'package:fl_query/src/core/mixins/retryer.dart';
 import 'package:mutex/mutex.dart';
 import 'package:state_notifier/state_notifier.dart';
 
@@ -74,11 +75,12 @@ class Mutation<DataType, ErrorType, VariablesType>
   final StreamController<VariablesType> _mutationController;
   final StreamController<DataType> _dataController;
   final StreamController<ErrorType> _errorController;
+  CancelableOperation<void>? _operation;
 
   Future<void> _operate(VariablesType variables) {
     return _mutex.protect(() async {
       state = state.copyWith();
-      return await retryOperation(
+      _operation = await cancellableRetryOperation(
         () {
           _mutationController.add(variables);
           return state.mutationFn(variables);
@@ -115,7 +117,8 @@ class Mutation<DataType, ErrorType, VariablesType>
     state = state.copyWith(mutationFn: mutationFn, updatedAt: state.updatedAt);
   }
 
-  void reset() {
+  Future<void> reset() async {
+    await _operation?.cancel();
     state = MutationState<DataType, ErrorType, VariablesType>(
       mutationFn: state.mutationFn,
     );
