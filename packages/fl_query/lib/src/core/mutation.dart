@@ -14,11 +14,9 @@ typedef MutationFn<DataType, VariablesType> = Future<DataType> Function(
 class MutationState<DataType, ErrorType, VariablesType> {
   final DataType? data;
   final ErrorType? error;
-  final MutationFn<DataType, VariablesType> mutationFn;
   final DateTime updatedAt;
 
   MutationState({
-    required this.mutationFn,
     this.data,
     this.error,
     DateTime? updatedAt,
@@ -28,10 +26,8 @@ class MutationState<DataType, ErrorType, VariablesType> {
     DataType? data,
     ErrorType? error,
     DateTime? updatedAt,
-    MutationFn<DataType, VariablesType>? mutationFn,
   }) {
     return MutationState<DataType, ErrorType, VariablesType>(
-      mutationFn: mutationFn ?? this.mutationFn,
       data: data ?? this.data,
       error: error ?? this.error,
       updatedAt: updatedAt ?? DateTime.now(),
@@ -43,22 +39,20 @@ class Mutation<DataType, ErrorType, VariablesType>
     extends StateNotifier<MutationState<DataType, ErrorType, VariablesType>>
     with Retryer<DataType, ErrorType> {
   final String key;
-  final MutationFn<DataType, VariablesType> mutationFn;
 
   final RetryConfig retryConfig;
 
+  MutationFn<DataType, VariablesType> _mutationFn;
+
   Mutation(
     this.key,
-    this.mutationFn, {
+    MutationFn<DataType, VariablesType> mutationFn, {
     this.retryConfig = DefaultConstants.retryConfig,
   })  : _dataController = StreamController.broadcast(),
         _errorController = StreamController.broadcast(),
         _mutationController = StreamController.broadcast(),
-        super(
-          MutationState<DataType, ErrorType, VariablesType>(
-            mutationFn: mutationFn,
-          ),
-        );
+        _mutationFn = mutationFn,
+        super(MutationState<DataType, ErrorType, VariablesType>());
 
   bool get isInactive => !hasListeners;
   bool get isMutating => _mutex.isLocked;
@@ -83,7 +77,7 @@ class Mutation<DataType, ErrorType, VariablesType>
       _operation = await cancellableRetryOperation(
         () {
           _mutationController.add(variables);
-          return state.mutationFn(variables);
+          return _mutationFn(variables);
         },
         config: retryConfig,
         onSuccessful: (data) {
@@ -113,15 +107,13 @@ class Mutation<DataType, ErrorType, VariablesType>
   }
 
   void updateMutationFn(MutationFn<DataType, VariablesType> mutationFn) {
-    if (mutationFn == state.mutationFn) return;
-    state = state.copyWith(mutationFn: mutationFn, updatedAt: state.updatedAt);
+    if (mutationFn == _mutationFn) return;
+    _mutationFn = mutationFn;
   }
 
   Future<void> reset() async {
     await _operation?.cancel();
-    state = MutationState<DataType, ErrorType, VariablesType>(
-      mutationFn: state.mutationFn,
-    );
+    state = MutationState<DataType, ErrorType, VariablesType>();
   }
 
   @override

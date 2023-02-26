@@ -17,15 +17,12 @@ typedef QueryFn<DataType> = FutureOr<DataType?> Function();
 class QueryState<DataType, ErrorType> with Invalidation {
   final DataType? data;
   final ErrorType? error;
-  final QueryFn<DataType> queryFn;
-
   final DateTime updatedAt;
   final Duration staleDuration;
 
   const QueryState({
     this.data,
     this.error,
-    required this.queryFn,
     required this.updatedAt,
     required this.staleDuration,
   });
@@ -34,14 +31,12 @@ class QueryState<DataType, ErrorType> with Invalidation {
     DataType? data,
     ErrorType? error,
     DateTime? updatedAt,
-    QueryFn<DataType>? queryFn,
   }) {
     return QueryState<DataType, ErrorType>(
       updatedAt: updatedAt ?? this.updatedAt,
       staleDuration: staleDuration,
       data: data ?? this.data,
       error: error ?? this.error,
-      queryFn: queryFn ?? this.queryFn,
     );
   }
 }
@@ -55,6 +50,8 @@ class Query<DataType, ErrorType>
   final RetryConfig retryConfig;
   final JsonConfig<DataType>? jsonConfig;
 
+  QueryFn<DataType> _queryFn;
+
   Query(
     this.key,
     QueryFn<DataType> queryFn, {
@@ -66,11 +63,11 @@ class Query<DataType, ErrorType>
         _dataController = StreamController<DataType>.broadcast(),
         _errorController = StreamController<ErrorType>.broadcast(),
         _initial = initial,
+        _queryFn = queryFn,
         super(QueryState<DataType, ErrorType>(
           updatedAt: DateTime.now(),
           staleDuration: refreshConfig.staleDuration,
           data: initial,
-          queryFn: queryFn,
         )) {
     if (jsonConfig != null) {
       _mutex.protect(() async {
@@ -123,11 +120,12 @@ class Query<DataType, ErrorType>
     return _mutex.protect(() async {
       state = state.copyWith();
       _operation = cancellableRetryOperation(
-        state.queryFn,
+        _queryFn,
         config: retryConfig,
         onSuccessful: (DataType? data) {
           state = state.copyWith(
             data: data,
+            error: null,
             updatedAt: DateTime.now(),
           );
           if (data is DataType) {
@@ -160,8 +158,8 @@ class Query<DataType, ErrorType>
   }
 
   void updateQueryFn(QueryFn<DataType> queryFn) {
-    if (state.queryFn == queryFn) return;
-    state = state.copyWith(queryFn: queryFn);
+    if (_queryFn == queryFn) return;
+    _queryFn = queryFn;
     if (state.isStale || refreshConfig.refreshOnQueryFnChange) {
       refresh();
     }

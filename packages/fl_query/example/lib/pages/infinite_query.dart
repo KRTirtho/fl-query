@@ -61,12 +61,9 @@ class _InfiniteQueryPageWidgetState extends State<InfiniteQueryPageWidget> {
             throw ClientException(res.statusCode.toString(), res.request?.url);
           }
         },
-        nextPage: (lastPage, pages) {
-          if (pages.isNotEmpty &&
-              pages.last.products.length < pages[lastPage].limit) {
-            /// returning [null] will set [hasNextPage] to [false]
-            return null;
-          }
+        nextPage: (lastPage, lastPageData) {
+          /// returning [null] will set [hasNextPage] to [false]
+          if (lastPageData.products.length < 10) return null;
           return lastPage + 1;
         },
         initialPage: 0,
