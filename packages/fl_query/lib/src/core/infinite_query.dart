@@ -314,6 +314,7 @@ class InfiniteQuery<DataType, ErrorType, PageType>
   }
 
   void updateNextPageFn(InfiniteQueryNextPage<DataType, PageType> nextPage) {
+    if (state._nextPage == nextPage) return;
     state = state.copyWith(nextPage: nextPage);
   }
 

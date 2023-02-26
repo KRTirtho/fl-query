@@ -110,6 +110,7 @@ class QueryClient {
         )
         .cast<DataType, ErrorType, PageType>();
     query.updateQueryFn(queryFn);
+    query.updateNextPageFn(nextPage);
     cache.addInfiniteQuery(query);
     return query;
   }
