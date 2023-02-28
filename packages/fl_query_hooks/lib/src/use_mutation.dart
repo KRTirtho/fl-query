@@ -19,13 +19,14 @@ Mutation<DataType, ErrorType, VariablesType>
 }) {
   final rebuild = useUpdater();
   final client = useQueryClient();
-  final mutation = useMemoized(() {
+  final mutation =
+      useMemoized<Mutation<DataType, ErrorType, VariablesType>>(() {
     return client.createMutation<DataType, ErrorType, VariablesType>(
       mutationKey,
       mutationFn,
       retryConfig: retryConfig,
     );
-  }, [client, mutationKey]);
+  }, [mutationKey]);
 
   final recoveryData = useState<RecoveryType?>(null);
 

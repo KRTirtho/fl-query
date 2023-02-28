@@ -22,8 +22,8 @@ InfiniteQuery<DataType, ErrorType, PageType>
 }) {
   final rebuild = useUpdater();
   final client = useQueryClient();
-  final query = useMemoized(() {
-    return client.createInfiniteQuery<DataType, ErrorType, PageType>(
+  final query = useMemoized<InfiniteQuery<DataType, ErrorType, PageType>>(() {
+    final query = client.createInfiniteQuery<DataType, ErrorType, PageType>(
       queryKey,
       queryFn,
       initialParam: initialPage,
@@ -32,21 +32,19 @@ InfiniteQuery<DataType, ErrorType, PageType>
       refreshConfig: refreshConfig,
       retryConfig: retryConfig,
     );
-  }, [client, queryKey]);
+    return query;
+  }, [queryKey]);
 
   useEffect(() {
     return query.addListener(rebuild);
   }, [query]);
 
-  useEffect(
-    () {
-      if (enabled) {
-        query.fetch();
-      }
-      return null;
-    },
-    [enabled],
-  );
+  useEffect(() {
+    if (enabled) {
+      query.fetch();
+    }
+    return null;
+  }, [enabled]);
 
   useEffect(() {
     query.updateQueryFn(queryFn);

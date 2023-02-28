@@ -21,8 +21,8 @@ Query<DataType, ErrorType> useQuery<DataType, ErrorType>(
 }) {
   final rebuild = useUpdater();
   final client = useQueryClient();
-  final query = useMemoized(() {
-    return client.createQuery<DataType, ErrorType>(
+  final query = useMemoized<Query<DataType, ErrorType>>(() {
+    final query = client.createQuery<DataType, ErrorType>(
       queryKey,
       queryFn,
       initial: initial,
@@ -30,7 +30,8 @@ Query<DataType, ErrorType> useQuery<DataType, ErrorType>(
       refreshConfig: refreshConfig,
       retryConfig: retryConfig,
     );
-  }, [client, queryKey]);
+    return query;
+  }, [queryKey]);
 
   useEffect(() {
     return query.addListener(rebuild);
