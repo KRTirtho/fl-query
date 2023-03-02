@@ -52,26 +52,36 @@ class QueryClient {
     RefreshConfig refreshConfig = DefaultConstants.refreshConfig,
     JsonConfig<DataType>? jsonConfig,
   }) async {
-    DataType? result;
-    final completer = Completer<DataType>();
-    final query = createQuery<DataType, ErrorType>(
-      key,
-      queryFn,
-      initial: initial,
-      retryConfig: retryConfig,
-      refreshConfig: refreshConfig,
-      jsonConfig: jsonConfig,
-    );
+    try {
+      DataType? result;
+      final completer = Completer<DataType>();
+      final query = createQuery<DataType, ErrorType>(
+        key,
+        queryFn,
+        initial: initial,
+        retryConfig: retryConfig,
+        refreshConfig: refreshConfig,
+        jsonConfig: jsonConfig,
+      );
 
-    final subscription = query.dataStream.listen((data) {
-      completer.complete(data);
-    });
+      final subscription = query.dataStream.listen((data) {
+        if (!completer.isCompleted) completer.complete(data);
+      });
 
-    result = await query.fetch();
-    result ??= await completer.future;
+      final errorSubscription = query.errorStream.listen((error) {
+        if (!completer.isCompleted)
+          completer.completeError(error != null ? error : "");
+      });
 
-    subscription.cancel();
-    return result;
+      result = await query.fetch();
+      result ??= await completer.future;
+
+      errorSubscription.cancel();
+      subscription.cancel();
+      return result;
+    } catch (e) {
+      return null;
+    }
   }
 
   Query<DataType, ErrorType>? getQuery<DataType, ErrorType>(
@@ -135,27 +145,37 @@ class QueryClient {
       RetryConfig retryConfig = DefaultConstants.retryConfig,
       RefreshConfig refreshConfig = DefaultConstants.refreshConfig,
       JsonConfig<DataType>? jsonConfig}) async {
-    DataType? result;
-    final completer = Completer<DataType>();
-    final query = createInfiniteQuery<DataType, ErrorType, PageType>(
-      key,
-      queryFn,
-      nextPage: nextPage,
-      initialParam: initialParam,
-      retryConfig: retryConfig,
-      refreshConfig: refreshConfig,
-      jsonConfig: jsonConfig,
-    );
+    try {
+      DataType? result;
+      final completer = Completer<DataType>();
+      final query = createInfiniteQuery<DataType, ErrorType, PageType>(
+        key,
+        queryFn,
+        nextPage: nextPage,
+        initialParam: initialParam,
+        retryConfig: retryConfig,
+        refreshConfig: refreshConfig,
+        jsonConfig: jsonConfig,
+      );
 
-    final subscription = query.dataStream.listen((event) {
-      completer.complete(event.data);
-    });
+      final subscription = query.dataStream.listen((event) {
+        if (!completer.isCompleted) completer.complete(event.data);
+      });
 
-    result = await query.fetch();
-    result ??= await completer.future;
+      final errorSubscription = query.errorStream.listen((event) {
+        if (!completer.isCompleted)
+          completer.completeError(event.data != null ? event.data! : "");
+      });
 
-    subscription.cancel();
-    return result;
+      result = await query.fetch();
+      result ??= await completer.future;
+
+      errorSubscription.cancel();
+      subscription.cancel();
+      return result;
+    } catch (e) {
+      return null;
+    }
   }
 
   InfiniteQuery<DataType, ErrorType, PageType>?
@@ -230,20 +250,41 @@ class QueryClient {
     List<String> refreshQueries = const [],
     List<String> refreshInfiniteQueries = const [],
   }) async {
-    final mutation = getMutation<DataType, ErrorType, VariablesType>(
-          key,
-        ) ??
-        (mutationFn != null
-            ? createMutation<DataType, ErrorType, VariablesType>(
-                key,
-                mutationFn,
-                retryConfig: retryConfig,
-              )
-            : null);
-    final result = await mutation?.mutate(variables);
-    await this.refreshQueries(refreshQueries);
-    await refreshInfiniteQueriesAllPages(refreshInfiniteQueries);
-    return result;
+    try {
+      DataType? result;
+      final completer = Completer<DataType>();
+      final mutation = getMutation<DataType, ErrorType, VariablesType>(
+            key,
+          ) ??
+          (mutationFn != null
+              ? createMutation<DataType, ErrorType, VariablesType>(
+                  key,
+                  mutationFn,
+                  retryConfig: retryConfig,
+                )
+              : null);
+
+      final subscription = mutation?.dataStream.listen((data) {
+        if (!completer.isCompleted) completer.complete(data);
+      });
+
+      final errorSubscription = mutation?.errorStream.listen((error) {
+        if (!completer.isCompleted)
+          completer.completeError(error != null ? error : "");
+      });
+
+      result = await mutation?.mutate(variables);
+      result ??= await completer.future;
+
+      errorSubscription?.cancel();
+      subscription?.cancel();
+
+      await this.refreshQueries(refreshQueries);
+      await refreshInfiniteQueriesAllPages(refreshInfiniteQueries);
+      return result;
+    } catch (e) {
+      return null;
+    }
   }
 
   Mutation<DataType, ErrorType, VariablesType>?
