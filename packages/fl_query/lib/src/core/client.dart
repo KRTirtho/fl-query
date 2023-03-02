@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:fl_query/src/collections/default_configs.dart';
 import 'package:fl_query/src/collections/json_config.dart';
@@ -50,6 +52,8 @@ class QueryClient {
     RefreshConfig refreshConfig = DefaultConstants.refreshConfig,
     JsonConfig<DataType>? jsonConfig,
   }) async {
+    DataType? result;
+    final completer = Completer<DataType>();
     final query = createQuery<DataType, ErrorType>(
       key,
       queryFn,
@@ -58,7 +62,16 @@ class QueryClient {
       refreshConfig: refreshConfig,
       jsonConfig: jsonConfig,
     );
-    return await query.fetch();
+
+    final subscription = query.dataStream.listen((data) {
+      completer.complete(data);
+    });
+
+    result = await query.fetch();
+    result ??= await completer.future;
+
+    subscription.cancel();
+    return result;
   }
 
   Query<DataType, ErrorType>? getQuery<DataType, ErrorType>(
@@ -122,6 +135,8 @@ class QueryClient {
       RetryConfig retryConfig = DefaultConstants.retryConfig,
       RefreshConfig refreshConfig = DefaultConstants.refreshConfig,
       JsonConfig<DataType>? jsonConfig}) async {
+    DataType? result;
+    final completer = Completer<DataType>();
     final query = createInfiniteQuery<DataType, ErrorType, PageType>(
       key,
       queryFn,
@@ -131,7 +146,16 @@ class QueryClient {
       refreshConfig: refreshConfig,
       jsonConfig: jsonConfig,
     );
-    return await query.fetch();
+
+    final subscription = query.dataStream.listen((event) {
+      completer.complete(event.data);
+    });
+
+    result = await query.fetch();
+    result ??= await completer.future;
+
+    subscription.cancel();
+    return result;
   }
 
   InfiniteQuery<DataType, ErrorType, PageType>?
