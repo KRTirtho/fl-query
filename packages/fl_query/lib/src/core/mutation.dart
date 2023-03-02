@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:async/async.dart';
-import 'package:fl_query/src/collections/default_configs.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/mixins/retryer.dart';
 import 'package:mutex/mutex.dart';
@@ -44,11 +43,9 @@ class Mutation<DataType, ErrorType, VariablesType>
 
   MutationFn<DataType, VariablesType> _mutationFn;
 
-  Mutation(
-    this.key,
-    MutationFn<DataType, VariablesType> mutationFn, {
-    this.retryConfig = DefaultConstants.retryConfig,
-  })  : _dataController = StreamController.broadcast(),
+  Mutation(this.key, MutationFn<DataType, VariablesType> mutationFn,
+      {required this.retryConfig})
+      : _dataController = StreamController.broadcast(),
         _errorController = StreamController.broadcast(),
         _mutationController = StreamController.broadcast(),
         _mutationFn = mutationFn,

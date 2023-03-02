@@ -9,7 +9,7 @@ Mutation<DataType, ErrorType, VariablesType>
     useMutation<DataType, ErrorType, VariablesType, RecoveryType>(
   String mutationKey,
   MutationFn<DataType, VariablesType> mutationFn, {
-  RetryConfig retryConfig = DefaultConstants.retryConfig,
+  RetryConfig? retryConfig,
   MutationOnDataFn<DataType, RecoveryType>? onData,
   MutationOnErrorFn<ErrorType, RecoveryType>? onError,
   MutationOnMutationFn<VariablesType, RecoveryType>? onMutate,

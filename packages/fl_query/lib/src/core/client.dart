@@ -13,17 +13,41 @@ import 'package:fl_query/src/core/query.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
 
+@immutable
 class QueryClient {
   final QueryCache cache;
 
-  QueryClient({QueryCache? cache}) : this.cache = cache ?? QueryCache();
+  final RetryConfig retryConfig;
+  final RefreshConfig refreshConfig;
+  final Duration cacheDuration;
+
+  QueryClient({
+    QueryCache? cache,
+    this.cacheDuration = DefaultConstants.cacheDuration,
+    int? maxRetries,
+    Duration? retryDelay,
+    Duration? staleDuration,
+    Duration? refreshInterval,
+    bool? refreshOnMount,
+    bool? refreshOnQueryFnChange,
+  })  : this.cache = cache ?? QueryCache(cacheDuration: cacheDuration),
+        this.retryConfig = DefaultConstants.retryConfig.copyWith(
+          maxRetries: maxRetries,
+          retryDelay: retryDelay,
+        ),
+        this.refreshConfig = DefaultConstants.refreshConfig.copyWith(
+          staleDuration: staleDuration,
+          refreshInterval: refreshInterval,
+          refreshOnMount: refreshOnMount,
+          refreshOnQueryFnChange: refreshOnQueryFnChange,
+        );
 
   Query<DataType, ErrorType> createQuery<DataType, ErrorType>(
     String key,
     QueryFn<DataType> queryFn, {
     DataType? initial,
-    RetryConfig retryConfig = DefaultConstants.retryConfig,
-    RefreshConfig refreshConfig = DefaultConstants.refreshConfig,
+    RetryConfig? retryConfig,
+    RefreshConfig? refreshConfig,
     JsonConfig<DataType>? jsonConfig,
   }) {
     final query = cache.queries
@@ -33,8 +57,8 @@ class QueryClient {
             key,
             queryFn,
             initial: initial,
-            retryConfig: retryConfig,
-            refreshConfig: refreshConfig,
+            retryConfig: retryConfig ?? this.retryConfig,
+            refreshConfig: refreshConfig ?? this.refreshConfig,
             jsonConfig: jsonConfig,
           ),
         )
@@ -48,8 +72,8 @@ class QueryClient {
     String key,
     QueryFn<DataType> queryFn, {
     DataType? initial,
-    RetryConfig retryConfig = DefaultConstants.retryConfig,
-    RefreshConfig refreshConfig = DefaultConstants.refreshConfig,
+    RetryConfig? retryConfig,
+    RefreshConfig? refreshConfig,
     JsonConfig<DataType>? jsonConfig,
   }) async {
     try {
@@ -114,8 +138,8 @@ class QueryClient {
     InfiniteQueryFn<DataType, PageType> queryFn, {
     required InfiniteQueryNextPage<DataType, PageType> nextPage,
     required PageType initialParam,
-    RetryConfig retryConfig = DefaultConstants.retryConfig,
-    RefreshConfig refreshConfig = DefaultConstants.refreshConfig,
+    RetryConfig? retryConfig,
+    RefreshConfig? refreshConfig,
     JsonConfig<DataType>? jsonConfig,
   }) {
     final query = cache.infiniteQueries
@@ -126,8 +150,8 @@ class QueryClient {
             queryFn,
             nextPage: nextPage,
             initialParam: initialParam,
-            retryConfig: retryConfig,
-            refreshConfig: refreshConfig,
+            retryConfig: retryConfig ?? this.retryConfig,
+            refreshConfig: refreshConfig ?? this.refreshConfig,
             jsonConfig: jsonConfig,
           ),
         )
@@ -139,12 +163,14 @@ class QueryClient {
   }
 
   Future<DataType?> fetchInfiniteQuery<DataType, ErrorType, PageType>(
-      String key, InfiniteQueryFn<DataType, PageType> queryFn,
-      {required InfiniteQueryNextPage<DataType, PageType> nextPage,
-      required PageType initialParam,
-      RetryConfig retryConfig = DefaultConstants.retryConfig,
-      RefreshConfig refreshConfig = DefaultConstants.refreshConfig,
-      JsonConfig<DataType>? jsonConfig}) async {
+    String key,
+    InfiniteQueryFn<DataType, PageType> queryFn, {
+    required InfiniteQueryNextPage<DataType, PageType> nextPage,
+    required PageType initialParam,
+    RetryConfig? retryConfig,
+    RefreshConfig? refreshConfig,
+    JsonConfig<DataType>? jsonConfig,
+  }) async {
     try {
       DataType? result;
       final completer = Completer<DataType>();
@@ -224,7 +250,7 @@ class QueryClient {
       createMutation<DataType, ErrorType, VariablesType>(
     String key,
     MutationFn<DataType, VariablesType> mutationFn, {
-    RetryConfig retryConfig = DefaultConstants.retryConfig,
+    RetryConfig? retryConfig,
   }) {
     final mutation = cache.mutations
         .firstWhere(
@@ -232,7 +258,7 @@ class QueryClient {
           orElse: () => Mutation<DataType, ErrorType, VariablesType>(
             key,
             mutationFn,
-            retryConfig: retryConfig,
+            retryConfig: retryConfig ?? this.retryConfig,
           ),
         )
         .cast<DataType, ErrorType, VariablesType>();
@@ -246,7 +272,7 @@ class QueryClient {
     String key,
     VariablesType variables, {
     MutationFn<DataType, VariablesType>? mutationFn,
-    RetryConfig retryConfig = DefaultConstants.retryConfig,
+    RetryConfig? retryConfig,
     List<String> refreshQueries = const [],
     List<String> refreshInfiniteQueries = const [],
   }) async {

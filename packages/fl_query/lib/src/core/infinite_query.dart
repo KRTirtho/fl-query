@@ -104,8 +104,8 @@ class InfiniteQuery<DataType, ErrorType, PageType>
     InfiniteQueryFn<DataType, PageType> queryFn, {
     required InfiniteQueryNextPage<DataType, PageType> nextPage,
     required PageType initialParam,
-    this.retryConfig = DefaultConstants.retryConfig,
-    this.refreshConfig = DefaultConstants.refreshConfig,
+    required this.retryConfig,
+    required this.refreshConfig,
     this.jsonConfig,
   })  : _initialParam = initialParam,
         _dataController = StreamController.broadcast(),

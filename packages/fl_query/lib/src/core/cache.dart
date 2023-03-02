@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
-import 'package:fl_query/src/collections/default_configs.dart';
 import 'package:fl_query/src/core/client.dart';
 import 'package:fl_query/src/core/infinite_query.dart';
 import 'package:fl_query/src/core/mutation.dart';
 import 'package:fl_query/src/core/query.dart';
+import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 enum QueryCacheEventType {
@@ -17,6 +17,7 @@ enum QueryCacheEventType {
   removeMutation,
 }
 
+@immutable
 class QueryCacheEvent {
   final QueryCacheEventType type;
   final Object data;
@@ -31,13 +32,14 @@ class QueryCache {
 
   final Duration cacheDuration;
 
-  final _eventController = StreamController<QueryCacheEvent>.broadcast();
+  final StreamController<QueryCacheEvent> _eventController;
 
   QueryCache({
-    this.cacheDuration = DefaultConstants.cacheDuration,
+    required this.cacheDuration,
   })  : _queries = Set<Query>(),
         _infiniteQueries = Set<InfiniteQuery>(),
-        _mutations = Set<Mutation>() {
+        _mutations = Set<Mutation>(),
+        _eventController = StreamController<QueryCacheEvent>.broadcast() {
     Timer.periodic(cacheDuration, (timer) {
       _queries.removeWhere((query) {
         if (query.isInactive) {

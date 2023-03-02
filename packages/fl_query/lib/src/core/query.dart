@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:fl_query/src/collections/default_configs.dart';
 import 'package:fl_query/src/collections/json_config.dart';
 import 'package:fl_query/src/collections/refresh_config.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
@@ -56,8 +55,8 @@ class Query<DataType, ErrorType>
     this.key,
     QueryFn<DataType> queryFn, {
     DataType? initial,
-    this.retryConfig = DefaultConstants.retryConfig,
-    this.refreshConfig = DefaultConstants.refreshConfig,
+    required this.retryConfig,
+    required this.refreshConfig,
     this.jsonConfig,
   })  : _box = Hive.lazyBox(QueryClient.queryCachePrefix),
         _dataController = StreamController<DataType>.broadcast(),

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:fl_query/src/collections/default_configs.dart';
 import 'package:fl_query/src/collections/json_config.dart';
 import 'package:fl_query/src/collections/refresh_config.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
@@ -21,8 +20,8 @@ class QueryBuilder<DataType, ErrorType> extends StatefulWidget {
 
   final DataType? initial;
 
-  final RetryConfig retryConfig;
-  final RefreshConfig refreshConfig;
+  final RetryConfig? retryConfig;
+  final RefreshConfig? refreshConfig;
   final JsonConfig<DataType>? jsonConfig;
 
   final ValueChanged<DataType>? onData;
@@ -37,8 +36,8 @@ class QueryBuilder<DataType, ErrorType> extends StatefulWidget {
     this.queryFn, {
     required this.builder,
     this.initial,
-    this.retryConfig = DefaultConstants.retryConfig,
-    this.refreshConfig = DefaultConstants.refreshConfig,
+    this.retryConfig,
+    this.refreshConfig,
     this.jsonConfig,
     this.onData,
     this.onError,

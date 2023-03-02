@@ -10,8 +10,8 @@ Query<DataType, ErrorType> useQuery<DataType, ErrorType>(
   final String queryKey,
   final QueryFn<DataType> queryFn, {
   final DataType? initial,
-  final RetryConfig retryConfig = DefaultConstants.retryConfig,
-  final RefreshConfig refreshConfig = DefaultConstants.refreshConfig,
+  final RetryConfig? retryConfig,
+  final RefreshConfig? refreshConfig,
   final JsonConfig<DataType>? jsonConfig,
   final ValueChanged<DataType>? onData,
   final ValueChanged<ErrorType>? onError,

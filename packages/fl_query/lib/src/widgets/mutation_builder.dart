@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:fl_query/src/collections/default_configs.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/client.dart';
 import 'package:fl_query/src/core/mutation.dart';
@@ -30,7 +29,7 @@ class MutationBuilder<DataType, ErrorType, VariablesType, RecoveryType>
   final MutationFn<DataType, VariablesType> mutationFn;
   final String mutationKey;
 
-  final RetryConfig retryConfig;
+  final RetryConfig? retryConfig;
 
   final MutationOnDataFn<DataType, RecoveryType>? onData;
   final MutationOnErrorFn<ErrorType, RecoveryType>? onError;
@@ -45,7 +44,7 @@ class MutationBuilder<DataType, ErrorType, VariablesType, RecoveryType>
     this.mutationKey,
     this.mutationFn, {
     required this.builder,
-    this.retryConfig = DefaultConstants.retryConfig,
+    this.retryConfig,
     this.onData,
     this.onError,
     this.onMutate,

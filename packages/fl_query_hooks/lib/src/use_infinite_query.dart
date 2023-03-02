@@ -12,8 +12,8 @@ InfiniteQuery<DataType, ErrorType, PageType>
   InfiniteQueryFn<DataType, PageType> queryFn, {
   required InfiniteQueryNextPage<DataType, PageType> nextPage,
   required PageType initialPage,
-  RetryConfig retryConfig = DefaultConstants.retryConfig,
-  RefreshConfig refreshConfig = DefaultConstants.refreshConfig,
+  RetryConfig? retryConfig,
+  RefreshConfig? refreshConfig,
   JsonConfig<DataType>? jsonConfig,
   ValueChanged<PageEvent<DataType, PageType>>? onData,
   ValueChanged<PageEvent<ErrorType, PageType>>? onError,

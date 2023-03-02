@@ -1,6 +1,8 @@
 import 'package:fl_query/src/collections/refresh_config.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
+import 'package:flutter/material.dart';
 
+@immutable
 abstract class DefaultConstants {
   static const RetryConfig retryConfig = RetryConfig(
     maxRetries: 3,

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:fl_query/src/collections/default_configs.dart';
 import 'package:fl_query/src/collections/json_config.dart';
 import 'package:fl_query/src/collections/refresh_config.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
@@ -23,8 +22,8 @@ class InfiniteQueryBuilder<DataType, ErrorType, PageType>
   final PageType initialPage;
   final InfiniteQueryNextPage<DataType, PageType> nextPage;
 
-  final RetryConfig retryConfig;
-  final RefreshConfig refreshConfig;
+  final RetryConfig? retryConfig;
+  final RefreshConfig? refreshConfig;
   final JsonConfig<DataType>? jsonConfig;
 
   final ValueChanged<PageEvent<DataType, PageType>>? onData;
@@ -40,8 +39,8 @@ class InfiniteQueryBuilder<DataType, ErrorType, PageType>
     required this.nextPage,
     required this.builder,
     required this.initialPage,
-    this.retryConfig = DefaultConstants.retryConfig,
-    this.refreshConfig = DefaultConstants.refreshConfig,
+    this.retryConfig,
+    this.refreshConfig,
     this.jsonConfig,
     this.onData,
     this.onError,
