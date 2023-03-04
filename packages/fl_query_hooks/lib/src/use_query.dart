@@ -34,20 +34,17 @@ Query<DataType, ErrorType> useQuery<DataType, ErrorType>(
   }, [queryKey]);
 
   useEffect(() {
-    return query.addListener(rebuild);
-  }, [query]);
-
-  useEffect(() {
     query.updateQueryFn(queryFn);
     return null;
   }, [queryFn, query]);
 
   useEffect(() {
+    final removeListener = query.addListener(rebuild);
     if (enabled) {
       query.fetch();
     }
-    return null;
-  }, [enabled]);
+    return removeListener;
+  }, [query, enabled]);
 
   useEffect(() {
     StreamSubscription<DataType>? dataSubscription;

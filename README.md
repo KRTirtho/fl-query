@@ -16,7 +16,7 @@ Fl-Query makes asynchronous server state management a breeze in flutter
 - Smart + effective refetching
 - Optimistic updates
 - Automatically cached data invalidation & unneeded query/mutation garbage collection
-- Infinite data pagination via `InfiniteQuery`
+- Infinite pagination via `InfiniteQuery`
 - Easy to write & understand code. Follows DRY (Don't repeat yourself) convention
 - Compatible with both vanilla Flutter & elite [flutter_hooks](https://pub.dev/packages/flutter_hooks)
 
@@ -41,12 +41,22 @@ You can find the documentation (WIP) of fl-query at https://fl-query.vercel.app/
 
 # Basic Usage
 
-First wrap your `MaterialApp` with with `QueryBowlScope` widget
+Initialize the cache databases in your `main` method
+
+> fl-query uses [hive](https://pub.dev/packages/hive) for persisting data to disk
+
+```dart
+void main()async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await QueryClient.initialize(cachePrefix: 'fl_query_example');
+  runApp(MyApp());
+}
+```
+In `MyApp` Widget's build method wrap your `MaterialApp` with with `QueryClientProvider` widget
 
 ```dart
   Widget build(BuildContext context) {
-    return QueryBowlScope(
-      bowl: QueryBowl(),
+    return QueryClientProvider(
       child: MaterialApp(
         title: 'Fl-Query Example App',
         theme: ThemeData(
@@ -59,85 +69,6 @@ First wrap your `MaterialApp` with with `QueryBowlScope` widget
   }
 ```
 
-Fl-Query has two types of jobs
-  - `QueryJob`: Used for storing GET requests or for storing changeable yet readonly async data
-  - `MutationJob`: Used for POST/PUT/DELETE requests or for mutating/changing data in services or a store asynchronously
-
-You can write all your query or mutation logic a method parameter named `task` & identify the query uniquely by passing a unique `queryKey`
-
-Example of a QueryJob:
-
-```dart
-final exampleQueryJob = QueryJob<Map, void>(
-  queryKey: "example", // have to be unique
-  task: (queryKey, externalData) async {
-    final res = await http.get("/api/example-data");
-    return jsonDecode(res.body);
-  }
-);
-```
-
-Store the `QueryJob` somewhere globally accessible in your project so you can reuse it later
-
-Now you can use this `QueryJob` anywhere inside your flutter app inside the build method using a `QueryBuilder` widget
-
-```dart
-Widget build(BuildContext context){
-  return QueryBuilder<String, void>(
-      job: exampleQueryJob,
-      externalData: null,
-      builder: (context, query) {
-        if (!query.hasData || query.isLoading) {
-          return const CircularProgressIndicator();
-        }
-        return Row(
-          children: [
-            Text(query.data!),
-            ElevatedButton(
-              child: const Text("Refetch"),
-              onPressed: () async {
-                // refetches the query
-                await query.refetch();
-              },
-            ),
-          ],
-        );
-      },
-    );
-}
-```
-
-Or if you're an elite **flutter_hooks** user you can use the `useQuery` hook which is exported from the `package:fl_query_hooks/fl_query_hooks.dart` to do the same thing as above 
-
-```dart
-/* other imports */
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:fl_query_hooks/fl_query_hooks.dart'; // importing the fl-query hook package
-
-class Example extends HookWidget{
-  Example(super.key);
-
-  Widget build(BuildContext context) {
-    final query = useQuery(job: exampleQueryJob, externalData: null);
-
-    if (!query.hasData || query.isLoading) {
-      return const CircularProgressIndicator();
-    }
-    return Row(
-      children: [
-        Text(query.data!),
-        ElevatedButton(
-          child: const Text("Refetch"),
-          onPressed: () async {
-            // refetches the query
-            await query.refetch();
-          },
-        ),
-      ],
-    );
-  }
-}
-```
 
 # Why?
 <p align="center">

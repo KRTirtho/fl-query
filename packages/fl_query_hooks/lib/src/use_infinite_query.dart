@@ -36,15 +36,12 @@ InfiniteQuery<DataType, ErrorType, PageType>
   }, [queryKey]);
 
   useEffect(() {
-    return query.addListener(rebuild);
-  }, [query]);
-
-  useEffect(() {
+    final removeListener = query.addListener(rebuild);
     if (enabled) {
       query.fetch();
     }
-    return null;
-  }, [enabled]);
+    return removeListener;
+  }, [query, enabled]);
 
   useEffect(() {
     query.updateQueryFn(queryFn);
