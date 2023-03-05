@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.0-alpha.1](https://github.com/KRTirtho/fl-query/compare/v0.3.0...v1.0.0-alpha.1) (2023-03-05)
+
+> **BREAKING**
+> - The Jobs API has been disabled. So there's no `QueryJob`, `MutationJob` and `InfiniteQueryJob` anymore. Instead, you can use the `useQuery`, `useMutation` and `useInfiniteQuery`  directly
+> - Some of classes were renamed to more mature names
+>   - `QueryBowlProvider` -> `QueryClientProvider`
+>   - `QueryBowl` -> `QueryClient`
+> - The unnecessary `getPreviousPageParam` is now removed from `InfiniteQuery`
+> - `getNextPageParam` has been renamed to `nextPage`
+> - Also, `fetchNextPage` has been renamed to `fetchNext`
+> - `Query` and `InfiniteQuery`'s `setQueryData` has been renamed to `setData` and it now accepts data directly instead of a call back function
+> - Finally, `QueryClient`'s unneeded `prefetchQuery` method was eradicated
+> - useForceUpdate hook is now removed from the package
+
+
+### Features
+
+* new useQueryClient hook
+* useQuery hook implementation hook based on new fl_query ([7fabf44](https://github.com/KRTirtho/fl-query/commit/7fabf44756ed36aaa4481583167735bc18f97ad1))
+* useInfiniteQuery hook implementation hook based on new fl_query ([f9a5207](https://github.com/KRTirtho/fl-query/commit/f9a520740321ababa3974e232562b32364062a35))
+* usMutation implementation hook based on new fl_query ([383d0e0](https://github.com/KRTirtho/fl-query/commit/383d0e0a85d7db6ee30bc336cb849f4ea401a8f1))
+
 ### [0.3.1](https://github.com/KRTirtho/fl-query/compare/v0.3.0...v0.3.1) (2022-10-03)
 
 ### Bug Fixes

@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.0-alpha.1](https://github.com/KRTirtho/fl-query/compare/v0.3.0...v1.0.0-alpha.1) (2023-03-05)
+
+> **BREAKING**
+> - The Jobs API has been disabled. So there's no `QueryJob`, `MutationJob` and `InfiniteQueryJob` anymore. Instead, you can use the `QueryBuilder`, `MutationBuilder` and `InfiniteQueryBuilder`  directly
+> - Some of classes were renamed to more mature names
+>   - `QueryBowlProvider` -> `QueryClientProvider`
+>   - `QueryBowl` -> `QueryClient`
+> - The unnecessary `getPreviousPageParam` is now removed from `InfiniteQuery`
+> - `getNextPageParam` has been renamed to `nextPage`
+> - Also, `fetchNextPage` has been renamed to `fetchNext`
+> - `Query` and `InfiniteQuery`'s `setQueryData` has been renamed to `setData` and it now accepts data directly instead of a call back function
+> - Finally, `QueryClient`'s unneeded `prefetchQuery` method was eradicated
+
+
+### Features
+
+* add infinite query builder ([efa2c81](https://github.com/KRTirtho/fl-query/commit/efa2c81505385eba0ba45f50c0debb9e4708804b))
+* add mutation and mutation builder ([6a90f84](https://github.com/KRTirtho/fl-query/commit/6a90f847c90c242ec089ab85f9ec7201a9aacd06))
+* add query and infinite query disk caching support ([074175e](https://github.com/KRTirtho/fl-query/commit/074175ed392370d5165d0573977af8d83422ac31))
+* add Cache, Client, QueryBuilder widget and refreshOnQueryFnChange support for queries ([18584a3](https://github.com/KRTirtho/fl-query/commit/18584a3c57dbb1538fc18a48b41be11fbc11d094))
+* InfiniteQuery implementation ([45b6f92](https://github.com/KRTirtho/fl-query/commit/45b6f92316ca1496e47462eb67aea64f43f8d9c1))
+* add InfiniteQueryListenable widget and cache event stream ([783a273](https://github.com/KRTirtho/fl-query/commit/783a2737b18283478d65082e236629188c124e6b))
+* add Query and Retryer ([b304466](https://github.com/KRTirtho/fl-query/commit/b304466d73654a89c9582b8211b063ae8c661454))
+* infinite query's nextPage method ([f2a23b0](https://github.com/KRTirtho/fl-query/commit/f2a23b085cd657a1612d87749f6592b4d67814c5))
+* new QueryListableBuilder widget ([975f9ea](https://github.com/KRTirtho/fl-query/commit/975f9eafe14d2ae235a67c173622f16ef850e8e7))
+* safe cancellation of running operation on reset ([5dde200](https://github.com/KRTirtho/fl-query/commit/5dde200c84836aba676708c2dd2682a861edb289))
+* safe setState for builders, separate cache box for query and infinite query ([68e60c1](https://github.com/KRTirtho/fl-query/commit/68e60c1914d321bb8e23516966bafc990ea2bc31))
+* add usMutation hook ([383d0e0](https://github.com/KRTirtho/fl-query/commit/383d0e0a85d7db6ee30bc336cb849f4ea401a8f1))
+* add useInfiniteQuery hook ([f9a5207](https://github.com/KRTirtho/fl-query/commit/f9a520740321ababa3974e232562b32364062a35))
+* add useQuery hook ([7fabf44](https://github.com/KRTirtho/fl-query/commit/7fabf44756ed36aaa4481583167735bc18f97ad1))
+
 
 ### [0.3.1](https://github.com/KRTirtho/fl-query/compare/v0.3.0...v0.3.1) (2022-10-03)
 
