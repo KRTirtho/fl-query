@@ -7,7 +7,7 @@ import 'package:fl_query/src/core/client.dart';
 import 'package:fl_query/src/core/query.dart';
 import 'package:fl_query/src/widgets/mixins/rebuilder.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/foundation/diagnostics.dart';
+import 'package:flutter/foundation.dart';
 
 typedef QueryBuilderFn<DataType, ErrorType> = Widget Function(
   BuildContext context,

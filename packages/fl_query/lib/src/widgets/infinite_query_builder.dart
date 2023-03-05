@@ -6,8 +6,8 @@ import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/client.dart';
 import 'package:fl_query/src/core/infinite_query.dart';
 import 'package:fl_query/src/widgets/mixins/rebuilder.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/foundation/diagnostics.dart';
 
 typedef InfiniteQueryBuilderFn<DataType, ErrorType, PageType> = Widget Function(
   BuildContext context,

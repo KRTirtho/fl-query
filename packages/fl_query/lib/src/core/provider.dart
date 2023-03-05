@@ -1,6 +1,6 @@
 import 'package:fl_query/src/core/client.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/foundation/diagnostics.dart';
 
 class QueryClientProvider extends InheritedWidget {
   final QueryClient client;
