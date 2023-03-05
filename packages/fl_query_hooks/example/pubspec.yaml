@@ -3,6 +3,8 @@ description: A new Flutter project.
 
 version: 1.0.0+1
 
+publish_to: none
+
 environment:
   sdk: ">=2.19.2 <3.0.0"
 
@@ -11,8 +13,10 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.2
-  fl_query: ^0.3.1
-  fl_query_hooks: ^0.3.1
+  fl_query:
+    path: ../../fl_query
+  fl_query_hooks:
+    path: ../
   go_router: ^6.0.9
   http: ^0.13.5
   flutter_hooks: ^0.18.6
