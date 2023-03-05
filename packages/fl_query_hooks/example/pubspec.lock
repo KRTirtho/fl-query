@@ -87,14 +87,14 @@ packages:
       path: "../../fl_query"
       relative: true
     source: path
-    version: "0.3.1"
+    version: "1.0.0-alpha.1"
   fl_query_hooks:
     dependency: "direct main"
     description:
       path: ".."
       relative: true
     source: path
-    version: "0.3.1"
+    version: "1.0.0-alpha.1"
   flutter:
     dependency: "direct main"
     description: flutter

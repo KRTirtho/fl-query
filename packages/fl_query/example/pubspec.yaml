@@ -9,8 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  fl_query:
-    path: ../
+  fl_query: ^1.0.0-alpha.1
   go_router: ^6.0.9
   http: ^0.13.5
 
