@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0-alpha.2](https://github.com/KRTirtho/fl-query/compare/v1.0.0-alpha.1...v1.0.0-alpha.2) (2023-03-12)
+
+
+### Features
+
+* **QueryClientProvider:** add config parameters and override-able client parameter ([f8895e3](https://github.com/KRTirtho/fl-query/commit/f8895e338141488e5bce4401c80b491688932085))
+
 ### [1.0.0-alpha.1](https://github.com/KRTirtho/fl-query/compare/v0.3.0...v1.0.0-alpha.1) (2023-03-05)
 
 > **BREAKING**
