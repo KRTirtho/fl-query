@@ -1,0 +1,12 @@
+name: fl_query_packages
+description: Asynchronous data caching, refetching & invalidation libraries for Flutter
+homepage: https://fl-query.vercel.app
+
+issue_tracker: https://github.com/KRTirtho/fl-query/issues
+repository: https://github.com/KRTirtho/fl-query
+
+environment:
+  sdk: ">=2.17.1 <4.0.0"
+
+dependencies:
+  melos: ^3.1.0

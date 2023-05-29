@@ -18,20 +18,40 @@ class QueryClientProvider extends InheritedWidget {
     Duration? refreshInterval,
     bool? refreshOnMount,
     bool? refreshOnQueryFnChange,
-  })  : assert((client == null && cache != null) || cache == null),
-        assert((client == null && maxRetries != null) || maxRetries == null),
-        assert((client == null && retryDelay != null) || retryDelay == null),
+  })  : assert(
+          (client == null && cache != null) || cache == null,
+          '[QueryClientProvider] no `client` must be provided when supplying `cache`',
+        ),
         assert(
-            (client == null && staleDuration != null) || staleDuration == null),
-        assert((client == null && refreshInterval != null) ||
-            refreshInterval == null),
-        assert((client == null && refreshOnMount != null) ||
-            refreshOnMount == null),
-        assert((client == null && refreshOnQueryFnChange != null) ||
-            refreshOnQueryFnChange == null),
+          (client == null && maxRetries != null) || maxRetries == null,
+          '[QueryClientProvider] no `client` must be provided when supplying `maxRetries`',
+        ),
+        assert(
+          (client == null && retryDelay != null) || retryDelay == null,
+          '[QueryClientProvider] no `client` must be provided when supplying `retryDelay`',
+        ),
+        assert(
+          (client == null && staleDuration != null) || staleDuration == null,
+          '[QueryClientProvider] no `client` must be provided when supplying `staleDuration`',
+        ),
+        assert(
+          (client == null && refreshInterval != null) ||
+              refreshInterval == null,
+          '[QueryClientProvider] no `client` must be provided when supplying `refreshInterval`',
+        ),
+        assert(
+          (client == null && refreshOnMount != null) || refreshOnMount == null,
+          '[QueryClientProvider] no `client` must be provided when supplying `refreshOnMount`',
+        ),
+        assert(
+          (client == null && refreshOnQueryFnChange != null) ||
+              refreshOnQueryFnChange == null,
+          '[QueryClientProvider] no `client` must be provided when supplying `refreshOnQueryFnChange`',
+        ),
         assert(
           (client == null && cacheDuration != DefaultConstants.cacheDuration) ||
               cacheDuration == DefaultConstants.cacheDuration,
+          '[QueryClientProvider] no `client` must be provided when supplying `cacheDuration`',
         ),
         client = client ??
             QueryClient(

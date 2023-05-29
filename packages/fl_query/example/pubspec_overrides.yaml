@@ -1,0 +1,4 @@
+# melos_managed_dependency_overrides: fl_query
+dependency_overrides:
+  fl_query:
+    path: ..
