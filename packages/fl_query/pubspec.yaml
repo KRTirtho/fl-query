@@ -19,6 +19,7 @@ dependencies:
   hive_flutter: ^1.1.0
   mutex: ^3.0.1
   state_notifier: ^0.7.2+1
+  json_view: ^0.4.1
 
 dev_dependencies:
   build_runner: ^2.2.0

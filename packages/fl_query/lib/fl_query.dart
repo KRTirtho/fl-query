@@ -17,3 +17,5 @@ export 'src/widgets/query_listenable.dart';
 export 'src/widgets/infinite_query_builder.dart';
 export 'src/widgets/infinite_query_listenable.dart';
 export 'src/widgets/mutation_builder.dart';
+
+export 'src/devtools/devtools.dart';

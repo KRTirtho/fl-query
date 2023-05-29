@@ -38,4 +38,11 @@ class RetryConfig {
       retryDelay: retryDelay ?? this.retryDelay,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'maxRetries': maxRetries,
+      'retryDelay': retryDelay.toString(),
+    };
+  }
 }

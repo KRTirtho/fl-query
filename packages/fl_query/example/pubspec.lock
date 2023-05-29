@@ -151,6 +151,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.7"
+  json_view:
+    dependency: transitive
+    description:
+      name: json_view
+      sha256: a60ea6dae3a3fe7a94418bdbc9e66f990f7a4582e010b091d27db16ab6fb1a3e
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.1"
   lints:
     dependency: transitive
     description:

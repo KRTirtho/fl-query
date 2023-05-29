@@ -23,6 +23,9 @@ class MainApp extends StatelessWidget {
         useMaterial3: true,
       ),
       title: 'FL Query Example',
+      builder: (context, child) {
+        return FlQueryDevtools(child: child);
+      },
       routerConfig: router,
     );
   }

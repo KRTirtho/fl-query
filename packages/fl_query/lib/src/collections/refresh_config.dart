@@ -58,4 +58,13 @@ class RefreshConfig {
           refreshOnQueryFnChange ?? this.refreshOnQueryFnChange,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'staleDuration': staleDuration.toString(),
+      'refreshInterval': refreshInterval.toString(),
+      'refreshOnMount': refreshOnMount,
+      'refreshOnQueryFnChange': refreshOnQueryFnChange,
+    };
+  }
 }
