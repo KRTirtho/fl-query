@@ -17,6 +17,7 @@ enum QueryCacheEventType {
   removeMutation,
 }
 
+/// A event triggered by the [QueryCache] cache modifications
 @immutable
 class QueryCacheEvent {
   final QueryCacheEventType type;
@@ -25,6 +26,10 @@ class QueryCacheEvent {
   QueryCacheEvent(this.type, this.data);
 }
 
+/// Cache for storing [Query], [InfiniteQuery] and [Mutation] objects
+/// and triggering events when they are added or removed
+///
+/// The cache can't be modified from outside directly
 class QueryCache {
   final Set<Query> _queries;
   final Set<InfiniteQuery> _infiniteQueries;
@@ -40,6 +45,7 @@ class QueryCache {
         _infiniteQueries = Set<InfiniteQuery>(),
         _mutations = Set<Mutation>(),
         _eventController = StreamController<QueryCacheEvent>.broadcast() {
+    // Invalidate inactive queries and mutations every [cacheDuration]
     Timer.periodic(cacheDuration, (timer) {
       _queries.removeWhere((query) {
         if (query.isInactive) {
@@ -118,6 +124,7 @@ class QueryCache {
     );
   }
 
+  /// Clears everything from cache
   void clear() {
     _queries.clear();
     _infiniteQueries.clear();
