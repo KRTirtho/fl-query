@@ -73,7 +73,7 @@ class _MutationBuilderState<DataType, ErrorType, VariablesType, RecoveryType>
 
   RecoveryType? recoveryData;
 
-  void subscribeOnMutate() {
+  void subscribeOnMutate(QueryClient client) {
     if (widget.onMutate != null)
       mutationSubscription = mutation!.mutationStream.listen(
         (event) async {
@@ -81,7 +81,7 @@ class _MutationBuilderState<DataType, ErrorType, VariablesType, RecoveryType>
 
           if (widget.onData != null) {
             dataSubscription?.cancel();
-            subscribeOnData();
+            subscribeOnData(client);
           }
 
           if (widget.onError != null) {
@@ -92,7 +92,7 @@ class _MutationBuilderState<DataType, ErrorType, VariablesType, RecoveryType>
       );
   }
 
-  void subscribeOnData() {
+  void subscribeOnData(QueryClient client) {
     if (widget.onData != null ||
         widget.refreshInfiniteQueries != null ||
         widget.refreshQueries != null)
@@ -100,11 +100,10 @@ class _MutationBuilderState<DataType, ErrorType, VariablesType, RecoveryType>
         (event) {
           final data = widget.onData?.call(event, recoveryData);
           if (widget.refreshQueries != null && mounted) {
-            QueryClient.of(context).refreshQueries(widget.refreshQueries!);
+            client.refreshQueries(widget.refreshQueries!);
           }
           if (widget.refreshInfiniteQueries != null && mounted) {
-            QueryClient.of(context)
-                .refreshInfiniteQueries(widget.refreshInfiniteQueries!);
+            client.refreshInfiniteQueries(widget.refreshInfiniteQueries!);
           }
           return data;
         },
@@ -120,18 +119,18 @@ class _MutationBuilderState<DataType, ErrorType, VariablesType, RecoveryType>
       );
   }
 
-  Future<void> initialize() async {
+  Future<void> initialize(QueryClient client) async {
     setState(() {
-      _createMutation();
-      subscribeOnMutate();
-      subscribeOnData();
+      _createMutation(client);
+      subscribeOnMutate(client);
+      subscribeOnData(client);
       subscribeOnError();
       removeListener = mutation!.addListener(rebuild);
     });
   }
 
-  void _createMutation() {
-    mutation = QueryClient.of(context).createMutation(
+  void _createMutation(QueryClient client) {
+    mutation = client.createMutation(
       widget.mutationKey,
       widget.mutationFn,
       retryConfig: widget.retryConfig,
@@ -142,7 +141,7 @@ class _MutationBuilderState<DataType, ErrorType, VariablesType, RecoveryType>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await initialize();
+      await initialize(QueryClient.of(context));
     });
   }
 
@@ -161,12 +160,14 @@ class _MutationBuilderState<DataType, ErrorType, VariablesType, RecoveryType>
   ) {
     super.didUpdateWidget(oldWidget);
 
+    final client = QueryClient.of(context);
+
     if (oldWidget.mutationKey != widget.mutationKey) {
       mutationSubscription?.cancel();
       dataSubscription?.cancel();
       errorSubscription?.cancel();
       removeListener?.call();
-      initialize();
+      initialize(client);
       return;
     }
     if (oldWidget.mutationFn != widget.mutationFn) {
@@ -174,15 +175,15 @@ class _MutationBuilderState<DataType, ErrorType, VariablesType, RecoveryType>
     }
     if (oldWidget.onMutate != widget.onMutate) {
       mutationSubscription?.cancel();
-      subscribeOnMutate();
+      subscribeOnMutate(client);
     }
     if (oldWidget.onData != widget.onData ||
         oldWidget.refreshQueries != widget.refreshQueries ||
         oldWidget.refreshInfiniteQueries != widget.refreshInfiniteQueries) {
       dataSubscription?.cancel();
-      subscribeOnData();
+      subscribeOnData(client);
       mutationSubscription?.cancel();
-      subscribeOnMutate();
+      subscribeOnMutate(client);
     }
     if (oldWidget.onError != widget.onError) {
       errorSubscription?.cancel();
@@ -193,7 +194,7 @@ class _MutationBuilderState<DataType, ErrorType, VariablesType, RecoveryType>
   @override
   Widget build(BuildContext context) {
     if (mutation == null) {
-      _createMutation();
+      _createMutation(QueryClient.of(context));
     }
     return widget.builder(context, mutation!);
   }

@@ -334,6 +334,8 @@ class InfiniteQuery<DataType, ErrorType, PageType>
   ///
   /// This is internally used to update queryFn when external data
   /// has changed. Used by [InfiniteQueryBuilder] and [QueryClient]
+  ///
+  /// This can also refresh if [RefreshConfig.refreshOnQueryFnChange] is true
   void updateQueryFn(InfiniteQueryFn<DataType, PageType> queryFn) {
     if (_queryFn == queryFn) return;
     _queryFn = queryFn;

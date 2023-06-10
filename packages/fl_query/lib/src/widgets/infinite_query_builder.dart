@@ -29,7 +29,11 @@ class InfiniteQueryBuilder<DataType, ErrorType, PageType>
   final ValueChanged<PageEvent<DataType, PageType>>? onData;
   final ValueChanged<PageEvent<ErrorType, PageType>>? onError;
 
-  // widget specific
+  /// Toggle to fetch data on initial load or not
+  ///
+  /// This is useful when you want to fetch data manually after certain action
+  ///
+  /// Once user manually fetch data, this will be set to true internally
   final bool enabled;
   final InfiniteQueryBuilderFn<DataType, ErrorType, PageType> builder;
 
@@ -66,9 +70,9 @@ class _InfiniteQueryBuilderState<DataType, ErrorType, PageType>
   StreamSubscription<PageEvent<DataType, PageType>>? dataSubscription;
   StreamSubscription<PageEvent<ErrorType, PageType>>? errorSubscription;
 
-  Future<void> initialize() async {
+  Future<void> initialize(QueryClient client) async {
     setState(() {
-      _createQuery();
+      _createQuery(client);
 
       if (widget.onData != null)
         dataSubscription = query!.dataStream.listen(widget.onData);
@@ -82,8 +86,8 @@ class _InfiniteQueryBuilderState<DataType, ErrorType, PageType>
     }
   }
 
-  void _createQuery() {
-    query = QueryClient.of(context).createInfiniteQuery(
+  void _createQuery(QueryClient client) {
+    query = client.createInfiniteQuery(
       widget.queryKey,
       widget.queryFn,
       initialParam: widget.initialPage,
@@ -98,7 +102,7 @@ class _InfiniteQueryBuilderState<DataType, ErrorType, PageType>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      initialize();
+      initialize(QueryClient.of(context));
     });
   }
 
@@ -118,7 +122,7 @@ class _InfiniteQueryBuilderState<DataType, ErrorType, PageType>
       dataSubscription?.cancel();
       errorSubscription?.cancel();
       removeListener?.call();
-      initialize();
+      initialize(QueryClient.of(context));
       return;
     } else if (oldWidget.enabled != widget.enabled && widget.enabled) {
       query!.fetch();
@@ -144,7 +148,7 @@ class _InfiniteQueryBuilderState<DataType, ErrorType, PageType>
   @override
   Widget build(BuildContext context) {
     if (query == null) {
-      _createQuery();
+      _createQuery(QueryClient.of(context));
     }
     return widget.builder(context, query!);
   }

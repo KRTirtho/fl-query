@@ -62,8 +62,8 @@ class _QueryBuilderState<DataType, ErrorType>
   StreamSubscription<DataType>? dataSubscription;
   StreamSubscription<ErrorType>? errorSubscription;
 
-  void _createQuery() {
-    query = QueryClient.of(context).createQuery(
+  void _createQuery(QueryClient client) {
+    query = client.createQuery(
       widget.queryKey,
       widget.queryFn,
       initial: widget.initial,
@@ -73,9 +73,9 @@ class _QueryBuilderState<DataType, ErrorType>
     );
   }
 
-  Future<void> initialize() async {
+  Future<void> initialize(QueryClient client) async {
     setState(() {
-      _createQuery();
+      _createQuery(client);
       if (widget.onData != null)
         dataSubscription = query!.dataStream.listen(widget.onData);
       if (widget.onData != null)
@@ -92,7 +92,7 @@ class _QueryBuilderState<DataType, ErrorType>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await initialize();
+      await initialize(QueryClient.of(context));
     });
   }
 
@@ -114,7 +114,7 @@ class _QueryBuilderState<DataType, ErrorType>
       dataSubscription?.cancel();
       errorSubscription?.cancel();
       removeListener?.call();
-      initialize();
+      initialize(QueryClient.of(context));
       return;
     } else if (oldWidget.enabled != widget.enabled && widget.enabled) {
       query!.fetch();
@@ -137,7 +137,7 @@ class _QueryBuilderState<DataType, ErrorType>
   @override
   Widget build(BuildContext context) {
     if (query == null) {
-      _createQuery();
+      _createQuery(QueryClient.of(context));
     }
     return widget.builder(context, query!);
   }

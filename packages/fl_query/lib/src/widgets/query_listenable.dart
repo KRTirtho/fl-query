@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fl_query/fl_query.dart';
+import 'package:fl_query/src/widgets/mixins/rebuilder.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_query/src/widgets/state_notifier_listenable.dart';
 
@@ -24,7 +25,7 @@ class QueryListenable<DataType, ErrorType> extends StatefulWidget {
 }
 
 class _QueryListenableState<DataType, ErrorType>
-    extends State<QueryListenable<DataType, ErrorType>> {
+    extends State<QueryListenable<DataType, ErrorType>> with SafeRebuild {
   StreamSubscription<QueryCacheEvent>? _subscription;
 
   @override
@@ -35,8 +36,8 @@ class _QueryListenableState<DataType, ErrorType>
         switch (event.type) {
           case QueryCacheEventType.addQuery:
           case QueryCacheEventType.removeQuery:
-            if (mounted && (event.data as Query).key == widget.queryKey) {
-              setState(() {});
+            if ((event.data as Query).key == widget.queryKey) {
+              rebuild();
             }
             break;
           default:

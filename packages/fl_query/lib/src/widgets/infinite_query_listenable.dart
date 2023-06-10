@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fl_query/fl_query.dart';
+import 'package:fl_query/src/widgets/mixins/rebuilder.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_query/src/widgets/state_notifier_listenable.dart';
 
@@ -26,7 +27,8 @@ class InfiniteQueryListenable<DataType, ErrorType, PageType>
 }
 
 class _InfiniteQueryListenableState<DataType, ErrorType, PageType>
-    extends State<InfiniteQueryListenable<DataType, ErrorType, PageType>> {
+    extends State<InfiniteQueryListenable<DataType, ErrorType, PageType>>
+    with SafeRebuild {
   StreamSubscription<QueryCacheEvent>? _subscription;
 
   @override
@@ -37,9 +39,8 @@ class _InfiniteQueryListenableState<DataType, ErrorType, PageType>
         switch (event.type) {
           case QueryCacheEventType.addInfiniteQuery:
           case QueryCacheEventType.removeInfiniteQuery:
-            if (mounted &&
-                (event.data as InfiniteQuery).key == widget.queryKey) {
-              setState(() {});
+            if ((event.data as InfiniteQuery).key == widget.queryKey) {
+              rebuild();
             }
             break;
           default:

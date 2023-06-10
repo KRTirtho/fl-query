@@ -17,6 +17,7 @@ Mutation<DataType, ErrorType, VariablesType>
   List<String>? refreshInfiniteQueries,
   List<Object?>? keys,
 }) {
+  final mounted = useIsMounted();
   final rebuild = useUpdater();
   final client = useQueryClient();
   final mutation =
@@ -42,7 +43,9 @@ Mutation<DataType, ErrorType, VariablesType>
   useEffect(() {
     if (onMutate != null) {
       return mutation.mutationStream.listen((event) async {
-        recoveryData.value = await onMutate.call(event);
+        if (mounted()) {
+          recoveryData.value = await onMutate.call(event);
+        }
       }).cancel;
     }
     return null;
