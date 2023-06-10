@@ -5,6 +5,7 @@ import 'package:collection/collection.dart';
 import 'package:fl_query/fl_query.dart';
 import 'package:fl_query/src/core/mixins/retryer.dart';
 import 'package:fl_query/src/core/mixins/validation.dart';
+import 'package:flutter/material.dart' hide Listener;
 import 'package:hive_flutter/adapters.dart';
 import 'package:mutex/mutex.dart';
 import 'package:state_notifier/state_notifier.dart';
@@ -16,6 +17,7 @@ typedef InfiniteQueryNextPage<DataType, PageType> = PageType? Function(
   DataType lastPageData,
 );
 
+/// A page holding all the data for a given page
 class InfiniteQueryPage<DataType, ErrorType, PageType> with Invalidation {
   final PageType page;
   final DataType? data;
@@ -74,6 +76,8 @@ class InfiniteQueryState<DataType, ErrorType, PageType> {
   }
 }
 
+/// Event fired with data and error by the [InfiniteQuery] fetchPage operation
+@immutable
 class PageEvent<T, P> {
   final P page;
   final T data;
@@ -86,6 +90,12 @@ class PageEvent<T, P> {
   }
 }
 
+/// A specialized Query that can retrieve + hold paginated/segmented data
+///
+/// - [nextPage] provides the next page param for fetching
+/// - [initialParam] provides the initial page param for fetching
+///
+/// Use the [InfiniteQueryBuilder] create and use an [InfiniteQuery]
 class InfiniteQuery<DataType, ErrorType, PageType>
     extends StateNotifier<InfiniteQueryState<DataType, ErrorType, PageType>>
     with Retryer<DataType, ErrorType> {
@@ -169,16 +179,31 @@ class InfiniteQuery<DataType, ErrorType, PageType>
 
   CancelableOperation<void>? _operation;
 
+  /// All the pages that has been successfully fetched
   List<DataType> get pages =>
       state.pages.map((e) => e.data).whereType<DataType>().toList();
+
+  /// All the errors of pages that has failed to fetch
   List<ErrorType> get errors =>
       state.pages.map((e) => e.error).whereType<ErrorType>().toList();
+
+  /// The last page that has been fetched
   PageType get lastPage => state.lastPage;
+
+  /// Stream of data events
+  ///
+  /// Subscribe to it to get notified when a page data is
+  /// fetched/refreshed/retried
   Stream<PageEvent<DataType, PageType>> get dataStream =>
       _dataController.stream;
+
+  /// Stream of error events
+  ///
+  /// Subscribe to it to get notified when a page has failed
   Stream<PageEvent<ErrorType, PageType>> get errorStream =>
       _errorController.stream;
 
+  /// The next page param that will be used to fetch the next page
   PageType? get getNextPage {
     final lastPageData = state.pages
         .firstWhereOrNull((e) => e.data is DataType && e.page == lastPage)
@@ -262,6 +287,9 @@ class InfiniteQuery<DataType, ErrorType, PageType>
     });
   }
 
+  /// Fetch current non-fetched page
+  ///
+  /// If page is already done fetching. It'll simply returns the old data
   Future<DataType?> fetch() async {
     final lastPage = state.lastPage;
     if (_mutex.isLocked || hasPageData || hasPageError)
@@ -269,6 +297,9 @@ class InfiniteQuery<DataType, ErrorType, PageType>
     return await _operate(lastPage).then((_) => state.pages.last.data);
   }
 
+  /// Refresh a page that has or has not been fetched
+  ///
+  /// - [page] The page to refresh. If null, it'll refresh the last page
   Future<DataType?> refresh([PageType? page]) async {
     page ??= lastPage;
     if (_mutex.isLocked)
@@ -278,6 +309,7 @@ class InfiniteQuery<DataType, ErrorType, PageType>
     });
   }
 
+  /// Refresh all the pages that has been fetched
   Future<List<DataType>?> refreshAll() async {
     if (_mutex.isLocked) return pages;
     return await Future.wait(
@@ -285,6 +317,9 @@ class InfiniteQuery<DataType, ErrorType, PageType>
     ).then((_) => pages);
   }
 
+  /// Fetch the next page
+  ///
+  /// If there's no next page, it'll simply return the last page data
   Future<DataType?> fetchNext() async {
     final nextPage = getNextPage;
     if (_mutex.isLocked || nextPage == null) {
@@ -295,6 +330,10 @@ class InfiniteQuery<DataType, ErrorType, PageType>
     });
   }
 
+  /// Replace the currently [queryFn] with new [queryFn]
+  ///
+  /// This is internally used to update queryFn when external data
+  /// has changed. Used by [InfiniteQueryBuilder] and [QueryClient]
   void updateQueryFn(InfiniteQueryFn<DataType, PageType> queryFn) {
     if (_queryFn == queryFn) return;
     _queryFn = queryFn;
@@ -311,11 +350,18 @@ class InfiniteQuery<DataType, ErrorType, PageType>
     }
   }
 
+  /// Replace the currently [nextPage] with new [nextPage]
   void updateNextPageFn(InfiniteQueryNextPage<DataType, PageType> nextPage) {
     if (_nextPage == nextPage) return;
     _nextPage = nextPage;
   }
 
+  /// Manually set the data of a page
+  ///
+  /// If there's no page with the given [page], it'll create a new page
+  /// and set the data as the given [data]
+  ///
+  /// The new page will be added to the end of the list so it becomes [lastPage]
   void setPageData(PageType page, DataType data) {
     final newPage = state.pages
         .firstWhere(
@@ -336,6 +382,10 @@ class InfiniteQuery<DataType, ErrorType, PageType>
     );
   }
 
+  /// Reset all data, pages, error, events of this query
+  ///
+  /// This will also remove every data of this [InfiniteQuery] from
+  /// persistent cache
   Future<void> reset() async {
     await _operation?.cancel();
     state = state.copyWith(pages: {
@@ -353,17 +403,19 @@ class InfiniteQuery<DataType, ErrorType, PageType>
     Listener<InfiniteQueryState<DataType, ErrorType, PageType>> listener, {
     bool fireImmediately = true,
   }) {
-    if (refreshConfig.refreshOnMount) {
-      refreshAll();
-    } else {
-      Future.wait(
-        state.pages.map((page) async {
-          if (page.isStale) {
-            return await refresh(page.page);
-          }
-        }),
-      );
-    }
+    Future.microtask(() async {
+      if (refreshConfig.refreshOnMount) {
+        await refreshAll();
+      } else {
+        await Future.wait(
+          state.pages.map((page) async {
+            if (page.isStale) {
+              return await refresh(page.page);
+            }
+          }),
+        );
+      }
+    });
     return super.addListener(listener, fireImmediately: fireImmediately);
   }
 
