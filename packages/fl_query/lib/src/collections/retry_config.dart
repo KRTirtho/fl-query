@@ -5,8 +5,13 @@ import 'package:flutter/material.dart';
 class RetryConfig {
   final int maxRetries;
   final Duration retryDelay;
+  final bool cancelWhenOffline;
 
-  const RetryConfig({required this.maxRetries, required this.retryDelay});
+  const RetryConfig({
+    required this.maxRetries,
+    required this.retryDelay,
+    required this.cancelWhenOffline,
+  });
 
   factory RetryConfig.withDefaults(
     BuildContext context, {
@@ -32,10 +37,12 @@ class RetryConfig {
   RetryConfig copyWith({
     int? maxRetries,
     Duration? retryDelay,
+    bool? cancelWhenOffline,
   }) {
     return RetryConfig(
       maxRetries: maxRetries ?? this.maxRetries,
       retryDelay: retryDelay ?? this.retryDelay,
+      cancelWhenOffline: cancelWhenOffline ?? this.cancelWhenOffline,
     );
   }
 

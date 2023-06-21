@@ -92,6 +92,27 @@ class Query<DataType, ErrorType>
           await refresh();
         }
       });
+
+    // Listen to network changes and cancel any ongoing operations
+
+    bool wasConnected = true;
+    _connectivitySubscription = QueryClient.connectivity.onConnectivityChanged
+        .listen((isConnected) async {
+      try {
+        if (isConnected &&
+            !wasConnected &&
+            state.isStale &&
+            refreshConfig.refreshOnNetworkStateChange) {
+          await refresh();
+        } else if (!isConnected &&
+            _mutex.isLocked &&
+            retryConfig.cancelWhenOffline) {
+          await _operation?.cancel();
+        }
+      } finally {
+        wasConnected = isConnected;
+      }
+    });
   }
 
   DataType? _initial;
@@ -99,6 +120,7 @@ class Query<DataType, ErrorType>
   final _mutex = Mutex();
   final StreamController<DataType> _dataController;
   final StreamController<ErrorType> _errorController;
+  StreamSubscription<bool>? _connectivitySubscription;
 
   bool get isInitial => hasData && state.data == _initial;
   bool get isLoading => isInitial ? _mutex.isLocked : !hasData && !hasError;
@@ -181,6 +203,15 @@ class Query<DataType, ErrorType>
       refresh();
     }
     return super.addListener(listener, fireImmediately: fireImmediately);
+  }
+
+  @override
+  void dispose() {
+    _operation?.cancel();
+    _connectivitySubscription?.cancel();
+    _dataController.close();
+    _errorController.close();
+    super.dispose();
   }
 
   @override

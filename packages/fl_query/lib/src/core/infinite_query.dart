@@ -170,12 +170,37 @@ class InfiniteQuery<DataType, ErrorType, PageType>
           }),
         );
       });
+
+    // Listen to network changes and cancel any ongoing operations
+
+    bool wasConnected = true;
+    _connectivitySubscription = QueryClient.connectivity.onConnectivityChanged
+        .listen((isConnected) async {
+      try {
+        if (isConnected &&
+            !wasConnected &&
+            refreshConfig.refreshOnNetworkStateChange) {
+          for (final page in state.pages) {
+            if (page.isStale) {
+              await refresh(page.page);
+            }
+          }
+        } else if (!isConnected &&
+            _mutex.isLocked &&
+            retryConfig.cancelWhenOffline) {
+          await _operation?.cancel();
+        }
+      } finally {
+        wasConnected = isConnected;
+      }
+    });
   }
 
   final _mutex = Mutex();
   final LazyBox _box;
   final StreamController<PageEvent<DataType, PageType>> _dataController;
   final StreamController<PageEvent<ErrorType, PageType>> _errorController;
+  StreamSubscription<bool>? _connectivitySubscription;
 
   CancelableOperation<void>? _operation;
 
@@ -419,6 +444,15 @@ class InfiniteQuery<DataType, ErrorType, PageType>
       }
     });
     return super.addListener(listener, fireImmediately: fireImmediately);
+  }
+
+  @override
+  void dispose() {
+    _operation?.cancel();
+    _connectivitySubscription?.cancel();
+    _errorController.close();
+    _dataController.close();
+    super.dispose();
   }
 
   @override

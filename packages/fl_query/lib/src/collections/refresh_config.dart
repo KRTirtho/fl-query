@@ -7,12 +7,14 @@ class RefreshConfig {
   final Duration refreshInterval;
   final bool refreshOnMount;
   final bool refreshOnQueryFnChange;
+  final bool refreshOnNetworkStateChange;
 
   const RefreshConfig({
     required this.staleDuration,
     required this.refreshInterval,
     required this.refreshOnMount,
     required this.refreshOnQueryFnChange,
+    required this.refreshOnNetworkStateChange,
   });
 
   factory RefreshConfig.withDefaults(
@@ -49,6 +51,7 @@ class RefreshConfig {
     Duration? refreshInterval,
     bool? refreshOnMount,
     bool? refreshOnQueryFnChange,
+    bool? refreshOnNetworkStateChange,
   }) {
     return RefreshConfig(
       staleDuration: staleDuration ?? this.staleDuration,
@@ -56,6 +59,8 @@ class RefreshConfig {
       refreshOnMount: refreshOnMount ?? this.refreshOnMount,
       refreshOnQueryFnChange:
           refreshOnQueryFnChange ?? this.refreshOnQueryFnChange,
+      refreshOnNetworkStateChange:
+          refreshOnNetworkStateChange ?? this.refreshOnNetworkStateChange,
     );
   }
 

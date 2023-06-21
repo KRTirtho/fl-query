@@ -523,7 +523,7 @@ class QueryClient {
     required ConnectivityAdapter connectivity,
     String? cacheDir,
   }) async {
-    connectivity = connectivity;
+    QueryClient.connectivity = connectivity;
     await Hive.initFlutter(cacheDir);
     _cachePrefix = cachePrefix;
     await Hive.openLazyBox(queryCachePrefix);

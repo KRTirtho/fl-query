@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:async/async.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
+import 'package:fl_query/src/core/client.dart';
 import 'package:fl_query/src/core/mixins/retryer.dart';
 import 'package:mutex/mutex.dart';
 import 'package:state_notifier/state_notifier.dart';
@@ -43,13 +44,38 @@ class Mutation<DataType, ErrorType, VariablesType>
 
   MutationFn<DataType, VariablesType> _mutationFn;
 
-  Mutation(this.key, MutationFn<DataType, VariablesType> mutationFn,
-      {required this.retryConfig})
-      : _dataController = StreamController.broadcast(),
+  Mutation(
+    this.key,
+    MutationFn<DataType, VariablesType> mutationFn, {
+    required this.retryConfig,
+  })  : _dataController = StreamController.broadcast(),
         _errorController = StreamController.broadcast(),
         _mutationController = StreamController.broadcast(),
         _mutationFn = mutationFn,
-        super(MutationState<DataType, ErrorType, VariablesType>());
+        super(MutationState<DataType, ErrorType, VariablesType>()) {
+    // Listen to network changes and cancel any ongoing operations
+    bool wasConnected = true;
+    _connectivitySubscription = QueryClient.connectivity.onConnectivityChanged
+        .listen((isConnected) async {
+      try {
+        if (!isConnected &&
+            wasConnected &&
+            _mutex.isLocked &&
+            retryConfig.cancelWhenOffline) {
+          await _operation?.cancel();
+        }
+      } finally {
+        wasConnected = isConnected;
+      }
+    });
+  }
+
+  final _mutex = Mutex();
+  final StreamController<VariablesType> _mutationController;
+  final StreamController<DataType> _dataController;
+  final StreamController<ErrorType> _errorController;
+  CancelableOperation<void>? _operation;
+  late final StreamSubscription<bool>? _connectivitySubscription;
 
   bool get isInactive => !hasListeners;
   bool get isMutating => _mutex.isLocked;
@@ -61,12 +87,6 @@ class Mutation<DataType, ErrorType, VariablesType>
   Stream<DataType> get dataStream => _dataController.stream;
   Stream<ErrorType> get errorStream => _errorController.stream;
   Stream<VariablesType> get mutationStream => _mutationController.stream;
-
-  final _mutex = Mutex();
-  final StreamController<VariablesType> _mutationController;
-  final StreamController<DataType> _dataController;
-  final StreamController<ErrorType> _errorController;
-  CancelableOperation<void>? _operation;
 
   Future<void> _operate(VariablesType variables) {
     return _mutex.protect(() async {
@@ -111,6 +131,16 @@ class Mutation<DataType, ErrorType, VariablesType>
   Future<void> reset() async {
     await _operation?.cancel();
     state = MutationState<DataType, ErrorType, VariablesType>();
+  }
+
+  @override
+  void dispose() {
+    _operation?.cancel();
+    _connectivitySubscription?.cancel();
+    _dataController.close();
+    _errorController.close();
+    _mutationController.close();
+    super.dispose();
   }
 
   @override

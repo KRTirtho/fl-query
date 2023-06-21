@@ -10,6 +10,7 @@ abstract class DefaultConstants {
   static const RetryConfig retryConfig = RetryConfig(
     maxRetries: 3,
     retryDelay: Duration(seconds: 1),
+    cancelWhenOffline: true,
   );
 
   static const RefreshConfig refreshConfig = RefreshConfig(
@@ -17,6 +18,7 @@ abstract class DefaultConstants {
     refreshInterval: Duration.zero,
     refreshOnMount: false,
     refreshOnQueryFnChange: false,
+    refreshOnNetworkStateChange: true,
   );
 
   static const Duration cacheDuration = Duration(minutes: 5);
