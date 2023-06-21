@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
+import 'package:fl_query/src/collections/connectivity_adapter.dart';
 import 'package:fl_query/src/collections/default_configs.dart';
 import 'package:fl_query/src/collections/json_config.dart';
 import 'package:fl_query/src/collections/refresh_config.dart';
@@ -512,13 +513,17 @@ class QueryClient {
   static String get infiniteQueryCachePrefix =>
       '$_cachePrefix.cache.infinite_queries';
 
+  static late final ConnectivityAdapter connectivity;
+
   /// Initializes the [QueryClient]
   ///
   /// This sets up all [Hive] boxes and cache directories
   static Future<void> initialize({
     required String cachePrefix,
+    required ConnectivityAdapter connectivity,
     String? cacheDir,
   }) async {
+    connectivity = connectivity;
     await Hive.initFlutter(cacheDir);
     _cachePrefix = cachePrefix;
     await Hive.openLazyBox(queryCachePrefix);

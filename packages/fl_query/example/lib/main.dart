@@ -1,10 +1,14 @@
+import 'package:fl_query_connectivity_plus_adapter/fl_query_connectivity_plus_adapter.dart';
 import 'package:fl_query_example/router.dart';
 import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await QueryClient.initialize(cachePrefix: 'fl_query_example');
+  await QueryClient.initialize(
+    cachePrefix: 'fl_query_example',
+    connectivity: FlQueryConnectivityPlusAdapter(),
+  );
   runApp(
     QueryClientProvider(
       child: const MainApp(),

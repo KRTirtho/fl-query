@@ -14,6 +14,7 @@ dependencies:
 
   cupertino_icons: ^1.0.2
   fl_query: ^1.0.0-alpha.2
+  fl_query_connectivity_plus_adapter: ^0.1.0
   fl_query_hooks: ^1.0.0-alpha.2
   go_router: ^6.0.9
   http: ^0.13.5

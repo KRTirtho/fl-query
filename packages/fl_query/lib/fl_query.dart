@@ -4,6 +4,7 @@ export 'src/collections/default_configs.dart';
 export 'src/collections/json_config.dart';
 export 'src/collections/refresh_config.dart';
 export 'src/collections/retry_config.dart';
+export 'src/collections/connectivity_adapter.dart';
 
 export 'src/core/cache.dart';
 export 'src/core/client.dart';
