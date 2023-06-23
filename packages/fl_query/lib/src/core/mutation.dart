@@ -4,6 +4,8 @@ import 'package:async/async.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/client.dart';
 import 'package:fl_query/src/core/mixins/retryer.dart';
+import 'package:fl_query/src/widgets/state_resolvers/mutation_state.dart';
+import 'package:flutter/widgets.dart';
 import 'package:mutex/mutex.dart';
 import 'package:state_notifier/state_notifier.dart';
 
@@ -88,7 +90,11 @@ class Mutation<DataType, ErrorType, VariablesType>
   Stream<ErrorType> get errorStream => _errorController.stream;
   Stream<VariablesType> get mutationStream => _mutationController.stream;
 
-  Future<void> _operate(VariablesType variables) {
+  Future<void> _operate(VariablesType variables) async {
+    if (!await QueryClient.connectivity.isConnected &&
+        retryConfig.cancelWhenOffline) {
+      return;
+    }
     return _mutex.protect(() async {
       state = state.copyWith();
       _operation = cancellableRetryOperation(
@@ -126,6 +132,57 @@ class Mutation<DataType, ErrorType, VariablesType>
   void updateMutationFn(MutationFn<DataType, VariablesType> mutationFn) {
     if (mutationFn == _mutationFn) return;
     _mutationFn = mutationFn;
+  }
+
+  Widget resolve(
+    Widget Function(DataType data) data, {
+    required Widget Function(ErrorType error) error,
+    required Widget Function() loading,
+    Widget Function()? mutating,
+    Widget Function()? offline,
+  }) {
+    if (hasData) {
+      return data(this.data!);
+    } else if (!QueryClient.connectivity.isConnectedSync) {
+      return offline != null ? offline() : loading();
+    } else if (isMutating) {
+      return mutating != null ? mutating() : loading();
+    } else if (hasError) {
+      return error(this.error!);
+    } else {
+      return loading();
+    }
+  }
+
+  Widget resolveWith(
+    BuildContext context,
+    Widget Function(DataType data) data, {
+    required Widget Function(ErrorType error)? error,
+    required Widget Function()? loading,
+    Widget Function()? offline,
+    Widget Function()? mutating,
+  }) {
+    final resolvents = MutationStateResolverProvider.of(context);
+
+    assert(
+      resolvents.error != null || error != null,
+      'You must provide an error widget or an error resolver using `MutationStateResolverProvider`',
+    );
+
+    assert(
+      resolvents.loading != null || loading != null,
+      'You must provide a loading widget or a loading resolver using `MutationStateResolverProvider`',
+    );
+
+    return resolve(
+      data,
+      error: resolvents.error != null
+          ? (e) => resolvents.error!(e as dynamic)
+          : error!,
+      loading: (resolvents.loading ?? loading)!,
+      offline: resolvents.offline ?? offline,
+      mutating: resolvents.mutating ?? mutating,
+    );
   }
 
   Future<void> reset() async {

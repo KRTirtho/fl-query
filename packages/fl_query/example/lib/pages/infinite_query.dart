@@ -67,33 +67,40 @@ class _InfiniteQueryPageWidgetState extends State<InfiniteQueryPageWidget> {
           return lastPage + 1;
         },
         initialPage: 0,
-        jsonConfig: JsonConfig(
-          fromJson: (json) => PagedProducts.fromJson(json),
-          toJson: (data) => data.toJson(),
-        ),
+        // jsonConfig: JsonConfig(
+        //   fromJson: (json) => PagedProducts.fromJson(json),
+        //   toJson: (data) => data.toJson(),
+        // ),
         builder: (context, query) {
           final products = query.pages.map((e) => e.products).expand((e) => e);
-          if (!query.hasPages) {
-            return const Center(
+
+          return query.resolve(
+            (data) => ListView(
+              controller: controller,
+              children: [
+                for (final product in products)
+                  ListTile(
+                    title: Text(product.title),
+                    subtitle: Text(product.description),
+                    leading: Image.network(product.thumbnail),
+                  ),
+                if (query.hasNextPage)
+                  const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                if (query.hasErrors)
+                  ...query.errors.map((e) => Text(e.message)).toList(),
+              ],
+            ),
+            loading: () => const Center(
               child: CircularProgressIndicator(),
-            );
-          }
-          return ListView(
-            controller: controller,
-            children: [
-              for (final product in products)
-                ListTile(
-                  title: Text(product.title),
-                  subtitle: Text(product.description),
-                  leading: Image.network(product.thumbnail),
-                ),
-              if (query.hasNextPage)
-                const Center(
-                  child: CircularProgressIndicator(),
-                ),
-              if (query.hasErrors)
-                ...query.errors.map((e) => Text(e.message)).toList(),
-            ],
+            ),
+            error: (error) => const Center(
+              child: Text("Sorry! There was an error :'("),
+            ),
+            offline: () => const Center(
+              child: Text("Yo. You're offline. Are you in a jungle?"),
+            ),
           );
         },
       ),

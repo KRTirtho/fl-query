@@ -6,6 +6,8 @@ import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/client.dart';
 import 'package:fl_query/src/core/mixins/retryer.dart';
 import 'package:fl_query/src/core/mixins/validation.dart';
+import 'package:fl_query/src/widgets/state_resolvers/query_state.dart';
+import 'package:flutter/widgets.dart' hide Listener;
 import 'package:hive_flutter/adapters.dart';
 import 'package:mutex/mutex.dart';
 import 'package:state_notifier/state_notifier.dart';
@@ -137,7 +139,11 @@ class Query<DataType, ErrorType>
 
   CancelableOperation<void>? _operation;
 
-  Future<void> _operate() {
+  Future<void> _operate() async {
+    if (!await QueryClient.connectivity.isConnected &&
+        retryConfig.cancelWhenOffline) {
+      return;
+    }
     return _mutex.protect(() async {
       state = state.copyWith();
       _operation = cancellableRetryOperation(
@@ -194,6 +200,52 @@ class Query<DataType, ErrorType>
     await _operation?.cancel();
     state = state.copyWith(data: _initial, updatedAt: DateTime.now());
     _box.delete(key);
+  }
+
+  Widget resolve(
+    Widget Function(DataType data) data, {
+    required Widget Function(ErrorType data) error,
+    required Widget Function() loading,
+    Widget Function()? offline,
+  }) {
+    if (hasData) {
+      return data(this.data!);
+    } else if (!QueryClient.connectivity.isConnectedSync) {
+      return offline != null ? offline() : loading();
+    } else if (hasError) {
+      return error(this.error!);
+    } else {
+      return loading();
+    }
+  }
+
+  Widget resolveWith(
+    BuildContext context,
+    Widget Function(DataType data) data, {
+    required Widget Function(ErrorType error)? error,
+    required Widget Function()? loading,
+    Widget Function()? offline,
+  }) {
+    final resolvents = QueryStateResolverProvider.of(context);
+
+    assert(
+      resolvents.error != null || error != null,
+      'You must provide an error widget or an error resolver using `QueryStateResolverProvider`',
+    );
+
+    assert(
+      resolvents.loading != null || loading != null,
+      'You must provide a loading widget or a loading resolver using `QueryStateResolverProvider`',
+    );
+
+    return resolve(
+      data,
+      error: resolvents.error != null
+          ? (e) => resolvents.error!(e as dynamic)
+          : error!,
+      loading: (resolvents.loading ?? loading)!,
+      offline: resolvents.offline ?? offline,
+    );
   }
 
   @override

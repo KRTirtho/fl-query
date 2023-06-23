@@ -2,10 +2,11 @@ import 'dart:async';
 
 import 'package:async/async.dart';
 import 'package:collection/collection.dart';
-import 'package:fl_query/fl_query.dart';
+import 'package:fl_query/src/core/client.dart';
 import 'package:fl_query/src/core/mixins/retryer.dart';
 import 'package:fl_query/src/core/mixins/validation.dart';
-import 'package:flutter/material.dart' hide Listener;
+import 'package:fl_query/src/widgets/state_resolvers/infinite_query_state.dart';
+import 'package:flutter/widgets.dart' hide Listener;
 import 'package:hive_flutter/adapters.dart';
 import 'package:mutex/mutex.dart';
 import 'package:state_notifier/state_notifier.dart';
@@ -251,7 +252,11 @@ class InfiniteQuery<DataType, ErrorType, PageType>
 
   bool get hasNextPage => getNextPage != null;
 
-  Future<void> _operate(PageType page) {
+  Future<void> _operate(PageType page) async {
+    if (!await QueryClient.connectivity.isConnected &&
+        retryConfig.cancelWhenOffline) {
+      return;
+    }
     return _mutex.protect(() async {
       state = state.copyWith();
       _operation = cancellableRetryOperation(
@@ -406,6 +411,52 @@ class InfiniteQuery<DataType, ErrorType, PageType>
         ...state.pages..remove(newPage),
         newPage,
       },
+    );
+  }
+
+  Widget resolve(
+    Widget Function(List<DataType> data) data, {
+    required Widget Function(List<ErrorType> errors) error,
+    required Widget Function() loading,
+    Widget Function()? offline,
+  }) {
+    if (hasPages) {
+      return data(this.pages);
+    } else if (!QueryClient.connectivity.isConnectedSync) {
+      return offline != null ? offline() : loading();
+    } else if (hasErrors) {
+      return error(this.errors);
+    } else {
+      return loading();
+    }
+  }
+
+  Widget resolveWith(
+    BuildContext context,
+    Widget Function(List<DataType> data) data, {
+    required Widget Function(List<ErrorType> error)? error,
+    required Widget Function()? loading,
+    Widget Function()? offline,
+  }) {
+    final resolvents = InfiniteQueryStateResolverProvider.of(context);
+
+    assert(
+      resolvents.error != null || error != null,
+      'You must provide an error widget or an error resolver using `InfiniteQueryStateResolverProvider`',
+    );
+
+    assert(
+      resolvents.loading != null || loading != null,
+      'You must provide a loading widget or a loading resolver using `InfiniteQueryStateResolverProvider`',
+    );
+
+    return resolve(
+      data,
+      error: resolvents.error != null
+          ? (e) => resolvents.error!(e.cast<dynamic>())
+          : error!,
+      loading: (resolvents.loading ?? loading)!,
+      offline: resolvents.offline ?? offline,
     );
   }
 

@@ -43,17 +43,11 @@ class QueryPage extends StatelessWidget {
           debugPrint('onError: $error');
         },
         builder: (context, query) {
-          if (query.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          } else if (query.hasError) {
-            return Center(
-              child: Text(query.error.toString()),
-            );
-          }
-          return Center(
-            child: Text(query.data ?? "Unfortunately, there's no data"),
+          return query.resolveWith(
+            context,
+            (data) => Center(child: Text(data)),
+            error: (error) => Center(child: Text(error.toString())),
+            loading: () => const Center(child: CircularProgressIndicator()),
           );
         },
       ),

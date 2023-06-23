@@ -28,7 +28,14 @@ class MainApp extends StatelessWidget {
       ),
       title: 'FL Query Example',
       builder: (context, child) {
-        return FlQueryDevtools(child: child);
+        return FlQueryDevtools(
+          child: QueryStateResolverProvider(
+            child: child!,
+            offline: () => const Center(
+              child: Text("Why u offline? How can u live?"),
+            ),
+          ),
+        );
       },
       routerConfig: router,
     );
