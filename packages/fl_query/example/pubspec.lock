@@ -119,6 +119,13 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  fl_query_devtools:
+    dependency: "direct main"
+    description:
+      path: "../../fl_query_devtools"
+      relative: true
+    source: path
+    version: "0.1.0"
   flutter:
     dependency: "direct main"
     description: flutter

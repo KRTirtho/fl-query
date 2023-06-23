@@ -1,5 +1,5 @@
-import 'package:fl_query/src/core/client.dart';
-import 'package:fl_query/src/devtools/widgets/query_tile.dart';
+import 'package:fl_query/fl_query.dart';
+import 'package:fl_query_devtools/src/widgets/query_tile.dart';
 import 'package:flutter/material.dart';
 
 class MutationTab extends StatefulWidget {

@@ -1,4 +1,5 @@
 import 'package:fl_query_connectivity_plus_adapter/fl_query_connectivity_plus_adapter.dart';
+import 'package:fl_query_devtools/fl_query_devtools.dart';
 import 'package:fl_query_example/router.dart';
 import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';

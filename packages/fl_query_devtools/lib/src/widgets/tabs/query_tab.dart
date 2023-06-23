@@ -1,9 +1,8 @@
-import 'package:fl_query/src/core/client.dart';
-import 'package:fl_query/src/devtools/helpers/jsonify_value.dart';
-import 'package:fl_query/src/devtools/helpers/primitvify_value.dart';
-import 'package:fl_query/src/devtools/widgets/explorers/explorer_view.dart';
-import 'package:fl_query/src/devtools/widgets/query_tile.dart';
-import 'package:fl_query/src/widgets/query_listenable.dart';
+import 'package:fl_query/fl_query.dart';
+import 'package:fl_query_devtools/src/helpers/jsonify_value.dart';
+import 'package:fl_query_devtools/src/helpers/primitvify_value.dart';
+import 'package:fl_query_devtools/src/widgets/explorers/explorer_view.dart';
+import 'package:fl_query_devtools/src/widgets/query_tile.dart';
 import 'package:flutter/material.dart';
 
 class QueryTab extends StatefulWidget {
@@ -62,7 +61,7 @@ class _QueryTabState extends State<QueryTab> {
                   child: QueryListenable(_selectedQueryKey ?? '',
                       builder: (context, query) {
                     if (query == null) {
-                      return SizedBox.shrink();
+                      return const SizedBox.shrink();
                     }
 
                     return ExplorerView(

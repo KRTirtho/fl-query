@@ -1,4 +1,4 @@
-import 'package:fl_query/src/devtools/widgets/devtools_root.dart';
+import 'package:fl_query_devtools/src/widgets/devtools_root.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -40,7 +40,7 @@ class _FlQueryDevtoolsState extends State<FlQueryDevtools> {
                           _showDevtools = false;
                         });
                       },
-                      child: SizedBox.expand(
+                      child: const SizedBox.expand(
                         child: ColoredBox(
                           color: Colors.black38,
                         ),
@@ -83,8 +83,8 @@ class _FlQueryDevtoolsState extends State<FlQueryDevtools> {
                     _showDevtools = !_showDevtools;
                   });
                 },
-                label: Text("Fl-Query Devtools"),
-                icon: Icon(Icons.search_rounded),
+                label: const Text("Fl-Query Devtools"),
+                icon: const Icon(Icons.search_rounded),
               ),
             ),
           ),

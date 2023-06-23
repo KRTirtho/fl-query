@@ -21,5 +21,3 @@ export 'src/widgets/mutation_builder.dart';
 export 'src/widgets/state_resolvers/query_state.dart';
 export 'src/widgets/state_resolvers/infinite_query_state.dart';
 export 'src/widgets/state_resolvers/mutation_state.dart';
-
-export 'src/devtools/devtools.dart';

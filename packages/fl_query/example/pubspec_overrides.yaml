@@ -1,6 +1,8 @@
-# melos_managed_dependency_overrides: fl_query,fl_query_connectivity_plus_adapter
+# melos_managed_dependency_overrides: fl_query,fl_query_connectivity_plus_adapter,fl_query_devtools
 dependency_overrides:
   fl_query:
     path: ..
   fl_query_connectivity_plus_adapter:
     path: ../../fl_query_connectivity_plus_adapter
+  fl_query_devtools:
+    path: ../../fl_query_devtools

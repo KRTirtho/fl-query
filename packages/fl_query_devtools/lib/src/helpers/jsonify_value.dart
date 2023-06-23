@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:fl_query/src/collections/json_config.dart';
+import 'package:fl_query/fl_query.dart';
 
 Object? jsonifyValue(data, JsonConfig? jsonConfig) {
   switch (data.runtimeType) {

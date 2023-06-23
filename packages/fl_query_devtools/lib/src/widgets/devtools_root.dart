@@ -1,6 +1,6 @@
-import 'package:fl_query/src/devtools/widgets/tabs/infinite_query_tab.dart';
-import 'package:fl_query/src/devtools/widgets/tabs/mutation_tab.dart';
-import 'package:fl_query/src/devtools/widgets/tabs/query_tab.dart';
+import 'package:fl_query_devtools/src/widgets/tabs/infinite_query_tab.dart';
+import 'package:fl_query_devtools/src/widgets/tabs/mutation_tab.dart';
+import 'package:fl_query_devtools/src/widgets/tabs/query_tab.dart';
 import 'package:flutter/material.dart';
 
 class DevtoolsRoot extends StatefulWidget {
@@ -33,7 +33,7 @@ class _DevtoolsRootState extends State<DevtoolsRoot> {
             ],
           ),
         ),
-        body: TabBarView(
+        body: const TabBarView(
           children: [
             QueryTab(),
             InfiniteQueryTab(),

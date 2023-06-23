@@ -1,9 +1,8 @@
-import 'package:fl_query/src/core/client.dart';
-import 'package:fl_query/src/devtools/helpers/jsonify_value.dart';
-import 'package:fl_query/src/devtools/helpers/primitvify_value.dart';
-import 'package:fl_query/src/devtools/widgets/explorers/explorer_view.dart';
-import 'package:fl_query/src/devtools/widgets/query_tile.dart';
-import 'package:fl_query/src/widgets/infinite_query_listenable.dart';
+import 'package:fl_query/fl_query.dart';
+import 'package:fl_query_devtools/src/helpers/jsonify_value.dart';
+import 'package:fl_query_devtools/src/helpers/primitvify_value.dart';
+import 'package:fl_query_devtools/src/widgets/explorers/explorer_view.dart';
+import 'package:fl_query_devtools/src/widgets/query_tile.dart';
 import 'package:flutter/material.dart';
 
 class InfiniteQueryTab extends StatefulWidget {
