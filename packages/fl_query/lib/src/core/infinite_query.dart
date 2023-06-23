@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:async/async.dart';
 import 'package:collection/collection.dart';
+import 'package:fl_query/src/collections/json_config.dart';
+import 'package:fl_query/src/collections/refresh_config.dart';
+import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/client.dart';
 import 'package:fl_query/src/core/mixins/retryer.dart';
 import 'package:fl_query/src/core/mixins/validation.dart';
