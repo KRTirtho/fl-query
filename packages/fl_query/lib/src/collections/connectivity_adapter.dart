@@ -14,3 +14,11 @@ abstract class ConnectivityAdapter {
 
   Stream<bool> get onConnectivityChanged;
 }
+
+class NoOpConnectivityAdapter extends ConnectivityAdapter {
+  @override
+  Future<bool> get isConnected => Future.value(true);
+
+  @override
+  Stream<bool> get onConnectivityChanged => Stream<bool>.empty();
+}

@@ -520,10 +520,10 @@ class QueryClient {
   /// This sets up all [Hive] boxes and cache directories
   static Future<void> initialize({
     required String cachePrefix,
-    required ConnectivityAdapter connectivity,
+    ConnectivityAdapter? connectivity,
     String? cacheDir,
   }) async {
-    QueryClient.connectivity = connectivity;
+    QueryClient.connectivity = connectivity ?? NoOpConnectivityAdapter();
     await Hive.initFlutter(cacheDir);
     _cachePrefix = cachePrefix;
     await Hive.openLazyBox(queryCachePrefix);
