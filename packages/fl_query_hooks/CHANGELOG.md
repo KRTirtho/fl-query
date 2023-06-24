@@ -1,3 +1,37 @@
+## 1.0.0-alpha.3
+
+ - **REFACTOR**: move devtools to separate library.
+ - **REFACTOR**: more convenient ways customizing config.
+ - **REFACTOR**(QueryBowl): query bowl logic as a separate class instead of a stateful widget.
+ - **REFACTOR**(example): package specific examples instead of a single example.
+ - **FIX**(fl_query_hooks): fetch query when queryKey changes.
+ - **FIX**(fl_query_hooks): query/mutation reset to initial memoized values on hot reload.
+ - **FIX**: state update on unmounted hook and infinite query cache refetch not working.
+ - **FIX**: refetchOnExternalDataChange isn't working #18.
+ - **FIX**(base_query): onData callback getting called with null #17.
+ - **FIX**(fl_query_hooks): unneeded empty instances of query/mutation.
+ - **FIX**(fl_query_hooks): newest query/mutation/infinite-query instance not getting returned.
+ - **FEAT**: connectivity adapter package for connectivity_plus.
+ - **FEAT**: add devtools (WIP).
+ - **FEAT**: new next_page signature, query/mutation fn in notifier and safe update in use_updater.
+ - **FEAT**: use function hooks instead of class hooks.
+ - **FEAT**: use mutation hook add.
+ - **FEAT**: useInfiniteQuery hook add.
+ - **FEAT**: useQuery hook with working example.
+ - **FEAT**: safe cancellation of running operation on reset.
+ - **FEAT**: add infinite query builder with example.
+ - **FEAT**: cache, client, query builder add and refreshOnQueryFnChange option.
+ - **FEAT**: initial query and retryer implementation.
+ - **FEAT**: clean old junk.
+ - **FEAT**: add query and infinite query disk caching support.
+ - **FEAT**(infinite-query): onData and onError listener support.
+ - **FEAT**(infinite-query): add `useInfiniteQuery` hook with example.
+ - **FEAT**(infinite-query): add refetchPages, refetchOnStale, refetchOnMount support.
+ - **FEAT**: add initial support for `InfiniteQuery`.
+ - **FEAT**: add support for keepPreviousData & examples regarding this.
+ - **DOCS**: add infinite query page.
+ - **DOCS**: add paginated-query section and update optimistc update section.
+
 # Changelog
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
