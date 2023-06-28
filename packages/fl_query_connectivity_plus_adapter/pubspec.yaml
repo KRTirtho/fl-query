@@ -7,7 +7,7 @@ repository: https://github.com/KRTirtho/tree/main/packages/fl_query_connectivity
 issue_tracker: https://github.com/KRTirtho/fl-query/issues
 
 environment:
-  sdk: '>=3.0.2 <4.0.0'
+  sdk: ">=2.17.1 <4.0.0"
   flutter: ">=1.17.0"
 
 dependencies:
