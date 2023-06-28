@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2023-06-28
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`fl_query_connectivity_plus_adapter` - `v0.1.0-alpha.2`](#fl_query_connectivity_plus_adapter---v010-alpha2)
+
+---
+
+#### `fl_query_connectivity_plus_adapter` - `v0.1.0-alpha.2`
+
+ - **FIX**(fl_query_connectivity_plus_adapter): lower the sdk constrains.
+
+
 ## 2023-06-24
 
 ### Changes

@@ -1,6 +1,6 @@
 name: fl_query_connectivity_plus_adapter
 description: Connectivity Plus adapter for FlQuery Connectivity
-version: 0.1.0-alpha.1
+version: 0.1.0-alpha.2
 
 homepage: https://fl-query.vercel.app
 repository: https://github.com/KRTirtho/tree/main/packages/fl_query_connectivity_plus_adapter
