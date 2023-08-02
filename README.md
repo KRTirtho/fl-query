@@ -37,7 +37,7 @@ $ flutter pub add fl_query_hooks
 
 # Docs
  
-You can find the documentation (WIP) of fl-query at https://fl-query.vercel.app/
+You can find the documentation (WIP) of fl-query at https://fl-query.krtirtho.dev/
 
 # Basic Usage
 
