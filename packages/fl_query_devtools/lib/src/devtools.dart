@@ -89,6 +89,6 @@ class _FlQueryDevtoolsState extends State<FlQueryDevtools> {
         ],
       );
     }
-    return SizedBox.shrink(child: widget.child);
+    return widget.child ?? const SizedBox.shrink();
   }
 }
