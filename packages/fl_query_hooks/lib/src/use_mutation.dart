@@ -61,7 +61,7 @@ Mutation<DataType, ErrorType, VariablesType>
         client.refreshQueries(refreshQueries);
       }
       if (refreshInfiniteQueries != null) {
-        client.refreshInfiniteQueries(refreshInfiniteQueries);
+        client.refreshInfiniteQueriesAllPages(refreshInfiniteQueries);
       }
       return data;
     });

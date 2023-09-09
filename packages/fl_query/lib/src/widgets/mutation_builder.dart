@@ -103,7 +103,8 @@ class _MutationBuilderState<DataType, ErrorType, VariablesType, RecoveryType>
             client.refreshQueries(widget.refreshQueries!);
           }
           if (widget.refreshInfiniteQueries != null && mounted) {
-            client.refreshInfiniteQueries(widget.refreshInfiniteQueries!);
+            client
+                .refreshInfiniteQueriesAllPages(widget.refreshInfiniteQueries!);
           }
           return data;
         },
