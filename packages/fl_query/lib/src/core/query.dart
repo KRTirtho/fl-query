@@ -187,7 +187,7 @@ class Query<DataType, ErrorType>
   void updateQueryFn(QueryFn<DataType> queryFn) {
     if (_queryFn == queryFn) return;
     _queryFn = queryFn;
-    if (state.isStale || refreshConfig.refreshOnQueryFnChange) {
+    if ((state.isStale && !hasError) || refreshConfig.refreshOnQueryFnChange) {
       refresh();
     }
   }

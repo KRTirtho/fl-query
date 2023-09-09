@@ -377,7 +377,7 @@ class InfiniteQuery<DataType, ErrorType, PageType>
     } else {
       Future.wait(
         state.pages.map((page) async {
-          if (page.isStale) {
+          if (page.isStale && page.error == null) {
             return await refresh(page.page);
           }
         }),
