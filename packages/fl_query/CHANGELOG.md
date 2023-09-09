@@ -1,3 +1,8 @@
+## 1.0.0-alpha.4
+
+ - **FIX**: mutation onSuccess doesn't refresh all pages of infinite queries.
+ - **FIX**: no refreshing stale queries with error.
+
 ## 1.0.0-alpha.3
 
  - **REFACTOR**: directory restructure revamp.

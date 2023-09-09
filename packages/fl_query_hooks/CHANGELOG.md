@@ -1,3 +1,7 @@
+## 1.0.0-alpha.4
+
+ - **FIX**: mutation onSuccess doesn't refresh all pages of infinite queries.
+
 ## 1.0.0-alpha.3
 
  - **REFACTOR**: move devtools to separate library.

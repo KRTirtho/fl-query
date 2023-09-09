@@ -1,3 +1,7 @@
+## 0.1.0-alpha.2
+
+ - **FIX**(devtools): no wrapping child inside SizedBox.shrink.
+
 ## 0.1.0-alpha.1
 
  - Update a dependency to the latest release.

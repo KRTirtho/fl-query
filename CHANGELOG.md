@@ -3,6 +3,45 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2023-09-09
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`fl_query` - `v1.0.0-alpha.4`](#fl_query---v100-alpha4)
+ - [`fl_query_devtools` - `v0.1.0-alpha.2`](#fl_query_devtools---v010-alpha2)
+ - [`fl_query_hooks` - `v1.0.0-alpha.4`](#fl_query_hooks---v100-alpha4)
+ - [`fl_query_connectivity_plus_adapter` - `v0.1.0-alpha.3`](#fl_query_connectivity_plus_adapter---v010-alpha3)
+
+Packages with dependency updates only:
+
+> Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.
+
+ - `fl_query_connectivity_plus_adapter` - `v0.1.0-alpha.3`
+
+---
+
+#### `fl_query` - `v1.0.0-alpha.4`
+
+ - **FIX**: mutation onSuccess doesn't refresh all pages of infinite queries.
+ - **FIX**: no refreshing stale queries with error.
+
+#### `fl_query_devtools` - `v0.1.0-alpha.2`
+
+ - **FIX**(devtools): no wrapping child inside SizedBox.shrink.
+
+#### `fl_query_hooks` - `v1.0.0-alpha.4`
+
+ - **FIX**: mutation onSuccess doesn't refresh all pages of infinite queries.
+
+
 ## 2023-06-28
 
 ### Changes
