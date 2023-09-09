@@ -15,6 +15,27 @@ Packages with breaking changes:
 
 Packages with other changes:
 
+ - [`fl_query_hooks` - `v1.0.0-alpha.4+1`](#fl_query_hooks---v100-alpha41)
+
+---
+
+#### `fl_query_hooks` - `v1.0.0-alpha.4+1`
+
+ - **FIX**(fl_query_hooks): upgrade flutter_hooks version & dart sdk constrain.
+
+
+## 2023-09-09
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
  - [`fl_query` - `v1.0.0-alpha.4`](#fl_query---v100-alpha4)
  - [`fl_query_devtools` - `v0.1.0-alpha.2`](#fl_query_devtools---v010-alpha2)
  - [`fl_query_hooks` - `v1.0.0-alpha.4`](#fl_query_hooks---v100-alpha4)

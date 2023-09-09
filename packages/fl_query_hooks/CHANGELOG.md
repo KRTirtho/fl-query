@@ -1,3 +1,7 @@
+## 1.0.0-alpha.4+1
+
+ - **FIX**(fl_query_hooks): upgrade flutter_hooks version & dart sdk constrain.
+
 ## 1.0.0-alpha.4
 
  - **FIX**: mutation onSuccess doesn't refresh all pages of infinite queries.
