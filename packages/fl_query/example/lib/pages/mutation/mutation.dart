@@ -40,7 +40,7 @@ class _MutationPageState extends State<MutationPage> {
         'sign-up',
         (variables) {
           return Future.delayed(
-            const Duration(seconds: 1),
+            const Duration(seconds: 5),
             () => {
               'name': variables['name'],
               'email': variables['email'],
@@ -49,12 +49,12 @@ class _MutationPageState extends State<MutationPage> {
           );
         },
         onMutate: (variables) {
-          print('onMutate: $variables');
+          debugPrint('onMutate: $variables');
           return "Recover ME";
         },
         onData: (data, recoveryData) {
-          print('onData: $data');
-          print('recoveryData: $recoveryData');
+          debugPrint('onData: $data');
+          debugPrint('recoveryData: $recoveryData');
         },
         refreshQueries: const ['hello'],
         builder: (context, mutation) {

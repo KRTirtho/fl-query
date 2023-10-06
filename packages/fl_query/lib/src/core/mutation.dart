@@ -16,22 +16,27 @@ typedef MutationFn<DataType, VariablesType> = Future<DataType> Function(
 class MutationState<DataType, ErrorType, VariablesType> {
   final DataType? data;
   final ErrorType? error;
+  final bool _loading;
   final DateTime updatedAt;
 
   MutationState({
     this.data,
     this.error,
+    bool loading = false,
     DateTime? updatedAt,
-  }) : updatedAt = updatedAt ?? DateTime.now();
+  })  : _loading = loading,
+        updatedAt = updatedAt ?? DateTime.now();
 
   MutationState<DataType, ErrorType, VariablesType> copyWith({
     DataType? data,
     ErrorType? error,
     DateTime? updatedAt,
+    bool? loading,
   }) {
     return MutationState<DataType, ErrorType, VariablesType>(
       data: data ?? this.data,
       error: error ?? this.error,
+      loading: loading ?? this._loading,
       updatedAt: updatedAt ?? DateTime.now(),
     );
   }
@@ -80,7 +85,7 @@ class Mutation<DataType, ErrorType, VariablesType>
   late final StreamSubscription<bool>? _connectivitySubscription;
 
   bool get isInactive => !hasListeners;
-  bool get isMutating => _mutex.isLocked;
+  bool get isMutating => state._loading;
   bool get hasData => state.data != null;
   bool get hasError => state.error != null;
 
@@ -96,7 +101,7 @@ class Mutation<DataType, ErrorType, VariablesType>
       return;
     }
     return _mutex.protect(() async {
-      state = state.copyWith();
+      state = state.copyWith(loading: true);
       _operation = cancellableRetryOperation(
         () {
           _mutationController.add(variables);
@@ -104,13 +109,13 @@ class Mutation<DataType, ErrorType, VariablesType>
         },
         config: retryConfig,
         onSuccessful: (data) {
-          state = state.copyWith(data: data);
+          state = state.copyWith(data: data, loading: false);
           if (data is DataType) {
             _dataController.add(data);
           }
         },
         onFailed: (error) {
-          state = state.copyWith(error: error);
+          state = state.copyWith(error: error, loading: false);
           if (error is ErrorType) {
             _errorController.add(error);
           }
