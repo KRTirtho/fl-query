@@ -21,23 +21,28 @@ class QueryState<DataType, ErrorType> with Invalidation {
   final DateTime updatedAt;
   final Duration staleDuration;
 
+  final bool _loading;
+
   const QueryState({
     this.data,
     this.error,
     required this.updatedAt,
     required this.staleDuration,
-  });
+    bool loading = false,
+  }) : _loading = loading;
 
   QueryState<DataType, ErrorType> copyWith({
     DataType? data,
     ErrorType? error,
     DateTime? updatedAt,
+    bool? loading,
   }) {
     return QueryState<DataType, ErrorType>(
       updatedAt: updatedAt ?? this.updatedAt,
       staleDuration: staleDuration,
       data: data ?? this.data,
       error: error ?? this.error,
+      loading: loading ?? this._loading,
     );
   }
 }
@@ -125,9 +130,11 @@ class Query<DataType, ErrorType>
   StreamSubscription<bool>? _connectivitySubscription;
 
   bool get isInitial => hasData && state.data == _initial;
-  bool get isLoading => isInitial ? _mutex.isLocked : !hasData && !hasError;
+  bool get isLoading =>
+      (isInitial && !hasError && state._loading) ||
+      (!hasData && !hasError && state._loading);
   bool get isRefreshing =>
-      ((!isInitial && hasData) || hasError) && _mutex.isLocked;
+      ((!isInitial && hasData) || hasError) && state._loading;
   bool get isInactive => !hasListeners;
   bool get hasData => state.data != null;
   bool get hasError => state.error != null;
@@ -145,7 +152,7 @@ class Query<DataType, ErrorType>
       return;
     }
     return _mutex.protect(() async {
-      state = state.copyWith();
+      state = state.copyWith(loading: true);
       _operation = cancellableRetryOperation(
         _queryFn,
         config: retryConfig,
@@ -154,6 +161,7 @@ class Query<DataType, ErrorType>
             data: data,
             error: null,
             updatedAt: DateTime.now(),
+            loading: false,
           );
           if (data is DataType) {
             _dataController.add(data);
@@ -166,7 +174,11 @@ class Query<DataType, ErrorType>
           }
         },
         onFailed: (ErrorType? error) {
-          state = state.copyWith(error: error, updatedAt: DateTime.now());
+          state = state.copyWith(
+            error: error,
+            updatedAt: DateTime.now(),
+            loading: false,
+          );
           if (error is ErrorType) _errorController.add(error);
         },
       );
@@ -193,12 +205,20 @@ class Query<DataType, ErrorType>
   }
 
   void setData(DataType data) {
-    state = state.copyWith(data: data, updatedAt: DateTime.now());
+    state = state.copyWith(
+      data: data,
+      updatedAt: DateTime.now(),
+      loading: false,
+    );
   }
 
   Future<void> reset() async {
     await _operation?.cancel();
-    state = state.copyWith(data: _initial, updatedAt: DateTime.now());
+    state = state.copyWith(
+      data: _initial,
+      updatedAt: DateTime.now(),
+      loading: false,
+    );
     _box.delete(key);
   }
 

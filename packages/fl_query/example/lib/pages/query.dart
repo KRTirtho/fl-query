@@ -29,13 +29,15 @@ class QueryPage extends StatelessWidget {
         'hello',
         () {
           return Future.delayed(
-              const Duration(seconds: 6), () => 'Hello World! $value');
+            const Duration(seconds: 6),
+            () => 'Hello World! $value',
+          );
         },
         initial: 'Hello',
-        jsonConfig: JsonConfig(
-          fromJson: (json) => json['data'],
-          toJson: (data) => {'data': data},
-        ),
+        // jsonConfig: JsonConfig(
+        //   fromJson: (json) => json['data'],
+        //   toJson: (data) => {'data': data},
+        // ),
         onData: (value) {
           debugPrint('onData: $value');
         },
