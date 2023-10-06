@@ -9,9 +9,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  fl_query: ^1.0.0-alpha.4
-  fl_query_connectivity_plus_adapter: ^0.1.0-alpha.3
-  fl_query_devtools: ^0.1.0-alpha.2
+  fl_query: ^1.0.0-alpha.5
+  fl_query_connectivity_plus_adapter: ^0.1.0-alpha.4
+  fl_query_devtools: ^0.1.0-alpha.3
   go_router: ^6.0.9
   http: ^0.13.5
 

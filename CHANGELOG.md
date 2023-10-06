@@ -3,6 +3,46 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2023-10-06
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`fl_query` - `v1.0.0-alpha.5`](#fl_query---v100-alpha5)
+ - [`fl_query_devtools` - `v0.1.0-alpha.3`](#fl_query_devtools---v010-alpha3)
+ - [`fl_query_hooks` - `v1.0.0-alpha.5`](#fl_query_hooks---v100-alpha5)
+ - [`fl_query_connectivity_plus_adapter` - `v0.1.0-alpha.4`](#fl_query_connectivity_plus_adapter---v010-alpha4)
+
+Packages with dependency updates only:
+
+> Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.
+
+ - `fl_query_connectivity_plus_adapter` - `v0.1.0-alpha.4`
+
+---
+
+#### `fl_query` - `v1.0.0-alpha.5`
+
+ - **FIX**(query): isLoading & isRefreshing not working as expected.
+ - **FIX**(mutation): isMutating not working.
+ - **FEAT**(infinite_query): add isLoadingNextPage & remove isLoadingPage.
+
+#### `fl_query_devtools` - `v0.1.0-alpha.3`
+
+ - **FEAT**(infinite_query): add isLoadingNextPage & remove isLoadingPage.
+
+#### `fl_query_hooks` - `v1.0.0-alpha.5`
+
+ - **FIX**(mutation): isMutating not working.
+
+
 ## 2023-09-09
 
 ### Changes

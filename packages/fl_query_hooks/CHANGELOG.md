@@ -1,3 +1,7 @@
+## 1.0.0-alpha.5
+
+ - **FIX**(mutation): isMutating not working.
+
 ## 1.0.0-alpha.4+1
 
  - **FIX**(fl_query_hooks): upgrade flutter_hooks version & dart sdk constrain.

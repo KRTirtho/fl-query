@@ -1,3 +1,9 @@
+## 1.0.0-alpha.5
+
+ - **FIX**(query): isLoading & isRefreshing not working as expected.
+ - **FIX**(mutation): isMutating not working.
+ - **FEAT**(infinite_query): add isLoadingNextPage & remove isLoadingPage.
+
 ## 1.0.0-alpha.4
 
  - **FIX**: mutation onSuccess doesn't refresh all pages of infinite queries.
