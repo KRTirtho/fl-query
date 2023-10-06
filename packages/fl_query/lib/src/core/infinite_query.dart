@@ -30,17 +30,21 @@ class InfiniteQueryPage<DataType, ErrorType, PageType> with Invalidation {
   final DateTime updatedAt;
   final Duration staleDuration;
 
+  final bool _loading;
+
   const InfiniteQueryPage({
     required this.page,
     this.data,
     this.error,
     required this.updatedAt,
     required this.staleDuration,
-  });
+    bool loading = false,
+  }) : _loading = loading;
 
   InfiniteQueryPage<DataType, ErrorType, PageType> copyWith({
     DataType? data,
     ErrorType? error,
+    bool? loading,
   }) {
     return InfiniteQueryPage<DataType, ErrorType, PageType>(
       page: page,
@@ -48,6 +52,7 @@ class InfiniteQueryPage<DataType, ErrorType, PageType> with Invalidation {
       staleDuration: staleDuration,
       data: data ?? this.data,
       error: error ?? this.error,
+      loading: loading ?? _loading,
     );
   }
 
@@ -70,7 +75,8 @@ class InfiniteQueryState<DataType, ErrorType, PageType> {
     required this.pages,
   });
 
-  PageType get lastPage => pages.last.page;
+  PageType get lastPage =>
+      pages.whereNot((e) => e.data == null && e.error == null).last.page;
 
   InfiniteQueryState<DataType, ErrorType, PageType> copyWith(
       {Set<InfiniteQueryPage<DataType, ErrorType, PageType>>? pages}) {
@@ -243,8 +249,16 @@ class InfiniteQuery<DataType, ErrorType, PageType>
     return _nextPage(lastPage, lastPageData);
   }
 
-  bool get isLoadingPage => !hasPageData && !hasPageError && _mutex.isLocked;
-  bool get isRefreshingPage => (hasPageData || hasPageError) && _mutex.isLocked;
+  bool get isLoadingNextPage {
+    final nextPage = state.pages.firstWhereOrNull((p) => p.page == getNextPage);
+    return nextPage?._loading == true;
+  }
+
+  bool get isRefreshingPage {
+    final currentPage = state.pages.firstWhereOrNull((p) => p.page == lastPage);
+    return currentPage?._loading == true;
+  }
+
   bool get isInactive => !hasListeners;
 
   bool get hasPages => pages.isNotEmpty;
@@ -261,21 +275,27 @@ class InfiniteQuery<DataType, ErrorType, PageType>
       return;
     }
     return _mutex.protect(() async {
-      state = state.copyWith();
+      final storedPage = state.pages.firstWhere(
+        (e) => e.page == page,
+        orElse: () => InfiniteQueryPage<DataType, ErrorType, PageType>(
+          page: page,
+          updatedAt: DateTime.now(),
+          staleDuration: refreshConfig.staleDuration,
+          loading: true,
+        ),
+      );
+      state = state.copyWith(
+        pages: {
+          ...state.pages..remove(storedPage),
+          storedPage,
+        },
+      );
       _operation = cancellableRetryOperation(
         () => _queryFn(page),
         config: retryConfig,
         onSuccessful: (data) async {
-          final dataPage = state.pages
-              .firstWhere(
-                (e) => e.page == page,
-                orElse: () => InfiniteQueryPage<DataType, ErrorType, PageType>(
-                  page: page,
-                  updatedAt: DateTime.now(),
-                  staleDuration: refreshConfig.staleDuration,
-                ),
-              )
-              .copyWith(data: data, error: null);
+          final dataPage =
+              storedPage.copyWith(data: data, error: null, loading: false);
           state = state.copyWith(
             pages: {...state.pages..remove(dataPage), dataPage},
           );
@@ -297,16 +317,7 @@ class InfiniteQuery<DataType, ErrorType, PageType>
           }
         },
         onFailed: (error) {
-          final errorPage = state.pages
-              .firstWhere(
-                (e) => e.page == page,
-                orElse: () => InfiniteQueryPage<DataType, ErrorType, PageType>(
-                  page: page,
-                  updatedAt: DateTime.now(),
-                  staleDuration: refreshConfig.staleDuration,
-                ),
-              )
-              .copyWith(error: error);
+          final errorPage = storedPage.copyWith(error: error, loading: false);
           state = state.copyWith(
             pages: {
               ...state.pages..remove(errorPage),
@@ -407,7 +418,7 @@ class InfiniteQuery<DataType, ErrorType, PageType>
             staleDuration: refreshConfig.staleDuration,
           ),
         )
-        .copyWith(data: data);
+        .copyWith(data: data, loading: false);
 
     state = state.copyWith(
       pages: {

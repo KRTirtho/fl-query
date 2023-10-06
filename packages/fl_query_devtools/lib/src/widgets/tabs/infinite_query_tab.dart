@@ -37,7 +37,7 @@ class _InfiniteQueryTabState extends State<InfiniteQueryTab> {
 
                     return QueryTile(
                       title: query.key,
-                      isLoading: query.isLoadingPage,
+                      isLoading: query.isLoadingNextPage,
                       hasError: query.hasErrors,
                       onTap: () {
                         setState(() {
@@ -63,7 +63,7 @@ class _InfiniteQueryTabState extends State<InfiniteQueryTab> {
                     _selectedQueryKey ?? '',
                     builder: (context, query) {
                       if (query == null) {
-                        return SizedBox.shrink();
+                        return const SizedBox.shrink();
                       }
 
                       return ExplorerView(
@@ -78,7 +78,7 @@ class _InfiniteQueryTabState extends State<InfiniteQueryTab> {
                               "updatedAt": page.updatedAt.toString(),
                             };
                           }).toList(),
-                          'isLoadingPage': query.isLoadingPage,
+                          'isLoadingNextPage': query.isLoadingNextPage,
                           'isRefreshingPage': query.isRefreshingPage,
                           'isInactive': query.isInactive,
                           'refreshConfig': query.refreshConfig.toJson(),
