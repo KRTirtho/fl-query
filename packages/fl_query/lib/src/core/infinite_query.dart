@@ -75,8 +75,16 @@ class InfiniteQueryState<DataType, ErrorType, PageType> {
     required this.pages,
   });
 
-  PageType get lastPage =>
-      pages.whereNot((e) => e.data == null && e.error == null).last.page;
+  PageType get lastPage {
+    final fetchedPages =
+        pages.whereNot((e) => e.data == null && e.error == null);
+
+    if (fetchedPages.isEmpty && pages.length == 1) {
+      return pages.last.page;
+    }
+
+    return fetchedPages.last.page;
+  }
 
   InfiniteQueryState<DataType, ErrorType, PageType> copyWith(
       {Set<InfiniteQueryPage<DataType, ErrorType, PageType>>? pages}) {
