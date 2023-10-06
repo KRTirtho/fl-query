@@ -1,0 +1,22 @@
+name: fl_query_connectivity_plus_adapter
+description: Connectivity Plus adapter for FlQuery Connectivity
+version: 0.1.0-alpha.4
+
+homepage: https://fl-query.vercel.app
+repository: https://github.com/KRTirtho/tree/main/packages/fl_query_connectivity_plus_adapter
+issue_tracker: https://github.com/KRTirtho/fl-query/issues
+
+environment:
+  sdk: ">=2.17.1 <4.0.0"
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  fl_query: ^1.0.0-alpha.5
+  connectivity_plus: ^4.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0

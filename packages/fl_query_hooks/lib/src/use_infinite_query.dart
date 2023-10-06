@@ -1,141 +1,74 @@
-// ignore_for_file: invalid_use_of_protected_member
+import 'dart:async';
 
 import 'package:fl_query/fl_query.dart';
-import 'package:fl_query_hooks/src/utils.dart';
-import 'package:flutter/widgets.dart';
+import 'package:fl_query_hooks/src/use_query_client.dart';
+import 'package:fl_query_hooks/src/utils/use_updater.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
-InfiniteQuery<T, Outside, PageParam>
-    useInfiniteQuery<T extends Object, Outside, PageParam extends Object>({
-  required InfiniteQueryJob<T, Outside, PageParam> job,
-  required Outside externalData,
-
-  /// Called when the query returns new data, on query
-  /// refetch or query gets expired
-  final InfiniteQueryListeners<T, PageParam>? onData,
-
-  /// Called when the query returns error
-  final InfiniteQueryListeners<dynamic, PageParam>? onError,
+InfiniteQuery<DataType, ErrorType, PageType>
+    useInfiniteQuery<DataType, ErrorType, PageType>(
+  String queryKey,
+  InfiniteQueryFn<DataType, PageType> queryFn, {
+  required InfiniteQueryNextPage<DataType, PageType> nextPage,
+  required PageType initialPage,
+  RetryConfig? retryConfig,
+  RefreshConfig? refreshConfig,
+  JsonConfig<DataType>? jsonConfig,
+  ValueChanged<PageEvent<DataType, PageType>>? onData,
+  ValueChanged<PageEvent<ErrorType, PageType>>? onError,
+  bool enabled = true,
   List<Object?>? keys,
 }) {
-  final context = useContext();
-  final mounted = useIsMounted();
-  final update = useForceUpdate();
-  final QueryBowl queryBowl = QueryBowl.of(context);
-  final ValueKey<String> uKey = useMemoized(() => ValueKey(uuid.v4()), []);
-  final infiniteQuery = useRef(
-    useMemoized(
-      () => queryBowl.addInfiniteQuery<T, Outside, PageParam>(
-        job,
-        externalData: externalData,
-        key: uKey,
-        onData: onData,
-        onError: onError,
-      ),
-      [],
-    ),
-  );
-
-  final oldJob = usePrevious(job);
-  final oldExternalData = usePrevious(externalData);
-  final oldOnData = usePrevious(onData);
-  final oldOnError = usePrevious(onError);
-
-  final init = useCallback(([T? previousData]) {
-    final hasExternalDataChanged = !isShallowEqual(
-        infiniteQuery.value.externalData,
-        infiniteQuery.value.prevUsedExternalData);
-    infiniteQuery.value = queryBowl.addInfiniteQuery<T, Outside, PageParam>(
-      job,
-      externalData: externalData,
-      key: uKey,
-      onData: onData,
-      onError: onError,
+  final rebuild = useUpdater();
+  final client = useQueryClient();
+  final query = useMemoized<InfiniteQuery<DataType, ErrorType, PageType>>(() {
+    final query = client.createInfiniteQuery<DataType, ErrorType, PageType>(
+      queryKey,
+      queryFn,
+      initialParam: initialPage,
+      nextPage: nextPage,
+      jsonConfig: jsonConfig,
+      refreshConfig: refreshConfig,
+      retryConfig: retryConfig,
     );
-    update();
-    if (infiniteQuery.value.fetched && hasExternalDataChanged) {
-      infiniteQuery.value.refetchPages();
-    } else if (!infiniteQuery.value.fetched) {
-      infiniteQuery.value.fetch();
+    return query;
+  }, [queryKey]);
+
+  useEffect(() {
+    final removeListener = query.addListener(rebuild);
+    if (enabled) {
+      query.fetch();
     }
-  }, [
-    queryBowl,
-    infiniteQuery.value,
-    uKey,
-    job,
-    externalData,
-    onData,
-    onError,
-  ]);
-
-  final disposeQuery = useCallback(() {
-    infiniteQuery.value.unmount(uKey);
-    if (onData != null) infiniteQuery.value.removeDataListener(onData);
-    if (onError != null) infiniteQuery.value.removeErrorListener(onError);
-  }, [
-    infiniteQuery.value,
-    uKey,
-    onData,
-    onError,
-  ]);
+    return removeListener;
+  }, [query, enabled]);
 
   useEffect(() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      init();
-      QueryBowl.of(context).onInfiniteQueriesUpdate<T, Outside, PageParam>(
-        (newInfiniteQuery) async {
-          if (newInfiniteQuery.queryKey != job.queryKey || !mounted()) return;
-          infiniteQuery.value = newInfiniteQuery;
-          if (!infiniteQuery.value.fetched &&
-              infiniteQuery.value.isCachedData) {
-            await infiniteQuery.value.refetchPages();
-          }
-          update();
-        },
-      );
-    });
-    return disposeQuery;
-  }, []);
-
-  useEffect(() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final hasOnErrorChanged = oldOnError != onError && oldOnError != null;
-      final hasOnDataChanged = oldOnData != onData && oldOnData != null;
-      if (oldJob != null && oldJob.queryKey != job.queryKey) {
-        disposeQuery();
-        init();
-      } else if (!isShallowEqual(oldExternalData, externalData)) {
-        if (job.refetchOnExternalDataChange ??
-            queryBowl.refetchOnExternalDataChange) {
-          QueryBowl.of(context).addInfiniteQuery(
-            job,
-            externalData: externalData,
-            key: uKey,
-            onData: onData,
-            onError: onError,
-          )..refetchPages();
-        } else {
-          QueryBowl.of(context)
-              .getQuery(job.queryKey)
-              ?.setExternalData(externalData);
-        }
-
-        if (hasOnDataChanged) infiniteQuery.value.removeDataListener(oldOnData);
-        if (hasOnErrorChanged)
-          infiniteQuery.value.removeErrorListener(oldOnError);
-      } else {
-        if (hasOnDataChanged) {
-          infiniteQuery.value.removeDataListener(oldOnData);
-          if (onData != null) infiniteQuery.value.addDataListener(onData);
-        }
-        if (hasOnErrorChanged) {
-          infiniteQuery.value.removeErrorListener(oldOnError);
-          if (onError != null) infiniteQuery.value.addErrorListener(onError);
-        }
-      }
-    });
+    query.updateQueryFn(queryFn);
     return null;
-  });
+  }, [queryFn, query]);
 
-  return infiniteQuery.value;
+  useEffect(() {
+    query.updateNextPageFn(nextPage);
+    return null;
+  }, [nextPage, query]);
+
+  useEffect(() {
+    StreamSubscription<PageEvent<DataType, PageType>>? dataSubscription;
+    StreamSubscription<PageEvent<ErrorType, PageType>>? errorSubscription;
+
+    if (onData != null) {
+      dataSubscription = query.dataStream.listen(onData);
+    }
+    if (onError != null) {
+      errorSubscription = query.errorStream.listen(onError);
+    }
+
+    return () {
+      dataSubscription?.cancel();
+      errorSubscription?.cancel();
+    };
+  }, [onData, onError, query]);
+
+  return query;
 }

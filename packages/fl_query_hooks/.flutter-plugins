@@ -1,12 +1,6 @@
 # This is a generated file; do not edit or check into version control.
-connectivity_plus=/home/krtirtho/.pub-cache/hosted/pub.dartlang.org/connectivity_plus-2.3.9/
-connectivity_plus_linux=/home/krtirtho/.pub-cache/hosted/pub.dartlang.org/connectivity_plus_linux-1.3.1/
-connectivity_plus_macos=/home/krtirtho/.pub-cache/hosted/pub.dartlang.org/connectivity_plus_macos-1.2.6/
-connectivity_plus_web=/home/krtirtho/.pub-cache/hosted/pub.dartlang.org/connectivity_plus_web-1.2.5/
-connectivity_plus_windows=/home/krtirtho/.pub-cache/hosted/pub.dartlang.org/connectivity_plus_windows-1.2.2/
-path_provider=/home/krtirtho/.pub-cache/hosted/pub.dartlang.org/path_provider-2.0.11/
-path_provider_android=/home/krtirtho/.pub-cache/hosted/pub.dartlang.org/path_provider_android-2.0.22/
-path_provider_ios=/home/krtirtho/.pub-cache/hosted/pub.dartlang.org/path_provider_ios-2.0.11/
-path_provider_linux=/home/krtirtho/.pub-cache/hosted/pub.dartlang.org/path_provider_linux-2.1.7/
-path_provider_macos=/home/krtirtho/.pub-cache/hosted/pub.dartlang.org/path_provider_macos-2.0.6/
-path_provider_windows=/home/krtirtho/.pub-cache/hosted/pub.dartlang.org/path_provider_windows-2.1.3/
+path_provider=/home/krtirtho/.pub-cache/hosted/pub.dev/path_provider-2.0.15/
+path_provider_android=/home/krtirtho/.pub-cache/hosted/pub.dev/path_provider_android-2.0.27/
+path_provider_foundation=/home/krtirtho/.pub-cache/hosted/pub.dev/path_provider_foundation-2.2.3/
+path_provider_linux=/home/krtirtho/.pub-cache/hosted/pub.dev/path_provider_linux-2.1.11/
+path_provider_windows=/home/krtirtho/.pub-cache/hosted/pub.dev/path_provider_windows-2.1.6/

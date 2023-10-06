@@ -1,79 +1,33 @@
-import 'package:fl_query_hooks_example/components/basic_hook_infinite_query.dart';
-import 'package:fl_query_hooks_example/components/basic_hook_mutation.dart';
-import 'package:fl_query_hooks_example/components/basic_hook_query.dart';
-import 'package:fl_query_hooks_example/components/lazy_hook_query.dart';
-import 'package:fl_query_hooks_example/components/mutation_hook_variable_key.dart';
-import 'package:fl_query_hooks_example/components/query_hook_external_data.dart';
-import 'package:fl_query_hooks_example/components/query_hook_previous_data.dart';
-import 'package:fl_query_hooks_example/components/query_hook_variable_key.dart';
+import 'package:fl_query_connectivity_plus_adapter/fl_query_connectivity_plus_adapter.dart';
+import 'package:fl_query_hooks_example/router.dart';
 import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await QueryClient.initialize(
+    cachePrefix: 'fl_query_hooks_example',
+    connectivity: FlQueryConnectivityPlusAdapter(),
+  );
+  runApp(
+    QueryClientProvider(
+      child: const MainApp(),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+class MainApp extends StatelessWidget {
+  const MainApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return QueryBowlScope(
-      bowl: QueryBowl(),
-      child: MaterialApp(
-        // showPerformanceOverlay: true,
-        title: 'Fl-Query Hooks Example',
-        theme: ThemeData(
-          useMaterial3: true,
-          primarySwatch: Colors.blue,
-        ),
-        home: const MyHomePage(),
+    return MaterialApp.router(
+      theme: ThemeData(
+        colorSchemeSeed: Colors.red[100],
+        useMaterial3: true,
       ),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key}) : super(key: key);
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Fl Query Hooks Example"),
-      ),
-      body: SingleChildScrollView(
-          child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          children: [
-            const BasicHookQueryExample(),
-            const QueryHookExternalDataExample(),
-            const LazyHookQueryExample(),
-            const QueryHookVariableKeyExample(),
-            const QueryHookPreviousDataExample(),
-            ListTile(
-              title: const Text("Infinite Query Example"),
-              trailing: const Icon(Icons.open_in_new),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const BasicHookInfiniteQueryExample(),
-                  ),
-                );
-              },
-            ),
-            const Divider(),
-            const BasicHookMutationExample(),
-            const MutationHookVariableKeyExample(),
-          ],
-        ),
-      )),
+      title: 'FL Query Hooks Example',
+      routerConfig: router,
     );
   }
 }
