@@ -9,49 +9,39 @@ import TabItem from '@theme/TabItem';
 
 This is a simple & dummy example that covers the usage of 
 - [Query](/)
-- [QueryJob](/)
 
 
 ```dart
+import 'package:fl_query_connectivity_plus_adapter/fl_query_connectivity_plus_adapter.dart';
+import 'package:fl_query_hooks_example/router.dart';
 import 'package:fl_query/fl_query.dart';
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await QueryClient.initialize(
+    cachePrefix: 'fl_query_hooks_example',
+    connectivity: FlQueryConnectivityPlusAdapter(),
+  );
+  runApp(
+    QueryClientProvider(
+      child: const MainApp(),
+    ),
+  );
 }
 
-// A QueryJob is where the Logic of how the data should be 
-// fetched can defined. The task callback is a PURE Function 
-// & have access to external resources through the second 
-// parameter where the first parameter is the queryKey
-final successJob = QueryJob<String, void>(
-  queryKey: "query-example",
-  task: (queryKey, externalData) => Future.delayed(
-    const Duration(seconds: 2),
-    () =>
-        "The work successfully executed. Data: key=($queryKey) value=${
-          Random.secure().nextInt(100)
-        }",
-  ),
-);
-
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+class MainApp extends StatelessWidget {
+  const MainApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // QueryBowlScope creates a Bowl (metaphor for Collection/Store)
-    // for all the Queries & Mutations
-    return QueryBowlScope(
-      bowl: QueryBowl(),
-      child: MaterialApp(
-        title: 'Fl-Query Quick Start',
-        theme: ThemeData(
-          useMaterial3: true,
-          primarySwatch: Colors.blue,
-        ),
-        home: const MyHomePage(),
+    return MaterialApp(
+      theme: ThemeData(
+        colorSchemeSeed: Colors.red[100],
+        useMaterial3: true,
       ),
+      title: 'FL Query Hooks Example',
+      home: const QueryPage(),
     );
   }
 }
@@ -61,42 +51,68 @@ class MyApp extends StatelessWidget {
   <TabItem value="vanilla" label="Vanilla">
 
 ```dart
-class MyHomePage extends StatelessWidget {
-  const MyHomePage({Key? key}) : super(key: key);
+import 'dart:math';
+
+import 'package:fl_query/fl_query.dart';
+import 'package:flutter/material.dart';
+
+class QueryPage extends StatelessWidget {
+  const QueryPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "# Basic Query Example",
-          style: Theme.of(context).textTheme.headline5,
-        ),
-        // QueryBuilder Widget provides the expected query 
-        // instances through the builder callback based on 
-        // the passed job & externalData argument
-        QueryBuilder<String, void>(
-          job: successJob,
-          externalData: null,
-          builder: (context, query) {
-            if (!query.hasData || query.isLoading || query.isRefetching) {
-              return const CircularProgressIndicator();
-            }
-            return Row(
-              children: [
-                Text(query.data!),
-                ElevatedButton(
-                  child: const Text("Refetch"),
-                  onPressed: () async {
-                    await query.refetch();
-                  },
-                ), // Text
-              ],
-            ); // Row
+    final value = Random().nextInt(200000);
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Query'),
+      ),
+      floatingActionButton:
+          QueryListenable<String, dynamic>('hello', builder: (context, query) {
+        if (query == null) {
+          return const SizedBox();
+        }
+        return FloatingActionButton(
+          onPressed: () {
+            query.refresh();
           },
-        ), // QueryBuilder
-      ],
+          child: Text(query.data ?? 'No Data'),
+        );
+      }),
+      body: QueryBuilder<String, dynamic>(
+        'hello',
+        () {
+          return Future.delayed(
+            const Duration(seconds: 6),
+            () => 'Hello World! $value',
+          );
+        },
+        initial: 'Hello',
+        jsonConfig: JsonConfig(
+          fromJson: (json) => json['data'],
+          toJson: (data) => {'data': data},
+        ),
+        onData: (value) {
+          debugPrint('onData: $value');
+        },
+        onError: (error) {
+          debugPrint('onError: $error');
+        },
+        builder: (context, query) {
+          if(query.isLoading){
+            return  const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+          else if(query.hasError){
+            return Center(
+              child: Text(query.error.toString()),
+            );
+          }
+          return Center(
+            child: Text(query.data ?? "Unfortunately, there's no data"),
+          );
+        },
+      ),
     );
   }
 }
@@ -106,40 +122,65 @@ class MyHomePage extends StatelessWidget {
   <TabItem value="hooks" label="Flutter Hooks">
 
 ```dart
-class MyHomePage extends HookWidget {
-  const MyHomePage({Key? key}) : super(key: key);
+import 'dart:math';
+
+import 'package:fl_query/fl_query.dart';
+import 'package:fl_query_hooks/fl_query_hooks.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+
+class QueryPage extends HookWidget {
+  const QueryPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // useQuery hook returns the expected query 
-    // instances based on the passed job & externalData argument
-    final query= useQuery<String, void>(
-      job: successJob,
-      externalData: null,
+    final value = Random().nextInt(200000);
+    final query = useQuery<String, dynamic>(
+      'hello',
+      () {
+        return Future.delayed(
+            const Duration(seconds: 6), () => 'Hello World! $value');
+      },
+      initial: 'Hello',
+      jsonConfig: JsonConfig(
+        fromJson: (json) => json['data'],
+        toJson: (data) => {'data': data},
+      ),
+      onData: (value) {
+        debugPrint('onData: $value');
+      },
+      onError: (error) {
+        debugPrint('onError: $error');
+      },
     );
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "# Basic Query Example",
-          style: Theme.of(context).textTheme.headline5,
-        ),
-        if (!query.hasData || query.isLoading || query.isRefetching)
-          const CircularProgressIndicator();
-        else
-          Row(
-            children: [
-              Text(query.data!),
-              ElevatedButton(
-                child: const Text("Refetch"),
-                onPressed: () async {
-                  await query.refetch();
-                },
-              ), // Text
-            ],
-          ); // Row
-      ],
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Query'),
+      ),
+      floatingActionButton:
+          QueryListenable<String, dynamic>('hello', builder: (context, query) {
+        if (query == null) {
+          return const SizedBox();
+        }
+        return FloatingActionButton(
+          onPressed: () {
+            query.refresh();
+          },
+          child: Text(query.data ?? 'No Data'),
+        );
+      }),
+      body: query.isLoading
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : query.hasError
+          ? Center(
+              child: Text(query.error.toString()),
+            )
+          : Center(
+              child: Text(query.data ?? "Unfortunately, there's no data"),
+            ),
     );
   }
 }
@@ -151,5 +192,5 @@ class MyHomePage extends HookWidget {
 :::tip
 If you want to explore more you can see the [Example Application](https://github.com/KRTirtho/fl-query/tree/main/packages/example) which covers a lot of use-cases
 
-Also you can browse [Spotube/fl_query_integrate](https://github.com/KRTirtho/spotube/tree/fl_query_integrate) branch of [Spotube](https://github.com/KRTirtho/spotube/) where Fl-Query is used in a real-world application experimentally
+Also you can browse [Spotube/libs/services/queries](https://github.com/KRTirtho/spotube/tree/master/lib/services/queries) & [Spotube/libs/services/mutations](https://github.com/KRTirtho/spotube/tree/master/lib/services/mutations) directories of [Spotube](https://github.com/KRTirtho/spotube/) where Fl-Query is used in a real-world production application
 :::
