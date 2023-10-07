@@ -28,8 +28,12 @@
     "tailwindcss": "^3.3.3"
   },
   "devDependencies": {
+    "@docusaurus/eslint-plugin": "^2.4.3",
     "@docusaurus/module-type-aliases": "2.4.3",
     "@tsconfig/docusaurus": "^2.0.1",
+    "eslint": "^8.51.0",
+    "eslint-config-prettier": "^9.0.0",
+    "prettier": "^3.0.3",
     "typescript": "^5.2.2"
   },
   "browserslist": {

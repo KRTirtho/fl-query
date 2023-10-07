@@ -3,14 +3,17 @@ title: Queries
 sidebar_position: 3
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
 
-### QueryBuilder and useQuery
+## QueryBuilder and useQuery
 
-The defined logic in [QueryJob](/docs/basics/QueryJob) is bind to the Flutter UI using the `QueryBuilder` Widget (or `useQuery` hook). QueryBuilder is basically a `Builder` that takes a `QueryJob` through the `job` named parameter & creates/retrieves the appropriate `Query` and passes it down to the `builder` method
+Most of the time you'll be using `QueryBuilder`/`useQuery` to create & manipulate Queries.
 
-On the other hand, `useQuery` is just a simple wrapper hook that does the same job as `QueryBuilder` but instead of building widgets it returns the actual `Query`
+`QueryBuilder` just like any other `Builder` widget in Flutter. It has 2 required (unnamed) parameters `queryKey` and `queryFn` and 1 required named
+parameter `builder`
+
+On the other hand, `useQuery` accepts arguments just as same as `QueryBuilder` but it returns a `Query` instead of a `Widget` and doesn't have the `builder` argument
 
 <Tabs>
   <TabItem value="vanilla" label="Vanilla">
@@ -21,11 +24,11 @@ class Example extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return QueryBuilder<String, void>(
-      job: job,
-      externalData: null,
+    return QueryBuilder<String, HttpException>(
+      "todos",
+      () => api.getTodos(),
       builder: (context, query) {
-        if (!query.hasData) {
+        if (query.isLoading) {
           return const CircularProgressIndicator();
         }
         return Text(query.data!);
@@ -44,9 +47,12 @@ class Example extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final query = useQuery<String, void>(job, externalData: null);
+    final query = useQuery<String, HttpException>(
+      "todos",
+      () => api.getTodos(),
+    );
 
-    if (!query.hasData) {
+    if (query.isLoading) {
       return const CircularProgressIndicator();
     }
     return Text(query.data!);
@@ -57,11 +63,24 @@ class Example extends HookWidget {
   </TabItem>
 </Tabs>
 
-> Here `job` is the same `QueryJob` defined at the first snippet in the [Query Job](/docs/basics/QueryJob) tutorial
+Both `QueryBuilder` and `useQuery` accepts error and success callbacks as well as configurations such as retry, `statleDuration`, `cacheDuration` etc.
 
-The `externalData` parameter of the `QueryBuilder` is passed to the `task` function of the `QueryJob`. It was discussed previously in [Query Job#External Data](/docs/basics/QueryJob#external-data) section
+### API
 
-### Query
+| Argument name        | Type                     | Description                                                                                                |
+| -------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| queryKey\* (unnamed) | String                   | The unique identifier of the query                                                                         |
+| queryFn\* (unnamed)  | VoidCallback             | Async Function that is used for getting resources                                                          |
+| initialData          | <DataType\>              | Initial data before query is fetched                                                                       |
+| onData               | ValueChanged<DataType\>  | Callback that supplies data when query is successfully fetched/refreshed                                   |
+| onError              | ValueChanged<ErrorType\> | Callback fired when query encounters an error while fetching                                               |
+| jsonConfig           | JsonConfig<DataType\>    | Supply `fromJson` and `toJson` for your returned data in onData<br/>If it's null, query won't be persisted |
+| enabled              | bool                     | Defines if query should be fetched immediately on mount or not                                             |
+| retryConfig          | RetryConfig              | Configure retry behvaiour                                                                                  |
+| refreshConfig        | RefreshConfig            | Configure refresh behvaiour                                                                                |
+
+## Query
+
 The `query` from the `builder` callback or returned from `useQuery` is the appropriate `Query` created based on the logic & configuration defined in the passed `QueryJob`
 
 The `query` parameter aka `Query` contains all the useful getters, properties & methods for rendering data from the query. It contains the state of the current query, the data, the error, the loading status etc along with useful methods such as `refetch` and `setQueryData`
@@ -69,6 +88,7 @@ The `query` parameter aka `Query` contains all the useful getters, properties & 
 But more importantly, it contains the status of the current `Query`. It has to types of status one is Query Progression status & another is data availability status
 
 You can access them as follows:
+
 - Progressive status of Query
   - `isSuccess`: When the task function returned data successfully
   - `isError`: When the task function returned an error
@@ -78,7 +98,6 @@ You can access them as follows:
 - Data availability status of Query
   - `hasData`: When query contains data (expired or not)
   - `hasError`: When the query contains error
-
 
 Now the most important part of query: Data and Error. You can access the data returned from the task using `query.data` or the error `query.error`. Both the data can be null. So always check if the data/error is null before accessing it
 
@@ -122,7 +141,7 @@ class Example extends StatelessWidget {
   Widget build(BuildContext context) {
     // getting the instance of Client provided by the [provider] package
     final client = Provider.of<Client>(context);
-    
+
     return QueryBuilder<String, Client>(
       job: job,
       // passing the client as externalData
@@ -132,7 +151,7 @@ class Example extends StatelessWidget {
         if (!query.hasData || query.isLoading) {
           return const CircularProgressIndicator();
         }
-        // remember to always show a fallback widget/screen for errors too. 
+        // remember to always show a fallback widget/screen for errors too.
         // It keeps the user aware of status of the application their using
         // & saves their time
         else if(query.hasError && query.isError){
@@ -174,12 +193,12 @@ class Example extends HookWidget {
         // passing the client as externalData
         externalData: client
       );
-    
+
     // checking if data availability along with progressive status
     if (!query.hasData || query.isLoading) {
       return const CircularProgressIndicator();
     }
-    // remember to always show a fallback widget/screen for errors too. 
+    // remember to always show a fallback widget/screen for errors too.
     // It keeps the user aware of status of the application their using
     // & saves their time
     else if(query.hasError && query.isError){

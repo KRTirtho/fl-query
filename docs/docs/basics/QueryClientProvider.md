@@ -48,7 +48,7 @@ class MyApp extends StatelessWidget {
 For more information on how to use QueryClientProvider, please refer to the [QueryClientProvider](https://pub.dev/documentation/fl_query/latest/fl_query/QueryClientProvider-class.html) API Reference
 
 
-## QueryClient widget
+## QueryClient
 
 The `QueryClient` is the store that holds all the query/mutation data. You can create a new instances of `QueryClient` by calling `QueryClient()` constructor. But it is recommended to use `QueryClientProvider` to create a new instance of `QueryClient` and use it across the app.
 `QueryClient` can be accessed from anywhere in the widget tree using `QueryClient.of(context)`. It can be useful for imperative data manipulation
