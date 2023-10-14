@@ -111,21 +111,21 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "1.0.0-alpha.4"
+    version: "1.0.0-alpha.5"
   fl_query_connectivity_plus_adapter:
     dependency: "direct main"
     description:
       path: "../../fl_query_connectivity_plus_adapter"
       relative: true
     source: path
-    version: "0.1.0-alpha.3"
+    version: "0.1.0-alpha.4"
   fl_query_devtools:
     dependency: "direct main"
     description:
       path: "../../fl_query_devtools"
       relative: true
     source: path
-    version: "0.1.0-alpha.2"
+    version: "0.1.0-alpha.3"
   flutter:
     dependency: "direct main"
     description: flutter
