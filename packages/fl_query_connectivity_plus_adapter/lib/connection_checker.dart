@@ -22,17 +22,22 @@ class InternetConnectivityChecker
 
   InternetConnectivityChecker(Duration duration)
       : controller = StreamController<bool>.broadcast() {
-    Timer.periodic(duration, (timer) async {
-      if (isAppPaused) {
-        return;
-      }
+    Timer? timer;
+    Connectivity().onConnectivityChanged.listen((event) async {
+      if (isAppPaused) return;
       await hasConnection();
     });
-    Connectivity().onConnectivityChanged.listen((event) async {
-      if (isAppPaused) {
-        return;
+
+    onConnectionChanged.listen((connection) {
+      if (!connection && timer == null) {
+        timer = Timer.periodic(duration, (timer) async {
+          if (isAppPaused) return;
+          await hasConnection();
+        });
+      } else {
+        timer?.cancel();
+        timer = null;
       }
-      await hasConnection();
     });
   }
 

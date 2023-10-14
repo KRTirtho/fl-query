@@ -7,7 +7,7 @@ import 'package:fl_query_connectivity_plus_adapter/connection_checker.dart';
 class FlQueryConnectivityPlusAdapter extends ConnectivityAdapter {
   final InternetConnectivityChecker _adapter;
   FlQueryConnectivityPlusAdapter({
-    Duration pollingDuration = const Duration(minutes: 5),
+    Duration pollingDuration = const Duration(seconds: 30),
   }) : _adapter = InternetConnectivityChecker(pollingDuration);
 
   @override
