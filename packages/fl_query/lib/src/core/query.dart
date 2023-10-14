@@ -147,7 +147,7 @@ class Query<DataType, ErrorType>
   CancelableOperation<void>? _operation;
 
   Future<void> _operate() async {
-    if (!await QueryClient.connectivity.isConnected &&
+    if (!QueryClient.connectivity.isConnectedSync &&
         retryConfig.cancelWhenOffline) {
       return;
     }

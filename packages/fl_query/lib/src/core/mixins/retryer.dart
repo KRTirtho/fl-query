@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:async/async.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
+import 'package:fl_query/src/core/client.dart';
 import 'package:flutter/material.dart';
 
 mixin Retryer<T, E> {
@@ -35,6 +36,9 @@ mixin Retryer<T, E> {
               stack: stack,
             ),
           );
+        }
+        if (!await QueryClient.connectivity.isConnected) {
+          break;
         }
       }
     }

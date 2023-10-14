@@ -96,7 +96,7 @@ class Mutation<DataType, ErrorType, VariablesType>
   Stream<VariablesType> get mutationStream => _mutationController.stream;
 
   Future<void> _operate(VariablesType variables) async {
-    if (!await QueryClient.connectivity.isConnected &&
+    if (!QueryClient.connectivity.isConnectedSync &&
         retryConfig.cancelWhenOffline) {
       return;
     }

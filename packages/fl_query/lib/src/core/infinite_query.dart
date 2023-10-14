@@ -278,7 +278,7 @@ class InfiniteQuery<DataType, ErrorType, PageType>
   bool get hasNextPage => getNextPage != null;
 
   Future<void> _operate(PageType page) async {
-    if (!await QueryClient.connectivity.isConnected &&
+    if (!QueryClient.connectivity.isConnectedSync &&
         retryConfig.cancelWhenOffline) {
       return;
     }
