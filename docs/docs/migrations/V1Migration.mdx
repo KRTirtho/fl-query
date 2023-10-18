@@ -1,0 +1,13 @@
+---
+sidebar_position: 1
+title: V1 Migration
+id: v1-migratin
+---
+
+Fl-Query V1 comes with lot of breaking changes in the API. It is not possible to upgrade to V1 without making changes to your code if you were using anything below V1. This page will help you to migrate to V1.
+
+### No Jobs API
+
+`QueryJob`, `MutationJob` and `InfiniteQueryJob` all were removed to bring the API closer to React Query. The `externalData` param was found to be vulnerable and was causing memory leaks. Also the query itself should react to external data changes automatically which caused massive performance drawbacks.
+
+Now everything needs to be passed to `QueryBuilder`, `MutationBuilder` and `InfiniteQueryBuilder` or `useQuery`, `useMutation` and `useInfiniteQuery` hooks directly.
