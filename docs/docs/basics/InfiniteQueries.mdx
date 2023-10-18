@@ -1,0 +1,364 @@
+---
+title: Infinite Queries
+sidebar_position: 11
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+
+Rendering lists that can additively "load more" data onto an existing set of data or "infinite scroll" is also a very common UI pattern. Fl Query supports a useful version of `Query` called `InfiniteQuery` for querying these types of lists.
+
+## Create an InfiniteQuery
+
+The `InfiniteQueryBuilder`/`useInfiniteQuery` is used to create InfiniteQueries. It's almost same as [`QueryBuilder and useQuery`](/docs/basics/Queries#create-a-query)
+
+Here's how to create one:
+
+<Tabs>
+  <TabItem value="vanilla" label="Vanilla">
+
+```dart
+InfiniteQueryBuilder<PagedProducts, ClientException, int>(
+  "products",
+  (page) => api.getProductsPaginated(page),
+  nextPage: (lastPage, lastPageData) {
+    /// returning [null] will set [hasNextPage] to [false]
+    if (lastPageData.products.length < 10) return null;
+    return lastPage + 1;
+  },
+  initialPage: 0,
+  builder: /*...*/
+);
+```
+
+  </TabItem>
+  <TabItem value="flutter_hooks" label="Flutter Hooks">
+
+```dart
+final query = useInfiniteQuery<PagedProducts, ClientException, int>(
+  "products",
+  (page) => api.getProductsPaginated(page),
+  nextPage: (lastPage, lastPageData) {
+    /// returning [null] will set [hasNextPage] to [false]
+    if (lastPageData.products.length < 10) return null;
+    return lastPage + 1;
+  },
+  initialPage: 0,
+);
+```
+
+  </TabItem>
+</Tabs>
+
+InfiniteQuery has some required parameters:
+
+- `key`(unnamed)
+- `queryFn`(unnamed)
+- `nextPage` - A function that returns the next page number or `null` if there are no more pages.
+- `initialPage` - The initial page to start from.
+
+All the Type parameters of both `InfiniteQueryBuilder` and `useInfiniteQuery` might seem overwhelming but using these makes your code more type safe and easier to understand. So the type parameters are:
+
+- `<DataType>` - The type of data returned by the `queryFn`
+- `<ErrorType>` - The type of error returned by the `queryFn`
+- `<PageType>` - The type of page
+
+
+:::note
+Make sure to return `null` for `nextPage` to indicate there's no more pages to load.
+:::
+
+## InfiniteQuery
+
+An `InfiniteQuery` will passed/returned by the `InfiniteQueryBuilder`/`useInfiniteQuery` which can used to manipulate the InfiniteQuery
+
+### States
+
+Just like `Query` an `InfiniteQuery` has 2 groups of states: 1. Progressive States 2. Data availability States
+
+- Progressive States
+  - `isLoadingNextPage` - `true` if the next page is currently loading.
+  - `isRefreshingPage` - `true` if the current page is currently refreshing.
+  - `isInactive` - `true` if the query is not fetching and has no errors and has no listeners
+- Data availability states
+  - `hasNextPage` - `true` if there is a next page to fetch.
+  - `hasPages` - `true` if there are pages available.
+  - `hasErrors` - `true` if there are errors in any pages.
+  - `hasPageData` - `true` if data is available for the current page.
+  - `hasPageError` - `true` if there's an error in the current page.
+
+Here's an example of how these states can be used to render a paginated list:
+
+<Tabs>
+<TabItem value="vanilla" label="Vanilla">
+
+```dart
+/// Inside the [builder] of previous example
+final products = query.pages.map((e) => e.products).expand((e) => e);
+
+return ListView(
+  children: [
+    for (final product in products)
+      ListTile(
+        title: Text(product.title),
+        subtitle: Text(product.description),
+        leading: Image.network(product.thumbnail),
+      ),
+    if (query.hasNextPage && query.isLoadingNextPage)
+      ElevatedButton(
+        onPressed: () => query.fetchNext(),
+        child: Text("Load More"),
+      )
+    else if (query.hasNextPage && !query.isLoadingNextPage)
+      ElevatedButton(
+        onPressed: null,
+        child: const CircularProgressIndicator(),
+      ),
+    if (query.hasErrors)
+      ...query.errors.map((e) => Text(e.message)).toList(),
+  ],
+);
+```
+
+</TabItem>
+<TabItem value="flutter_hooks" label="Flutter Hooks">
+
+```dart
+/// Using the [query] from previous example
+final products = useMemoized(
+  () => query.pages.map((e) => e.products).expand((e) => e),
+  [query.pages],
+);
+
+return ListView(
+  children: [
+    for (final product in products)
+      ListTile(
+        title: Text(product.title),
+        subtitle: Text(product.description),
+        leading: Image.network(product.thumbnail),
+      ),
+    if (query.hasNextPage && query.isLoadingNextPage)
+      ElevatedButton(
+        onPressed: () => query.fetchNext(),
+        child: Text("Load More"),
+      )
+    else if (query.hasNextPage && !query.isLoadingNextPage)
+      ElevatedButton(
+        onPressed: null,
+        child: const CircularProgressIndicator(),
+      ),
+    if (query.hasErrors)
+      ...query.errors.map((e) => Text(e.message)).toList(),
+  ],
+);
+```
+
+</TabItem>
+</Tabs>
+
+### Fetching next page
+
+`InfiniteQuery` has `hasNextPage` that must be used to check if there's any pages left to fetch. The `fetchNext` can be used to fetch the next page.
+
+```dart
+if (query.hasNextPage){
+  await query.fetchNext();
+}
+```
+
+Also `InfiniteQuery.isLoadingNextPage` can be used to show a loading indicator while the next page is loading.
+
+```dart
+ListView(
+  children: [
+    // ...
+    if (query.hasNextPage && query.isLoadingNextPage)
+      CircularProgressIndicator(),
+  ],
+)
+```
+
+### Refreshing
+
+`InfiniteQuery` uses pages to store data and each individual page are fetched/refreshed in a sequeunce. `InfiniteQuery` provides two methods `InfiniteQuery.refresh` and `InfiniteQuery.refreshAll` to refresh once page or all pages at once.
+
+Refresh a current page:
+
+```dart
+await query.refresh();
+```
+
+Passing no page argument will refresh the current page by default.
+
+Refresh a specific page:
+
+```dart
+await query.refresh(2);
+```
+
+Refresh all pages:
+
+```dart
+await query.refreshAll();
+```
+
+:::note
+Refreshing all pages can be really expensive and should be done with caution.
+:::
+
+If you need refresh specific pages or to refresh some segments, you can just combine `refresh` with `Future.wait` or just a plain for loop.
+
+```dart
+await Future.wait(
+  [1, 2, 3].map((e) => query.refresh(e)),
+);
+```
+
+### Set page data manually
+
+`InfiniteQuery` provides a method `InfiniteQuery.setPageData` to set page data manually. This can be useful if you want to set data after a mutation for [Optmisitc Updates](/docs/basics/OptimisticUpdates)
+
+```dart
+query.setPageData(0, [...query.pages[0], newProduct])
+```
+You can use `InfiniteQuery.pages.map` to set page data for all pages.
+
+:::note
+If the specified page doesn't exist, `setPageData` will create a new page and add the data to it.
+:::
+
+### Dynamic Key
+
+Just like [`Query`](/docs/basics/queries#dynamic-key) with dart's String interpolation, you can pass dynamic keys to the InfiniteQuery. This will create new instance of InfiniteQuery for every dynamically generated unique key
+
+<Tabs>
+  <TabItem value="vanilla" label="Vanilla">
+
+```dart
+InfiniteQueryBuilder<PagedProducts, ClientException, int>(
+  "category/$categoryId/products",
+  (page) => api.getProductsPaginated(page, categoryId),
+  nextPage: (lastPage, lastPageData) {
+    /// returning [null] will set [hasNextPage] to [false]
+    if (lastPageData.products.length < 10) return null;
+    return lastPage + 1;
+  },
+  initialPage: 0,
+  builder: /*...*/
+);
+```
+
+  </TabItem>
+  <TabItem value="flutter_hooks" label="Flutter Hooks">
+
+```dart
+final query = useInfiniteQuery<PagedProducts, ClientException, int>(
+  "category/$categoryId/products",
+  (page) => api.getProductsPaginated(page, categoryId),
+  nextPage: (lastPage, lastPageData) {
+    /// returning [null] will set [hasNextPage] to [false]
+    if (lastPageData.products.length < 10) return null;
+    return lastPage + 1;
+  },
+  initialPage: 0,
+);
+```
+
+  </TabItem>
+</Tabs>
+
+### Lazy InfiniteQuery
+
+Just like [Query](/docs/basics/Queries#lazy-query) by default InfiniteQueries are executed immediately after they are mounted. But you can also make them lazy by passing `enabled: false` to the `InfiniteQueryBuilder` or `useInfiniteQuery`
+Until `InfiniteQuery.fetch` or `InfiniteQuery.refresh` is called, anything won't be fetched
+
+<Tabs>
+  <TabItem value="vanilla" label="Vanilla">
+
+```dart
+InfiniteQueryBuilder<PagedProducts, ClientException, int>(
+  "lazy-products",
+  (page) => api.getProductsPaginated(page),
+  nextPage: (lastPage, lastPageData) {
+    /// returning [null] will set [hasNextPage] to [false]
+    if (lastPageData.products.length < 10) return null;
+    return lastPage + 1;
+  },
+  initialPage: 0,
+  enabled: false,
+  builder: /*...*/
+);
+```
+
+  </TabItem>
+  <TabItem value="flutter_hooks" label="Flutter Hooks">
+
+```dart
+final query = useInfiniteQuery<PagedProducts, ClientException, int>(
+  "lazy-products",
+  (page) => api.getProductsPaginated(page),
+  nextPage: (lastPage, lastPageData) {
+    /// returning [null] will set [hasNextPage] to [false]
+    if (lastPageData.products.length < 10) return null;
+    return lastPage + 1;
+  },
+  initialPage: 0,
+  enabled: false,
+);
+```
+
+  </TabItem>
+</Tabs>
+
+### Persisting InfiniteQueries
+
+The `pages` data can be saved to disk to be loaded next time when the app starts to reduce loading time of your app. Just like [`Query`](/docs/basics/Queries#persisting-queries) persisted `InfiniteQuery`'s `pages` data are stored in [hive](https://docs.hivedb.dev/#/). This can be widely useful to add offline capabilities to the app
+
+For this you need to pass a `jsonConfig: JsonConfig()` argument to `InfiniteQueryBuilder` or `useInfiniteQuery`. Also make sure your `DataType` is serializable to JSON. You can use [json_serializable](https://pub.dev/packages/json_serializable) to generate the code for you.
+
+<Tabs>
+  <TabItem value="vanilla" label="Vanilla">
+
+```dart
+InfiniteQueryBuilder<PagedPosts, ClientException, int>(
+  "posts",
+  (page) => api.getPostsPaginated(page),
+  nextPage: (lastPage, lastPageData) {
+    /// returning [null] will set [hasNextPage] to [false]
+    if (lastPageData.posts.length < 10) return null;
+    return lastPage + 1;
+  },
+  initialPage: 0,
+  jsonConfig: JsonConfig(
+    fromJson: (json)=> PagedPosts.fromJson(json),
+    toJson: (pagedPosts) => pagedPosts.toJson(),
+  ),
+  builder: /*...*/
+);
+```
+
+  </TabItem>
+  <TabItem value="flutter_hooks" label="Flutter Hooks">
+
+```dart
+final query = useInfiniteQuery<PagedPosts, ClientException, int>(
+  "posts",
+  (page) => api.getPostsPaginated(page),
+  nextPage: (lastPage, lastPageData) {
+    /// returning [null] will set [hasNextPage] to [false]
+    if (lastPageData.posts.length < 10) return null;
+    return lastPage + 1;
+  },
+  initialPage: 0,
+  jsonConfig: JsonConfig(
+    fromJson: (json)=> PagedPosts.fromJson(json),
+    toJson: (pagedPosts) => pagedPosts.toJson(),
+  ),
+);
+```
+
+  </TabItem>
+</Tabs>
+
+This will persist each available page to a HiveStore
