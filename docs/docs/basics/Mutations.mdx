@@ -1,0 +1,218 @@
+---
+title: Mutations
+sidebar_position: 6
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+## MutationBuilder
+
+Unlike queries, mutations are typically used to create/update/delete data or perform server side-effects. You can use `MutationBuilder` or `useMutation` to create a mutation.
+
+<Tabs>
+  <TabItem value="vanilla" label="Vanilla">
+
+```dart
+  MutationBuilder<Map<String, dynamic>, dynamic, Map<String, dynamic>, dynamic>(
+    'sign-up',
+    (variables) {
+      return Future.delayed(
+        const Duration(seconds: 5),
+        () => {
+          'name': variables['name'],
+          'email': variables['email'],
+          'password': variables['password'],
+        },
+      );
+    },
+    builder: (context, mutation) {
+      /* ... */
+    },
+  );
+```
+
+  </TabItem>
+  <TabItem value="flutter_hooks" label="Flutter Hooks">
+
+```dart
+final mutation = useMutation<Map<String, dynamic>, dynamic, Map<String, dynamic>, dynamic>(
+  'sign-up',
+  (variables) {
+    return Future.delayed(
+      const Duration(seconds: 1),
+      () => {
+        'name': variables['name'],
+        'email': variables['email'],
+        'password': variables['password'],
+      },
+    );
+  },
+)
+```
+
+  </TabItem>
+</Tabs>
+
+`MutationBuilder` or `useMutation` requires 4 type arguments to provide proper type intellisense and type-safety. This might seem overwhelming but at the end of the day saves time and effort. The type arguments are as follows in order:
+
+1. `DataType` - The type of the data returned by the mutation function
+1. `ErrorType` - The type of the error returned by the mutation function
+1. `VariablesType` - The type of the variables passed to the mutation function
+1. `RecoveryType` - The type of the data returned by the onMutate callback and to be passed on onSuccess & onError callback. Which can be used to recover from an error and continue the mutation flow.
+
+### Callbacks
+
+`MutationBuilder` or `useMutation` comes with some helper parameters that allow quick and easy side-effects at any stage during the mutation lifecycle. These come in handy for both invalidating and refetching queries after mutations and even optimistic updates
+
+<Tabs>
+  <TabItem value="Vanilla" label="Vanilla">
+
+```dart
+MutationBuilder<Map<String, dynamic>, dynamic, Map<String, dynamic>, String>(
+    'sign-up',
+    (variables) {
+      return Future.delayed(
+        const Duration(seconds: 5),
+        () => {
+          'name': variables['name'],
+          'email': variables['email'],
+          'password': variables['password'],
+        },
+      );
+    },
+    onMutate: (variables) {
+        print('onMutate: $variables');
+        return "Recover ME";
+      },
+    onData: (data, recoveryData) {
+      print('onData: $data');
+      print('recoveryData: $recoveryData');
+    },
+    onError: (error, recoveryData) {
+      print('onError: $error');
+      print('recoveryData: $recoveryData');
+    },
+    builder: (context, mutation) {
+      /* ... */
+    },
+  );
+```
+
+  </TabItem>
+  <TabItem value="flutter_hooks" label="Flutter Hooks">
+
+```dart
+final mutation = useMutation<Map<String, dynamic>, dynamic, Map<String, dynamic>, String>(
+  'sign-up',
+  (variables) {
+    return Future.delayed(
+      const Duration(seconds: 1),
+      () => {
+        'name': variables['name'],
+        'email': variables['email'],
+        'password': variables['password'],
+      },
+    );
+  },
+  onMutate: (variables) {
+      print('onMutate: $variables');
+      return "Recover ME";
+    },
+  onData: (data, recoveryData) {
+    print('onData: $data');
+    print('recoveryData: $recoveryData');
+  },
+  onError: (error, recoveryData) {
+    print('onError: $error');
+    print('recoveryData: $recoveryData');
+  },
+)
+```
+
+  </TabItem>
+</Tabs>
+
+> Learn how to use `onMutate` & `Query.setData` to implement [optimistic updates](/docs/basics/OptimisticUpdates)
+
+### Refetch Queries and InfiniteQueries on successful mutation
+
+<Tabs>
+<TabItem value="vanilla" label="Vanilla">
+
+```dart
+MutationBuilder<Map<String, dynamic>, dynamic, Map<String, dynamic>, dynamic>(
+    'sign-up',
+    /* ... */,
+    refreshQueries: const ['user-profile'],
+    refreshInfiniteQueries: const ['feeds'],
+)
+```
+
+</TabItem>
+<TabItem value="flutter_hooks" label="Flutter Hooks">
+
+```dart
+final mutation = useMutation<Map<String, dynamic>, dynamic, Map<String, dynamic>, dynamic>(
+  'sign-up',
+    /* ... */,
+    refreshQueries: const ['user-profile'],
+    refreshInfiniteQueries: const ['feeds'],
+)
+```
+
+</TabItem>
+</Tabs>
+
+## Mutation
+
+The `MutationBuilder`/`useMutation` returns a `Mutation` object that can be used to trigger the mutation and access the state of the mutation.
+
+### States
+
+A mutation can only be in one of the following states at any given moment:
+
+- `isInactive` - The mutation is currently idle or in a fresh/reset state
+- `isMutating` - The mutation is currently running and performing the mutation
+
+Beyond those primary states, more information is available depending on the state of the mutation:
+
+- `hasError` - If the mutation is in an error state, the error is available via the `error` property.
+- `hasData` - If the mutation is in a success state, the data is available via the `data` property.
+
+### Performing a mutation
+
+You can use the `Mutation.mutate` method to trigger your mutation. The `mutate` method accepts a single variable or object as an argument. This variable or object will be passed to your mutation function.
+
+```dart
+await mutation.mutate({
+  'name': 'John Doe',
+  'email': 'john.doe@mail.com'
+  'password': 'password',
+})
+```
+
+> The variables must be the type specified as `VariableType` in `MutationBuilder` or `useMutation`.
+
+All mutations are by default asynchronous and immediately returns a `Future` with available data. But if you want to
+schedule the mutation in queue and wait for the result, you need to pass the `scheduleToQueue: true` parameter to the
+`mutate` method
+
+```dart
+await mutation.mutate(
+  {
+    'name': 'John Doe',
+    'email': 'john.doe@mail.com'
+    'password': 'password',
+  },
+  scheduleToQueue: true,
+)
+```
+
+### Resetting a mutation
+
+You can use the `Mutation.reset` method to reset the mutation to its initial state
+
+```dart
+await mutation.reset();
+```
