@@ -216,3 +216,35 @@ You can use the `Mutation.reset` method to reset the mutation to its initial sta
 ```dart
 await mutation.reset();
 ```
+
+### Dynamic key
+
+You can use Dart's string interpolation to dynamically generate the key for a mutation. This is useful when you want
+separate mutations that has same data type but are triggered by different events.
+
+<Tabs>
+  <TabItem value="vanilla" label="Vanilla">
+
+```dart
+MutationBuilder<Map<String, dynamic>, dynamic, Map<String, dynamic>, dynamic>(
+    'sign-up?provider=$authProvider',
+    (variable) => auth.signUp(variable, provider: authProvider),
+)
+```
+
+  </TabItem>
+  <TabItem value="flutter_hooks" label="Flutter Hooks">
+
+```dart
+final mutation = useMutation<Map<String, dynamic>, dynamic, Map<String, dynamic>, dynamic>(
+  'sign-up?provider=$authProvider',
+  (variable) => auth.signUp(variable, provider: authProvider),
+)
+```
+
+  </TabItem>
+</Tabs>
+
+> For every `authProvider` a new mutation will be created and will be cached separately. Which are also isolated from each other.
+
+> Btw, `authProvider` and `auth.signUp` are imaginary variables and methods
