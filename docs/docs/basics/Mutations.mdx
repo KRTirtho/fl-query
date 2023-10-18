@@ -227,8 +227,11 @@ separate mutations that has same data type but are triggered by different events
 
 ```dart
 MutationBuilder<Map<String, dynamic>, dynamic, Map<String, dynamic>, dynamic>(
-    'sign-up?provider=$authProvider',
-    (variable) => auth.signUp(variable, provider: authProvider),
+  'sign-up?provider=$authProvider',
+  (variable) => auth.signUp(variable, provider: authProvider),
+  builder: (context, mutation) {
+    /* ... */
+  },
 )
 ```
 

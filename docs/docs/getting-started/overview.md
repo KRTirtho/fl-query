@@ -3,13 +3,13 @@ sidebar_position: 1
 id: overview
 ---
 
-# Overview
+## Overview
 
 Asynchronous data caching, refetching & invalidation library for Flutter. FL-Query lets you manage & distribute your async data without touching any global state
 
 Fl-Query makes asynchronous server state management a breeze in flutter
 
-# Features
+## Features
 
 - Async data caching & management
 - Smart + effective refetching
@@ -20,7 +20,7 @@ Fl-Query makes asynchronous server state management a breeze in flutter
 - Easy to write & understand code. Follows DRY (Don't repeat yourself) convention
 - Compatible with both vanilla Flutter & elite [flutter_hooks](https://pub.dev/packages/flutter_hooks)
 
-# Installation
+## Installation
 
 Regular installation:
 
@@ -34,11 +34,11 @@ For elite flutter_hooks user (Welcome to the flutter cool community btw😎)
 $ flutter pub add flutter_hooks fl_query_hooks
 ```
 
-# Docs
+## Docs
  
-You can find the documentation of fl-query at https://fl-query.vercel.app/
+You can find the documentation of fl-query at https://fl-query.krtirtho.dev/
 
-# Basic Usage
+## Basic Usage
 
 Initialize the cache databases in your `main` method
 
@@ -161,7 +161,7 @@ class MyApp extends HookWidget{
 
 *To master the fl-query follow the official blog at https://fl-query.krtirtho.dev/blog*
 
-# Why?
+## Why?
 <p align="center">
 <img src="https://media.giphy.com/media/1M9fmo1WAFVK0/giphy.gif" alt="The hell, why?"/>
 </p>

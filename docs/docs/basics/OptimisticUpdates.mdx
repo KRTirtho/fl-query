@@ -2,6 +2,8 @@
 title: Optimistic Updates
 sidebar_position: 10
 ---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
 > <em>In an optimistic update the UI behaves as though a change was successfully completed before receiving confirmation from the server that it actually was - it is being optimistic that it will eventually get the confirmation rather than an error. This allows for a more responsive user experience.</em>
 
@@ -10,6 +12,9 @@ sidebar_position: 10
 ## Update from Mutation Response
 
 When dealing with mutations that **update** documents/tables on the server, it's common for the new data to be automatically returned in the response of the `mutation`. Instead of refreshing any queries for that item and wasting a network call for data we already have, we can take advantage of the object returned by the mutation function and update the existing query with the new data immediately using the `Query.setData` method.
+
+<Tabs>
+  <TabItem value="vanilla" label="Vanilla">
 
 ```dart
 final queryClient = QueryBowl.of(context);
@@ -22,13 +27,39 @@ return MutationBuilder<Todo, dynamic, Todo, dynamic>(
       final query = queryClient.getQuery<Todo, dynamic>('todos');
       if(query == null) return;
       query.setData([...query.data, data]);
+  },
+  builder: /*...*/
+);
+```
+
+  </TabItem>
+  <TabItem value="flutter_hooks" label="Flutter Hooks">
+
+```dart
+final queryClient = useQueryClient();
+
+final mutation = useMutation<Todo, dynamic, Todo, dynamic>(
+  'add-todo',
+  (todo)=> api.addTodo(todo)
+  onSuccess: (data, recoveryData) {
+      // suppose a query with key 'todos' exists
+      final query = queryClient.getQuery<Todo, dynamic>('todos');
+      if(query == null) return;
+      query.setData([...query.data, data]);
   }
 );
 ```
 
+  </TabItem>
+</Tabs>
+
+
 ## onMutate Callback
 
 `onMutate` callback of `MutationBuilder` runs before the mutation is executed. It gives access to mutation variables in the Callback thus queries or any other source of data can be updated with predicted data to make the UI more instantaneous.
+
+<Tabs>
+  <TabItem value="vanilla" label="Vanilla">
 
 ```dart
 final queryClient = QueryBowl.of(context);
@@ -52,5 +83,37 @@ return MutationBuilder<Todo, dynamic, Todo, List<Todo>>(
     if(query == null) return;
     query.setData(recoveryData);
   },
+  builder: /*...*/
 );
 ```
+
+  </TabItem>
+  <TabItem value="flutter_hooks" label="Flutter Hooks">
+
+```dart
+final queryClient = useQueryClient();
+
+final mutation = useMutation<Todo, dynamic, Todo, List<Todo>>(
+  'add-todo',
+  (todo)=> api.addTodo(todo)
+  onMutate: (variable) {  
+    final query = queryClient.getQuery<Todo, dynamic>('todos');
+    if(query == null) return;
+    query.setData([...query.data, variable]);
+
+    // here we should be able to return a previous snapshot
+    // of the intended query data which can be used when
+    // an error occurs in mutation & we can rollback to a previous
+    // data set
+    return query.data;
+  },
+  onError: (data, recoveryData) {
+    final query = queryClient.getQuery<Todo, dynamic>('todos');
+    if(query == null) return;
+    query.setData(recoveryData);
+  },
+);
+```
+
+  </TabItem>
+</Tabs>
