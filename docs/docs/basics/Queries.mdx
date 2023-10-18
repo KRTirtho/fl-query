@@ -125,3 +125,135 @@ await query.setData("new data"); // type of 'data' has to match the DataType
 :::tip
 You can learn more about Optimistic Updates in the [Mutation Tutorial](/docs/basics/mutations)
 :::
+
+### Dynamic key
+
+You can also use dynamic keys with `QueryBuilder` and `useQuery`. With dart's String interpolation, you can pass dynamic keys to the query
+
+<Tabs>
+  <TabItem value="vanilla" label="Vanilla">
+
+```dart
+QueryBuilder<String, HttpException>(
+  "todos/$todoId",
+  () => api.getTodo(todoId),
+  builder: (context, query) {
+    /* ... */
+  },
+);
+```
+
+  </TabItem>
+  <TabItem value="flutter_hooks" label="Flutter Hooks">
+
+```dart
+useQuery<String, HttpException>(
+  "todos/$todoId",
+  () => api.getTodo(todoId),
+);
+```
+
+  </TabItem>
+</Tabs>
+
+> For every new `todoId`, a new query will be created and cached separately
+
+### Lazy Query
+
+By default queries are executed immediately after they are mounted. But you can also make them lazy by passing `enabled: false` to the `QueryBuilder` or `useQuery`
+
+<Tabs>
+  <TabItem value="vanilla" label="Vanilla">
+
+```dart
+QueryBuilder<String, HttpException>(
+  "lazy-todos",
+  () => api.getTodos(),
+  enabled: false,
+  builder: (context, query) {
+    /* ... */
+  },
+);
+```
+
+  </TabItem>
+  <TabItem value="flutter_hooks" label="Flutter Hooks">
+
+```dart
+useQuery<String, HttpException>(
+  "lazy-todos",
+  () => api.getTodos(),
+  enabled: false,
+);
+```
+
+  </TabItem>
+</Tabs>
+
+Now these queries won't be executed as soon as they're mounted. Until `Query.refresh()` or `Query.fetch()` is called these will stay in initial state. If `initial` data was passed, it'll be used until the query is refreshed. Same goes for persisting queries
+
+### Persisting Queries
+
+Queries can be persisted by passing `jsonConfig` argument to the `QueryBuilder` or `useQuery`. Persisted queries are stored in [hive](https://docs.hivedb.dev/) cache and are available even after the app is restarted
+
+First make sure your custom data type is json serializable. You can use [json_serializable](https://pub.dev/packages/json_serializable) package to generate `toJson` and `fromJson` methods for your data type
+
+
+```dart
+import 'package:json_annotation/json_annotation.dart';
+
+part 'todo.g.dart';
+
+@JsonSerializable()
+class Todo{
+  final String id;
+  final String title;
+  final bool completed;
+
+  Todo({
+    required this.id,
+    required this.title,
+    required this.completed,
+  });
+
+  factory Todo.fromJson(Map<String, dynamic> json) => _$TodoFromJson(json);
+  Map<String, dynamic> toJson() => _$TodoToJson(this);
+}
+```
+
+<Tabs>
+  <TabItem value="vanilla" label="Vanilla">
+
+```dart
+QueryBuilder<Todo, HttpException>(
+  "todos",
+  () => api.getTodos(),
+  jsonConfig: JsonConfig(
+    fromJson: (json) => Todo.fromJson(json),
+    toJson: (todo) => todo.toJson(),
+  ),
+  builder: (context, query) {
+    /* ... */
+  },
+);
+```
+
+  </TabItem>
+  <TabItem value="flutter_hooks" label="Flutter Hooks">
+
+```dart
+useQuery<Todo, HttpException>(
+  "todos",
+  () => api.getTodos(),
+  jsonConfig: JsonConfig(
+    fromJson: (json) => Todo.fromJson(json),
+    toJson: (todo) => todo.toJson(),
+  ),
+);
+```
+
+  </TabItem>
+</Tabs>
+
+Right now due to lack of reflection support and compile time macros we're unable to serialize any data type on the fly.
+That's why `JsonConfig` is required. Otherwise, a simple `persistToDisk: true` would have been enough
