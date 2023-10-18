@@ -1,3 +1,8 @@
+## 1.0.0-alpha.6
+
+ - **FIX**(fl_query): use sync connection checker instead of async in every operation.
+ - **FEAT**(fl_query_connectivity_plus_adapter): lookup based offline detection.
+
 ## 1.0.0-alpha.5
 
  - **FIX**(query): isLoading & isRefreshing not working as expected.

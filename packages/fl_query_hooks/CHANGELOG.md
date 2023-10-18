@@ -1,3 +1,7 @@
+## 1.0.0-alpha.6
+
+ - Update a dependency to the latest release.
+
 ## 1.0.0-alpha.5
 
  - **FIX**(mutation): isMutating not working.
