@@ -1,0 +1,128 @@
+---
+title: Persisting Queries
+sidebar_position: 1
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Implementing offline capabilites by your own can be hard to do (and maintain!!) so Fl-Query makes easier for developers to do it. Fl-Query uses [Hive](https://docs.hivedb.dev/#/) to persist queries to disk. Hive is a Open Source, "lightweight and buzzing-fast key-value database made for Flutter and Dart."
+
+We're using hive because it supports storing unstructured data and the write speed is blazingly fast
+
+But it is planned to support multiple types of Database for persisting using an Adapter pattern
+
+### Persisting Queries
+
+Queries can be persisted by passing `jsonConfig` argument to the `QueryBuilder` or `useQuery`. Persisted queries are stored in [hive](https://docs.hivedb.dev/) cache and are available even after the app is restarted
+
+First make sure your custom data type is json serializable. You can use [json_serializable](https://pub.dev/packages/json_serializable) package to generate `toJson` and `fromJson` methods for your data type
+
+
+```dart
+import 'package:json_annotation/json_annotation.dart';
+
+part 'todo.g.dart';
+
+@JsonSerializable()
+class Todo{
+  final String id;
+  final String title;
+  final bool completed;
+
+  Todo({
+    required this.id,
+    required this.title,
+    required this.completed,
+  });
+
+  factory Todo.fromJson(Map<String, dynamic> json) => _$TodoFromJson(json);
+  Map<String, dynamic> toJson() => _$TodoToJson(this);
+}
+```
+
+<Tabs>
+  <TabItem value="vanilla" label="Vanilla">
+
+```dart
+QueryBuilder<Todo, HttpException>(
+  "todos",
+  () => api.getTodos(),
+  jsonConfig: JsonConfig(
+    fromJson: (json) => Todo.fromJson(json),
+    toJson: (todo) => todo.toJson(),
+  ),
+  builder: (context, query) {
+    /* ... */
+  },
+);
+```
+
+  </TabItem>
+  <TabItem value="flutter_hooks" label="Flutter Hooks">
+
+```dart
+useQuery<Todo, HttpException>(
+  "todos",
+  () => api.getTodos(),
+  jsonConfig: JsonConfig(
+    fromJson: (json) => Todo.fromJson(json),
+    toJson: (todo) => todo.toJson(),
+  ),
+);
+```
+
+  </TabItem>
+</Tabs>
+
+Right now due to lack of reflection support and compile time macros we're unable to serialize any data type on the fly.
+That's why `JsonConfig` is required. Otherwise, a simple `persistToDisk: true` would have been enough
+
+### Persisting InfiniteQueries
+
+Just like `Query`, `InfiniteQuery` also accepts `jsonConfig` argument to persist page data to disk. With persisting `InfiniteQuery` you can achieve similar results like facebook/twitter's offline mode
+
+<Tabs>
+  <TabItem value="vanilla" label="Vanilla">
+
+```dart
+InfiniteQueryBuilder<PagedPosts, ClientException, int>(
+  "posts",
+  (page) => api.getPostsPaginated(page),
+  nextPage: (lastPage, lastPageData) {
+    /// returning [null] will set [hasNextPage] to [false]
+    if (lastPageData.posts.length < 10) return null;
+    return lastPage + 1;
+  },
+  initialPage: 0,
+  jsonConfig: JsonConfig(
+    fromJson: (json)=> PagedPosts.fromJson(json),
+    toJson: (pagedPosts) => pagedPosts.toJson(),
+  ),
+  builder: /*...*/
+);
+```
+
+  </TabItem>
+  <TabItem value="flutter_hooks" label="Flutter Hooks">
+
+```dart
+final query = useInfiniteQuery<PagedPosts, ClientException, int>(
+  "posts",
+  (page) => api.getPostsPaginated(page),
+  nextPage: (lastPage, lastPageData) {
+    /// returning [null] will set [hasNextPage] to [false]
+    if (lastPageData.posts.length < 10) return null;
+    return lastPage + 1;
+  },
+  initialPage: 0,
+  jsonConfig: JsonConfig(
+    fromJson: (json)=> PagedPosts.fromJson(json),
+    toJson: (pagedPosts) => pagedPosts.toJson(),
+  ),
+);
+```
+
+  </TabItem>
+</Tabs>
+
+This will persist each available page to a HiveStore

@@ -217,7 +217,7 @@ await Future.wait(
 
 ### Set page data manually
 
-`InfiniteQuery` provides a method `InfiniteQuery.setPageData` to set page data manually. This can be useful if you want to set data after a mutation for [Optmisitc Updates](/docs/basics/OptimisticUpdates)
+`InfiniteQuery` provides a method `InfiniteQuery.setPageData` to set page data manually. This can be useful if you want to set data after a mutation for [Optmisitc Updates](/docs/advanced/OptimisticUpdates)
 
 ```dart
 query.setPageData(0, [...query.pages[0], newProduct])
@@ -310,55 +310,3 @@ final query = useInfiniteQuery<PagedProducts, ClientException, int>(
 
   </TabItem>
 </Tabs>
-
-### Persisting InfiniteQueries
-
-The `pages` data can be saved to disk to be loaded next time when the app starts to reduce loading time of your app. Just like [`Query`](/docs/basics/Queries#persisting-queries) persisted `InfiniteQuery`'s `pages` data are stored in [hive](https://docs.hivedb.dev/#/). This can be widely useful to add offline capabilities to the app
-
-For this you need to pass a `jsonConfig: JsonConfig()` argument to `InfiniteQueryBuilder` or `useInfiniteQuery`. Also make sure your `DataType` is serializable to JSON. You can use [json_serializable](https://pub.dev/packages/json_serializable) to generate the code for you.
-
-<Tabs>
-  <TabItem value="vanilla" label="Vanilla">
-
-```dart
-InfiniteQueryBuilder<PagedPosts, ClientException, int>(
-  "posts",
-  (page) => api.getPostsPaginated(page),
-  nextPage: (lastPage, lastPageData) {
-    /// returning [null] will set [hasNextPage] to [false]
-    if (lastPageData.posts.length < 10) return null;
-    return lastPage + 1;
-  },
-  initialPage: 0,
-  jsonConfig: JsonConfig(
-    fromJson: (json)=> PagedPosts.fromJson(json),
-    toJson: (pagedPosts) => pagedPosts.toJson(),
-  ),
-  builder: /*...*/
-);
-```
-
-  </TabItem>
-  <TabItem value="flutter_hooks" label="Flutter Hooks">
-
-```dart
-final query = useInfiniteQuery<PagedPosts, ClientException, int>(
-  "posts",
-  (page) => api.getPostsPaginated(page),
-  nextPage: (lastPage, lastPageData) {
-    /// returning [null] will set [hasNextPage] to [false]
-    if (lastPageData.posts.length < 10) return null;
-    return lastPage + 1;
-  },
-  initialPage: 0,
-  jsonConfig: JsonConfig(
-    fromJson: (json)=> PagedPosts.fromJson(json),
-    toJson: (pagedPosts) => pagedPosts.toJson(),
-  ),
-);
-```
-
-  </TabItem>
-</Tabs>
-
-This will persist each available page to a HiveStore
