@@ -1,7 +1,7 @@
 name: fl_query_devtools
 description: Devtools support for Fl-Query
 version: 0.1.0-alpha.4
-homepage: https://fl-query.vercel.app
+homepage: https://fl-query.krtirtho.dev
 repository: https://github.com/KRTirtho/fl-query/tree/main/packages/fl_query_devtools
 issue_tracker: https://github.com/KRTirtho/fl-query/issues
 

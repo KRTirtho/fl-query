@@ -37,7 +37,7 @@ $ flutter pub add flutter_hooks fl_query_hooks
 
 # Docs
  
-You can find the documentation of fl-query at https://fl-query.vercel.app/
+You can find the documentation of fl-query at https://fl-query.krtirtho.dev/
 
 # Basic Usage
 
@@ -160,7 +160,7 @@ class MyApp extends HookWidget{
 }
 ```
 
-*To master the fl-query follow the official blog at https://fl-query.vercel.app/blog*
+*To master the fl-query follow the official blog at https://fl-query.krtirtho.dev/blog*
 
 # Why?
 <p align="center">

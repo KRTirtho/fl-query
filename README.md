@@ -37,7 +37,7 @@ $ flutter pub add flutter_hooks fl_query_hooks
 
 # Docs
  
-You can find the documentation of fl-query at https://fl-query.vercel.app/
+You can find the documentation of fl-query at https://fl-query.krtirtho.dev/
 
 # Basic Usage
 
@@ -160,7 +160,7 @@ class MyApp extends HookWidget{
 }
 ```
 
-*To master the fl-query follow the official blog at https://fl-query.vercel.app/blog*
+*To master the fl-query follow the official blog at https://fl-query.krtirtho.dev/blog*
 
 # Why?
 <p align="center">
@@ -177,6 +177,7 @@ This let's you focus more on those cool UI animations & transitions✨. Leave th
 **Q. So `FutureProvider` from riverpod or provider not enough?**
 
 Probably yes. Although riverpod@v2 has added a lot of caching related features but still optimistic updates, periodic refetching & disk persistence are missing. Let's not forget about infinite pagination, it's a nightmare😅. In case of provider, same story. It's a great package but it's not ideal for server-state management
+
 
 # Notice Board
 
