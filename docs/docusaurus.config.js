@@ -1,22 +1,22 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
-  
-const { themes } = require('prism-react-renderer');
+
+const { themes } = require("prism-react-renderer");
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'Fl-Query',
-  tagline: 'Async data manager for Flutter',
-  url: 'https://flquery.com',
-  baseUrl: '/',
-  onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
-  favicon: 'img/favicon.ico',
+  title: "Fl-Query",
+  tagline: "Async data manager for Flutter",
+  url: "https://flquery.com",
+  baseUrl: "/",
+  onBrokenLinks: "throw",
+  onBrokenMarkdownLinks: "warn",
+  favicon: "img/favicon.ico",
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'Kingkor Roy Tirtho', // Usually your GitHub org/user name.
-  projectName: 'Fl-Query', // Usually your repo name.
+  organizationName: "Kingkor Roy Tirtho", // Usually your GitHub org/user name.
+  projectName: "Fl-Query", // Usually your repo name.
 
   plugins: [
     async function TailwindCSSPlugin(context, options) {
@@ -36,31 +36,31 @@ const config = {
   // metadata like html lang. For example, if your site is Chinese, you may want
   // to replace "en" with "zh-Hans".
   i18n: {
-    defaultLocale: 'en',
-    locales: ['en'],
+    defaultLocale: "en",
+    locales: ["en"],
   },
 
   presets: [
     [
-      'classic',
+      "classic",
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          sidebarPath: require.resolve('./sidebars.js'),
+          sidebarPath: require.resolve("./sidebars.js"),
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/KRTirtho/fl-query/tree/main/packages/docs/docs/',
+            "https://github.com/KRTirtho/fl-query/tree/main/packages/docs/docs/",
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/KRTirtho/fl-query/tree/main/packages/docs/blog/',
+            "https://github.com/KRTirtho/fl-query/tree/main/packages/docs/blog/",
         },
         theme: {
-          customCss: require.resolve('./src/css/custom.css'),
+          customCss: require.resolve("./src/css/custom.css"),
         },
       }),
     ],
@@ -69,62 +69,65 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      colorMode: {
+        respectPrefersColorScheme: true,
+      },
       navbar: {
-        title: 'Fl-Query',
+        title: "Fl-Query",
         logo: {
-          alt: 'Fl-Query Logo',
-          src: 'img/logo.svg',
+          alt: "Fl-Query Logo",
+          src: "img/logo.svg",
         },
         items: [
           {
-            type: 'doc',
-            docId: 'getting-started/overview',
-            position: 'left',
-            label: 'Documentation',
+            type: "doc",
+            docId: "getting-started/overview",
+            position: "left",
+            label: "Documentation",
           },
-          {to: '/blog', label: 'Blog', position: 'left'},
+          { to: "/blog", label: "Blog", position: "left" },
           {
-            href: 'https://github.com/KRTirtho/fl-query',
-            label: 'GitHub',
-            position: 'right',
+            href: "https://github.com/KRTirtho/fl-query",
+            label: "GitHub",
+            position: "right",
           },
         ],
       },
       footer: {
-        style: 'dark',
+        style: "dark",
         links: [
           {
-            title: 'Docs',
+            title: "Docs",
             items: [
               {
-                label: 'Documentation',
-                to: '/docs/getting-started/overview',
+                label: "Documentation",
+                to: "/docs/getting-started/overview",
               },
             ],
           },
           {
-            title: 'Community',
+            title: "Community",
             items: [
               {
-                label: 'Stack Overflow',
-                href: 'https://stackoverflow.com/questions/tagged/fl-query',
+                label: "Stack Overflow",
+                href: "https://stackoverflow.com/questions/tagged/fl-query",
               },
               {
-                label: 'Twitter',
-                href: 'https://twitter.com/KrTirtho',
+                label: "Twitter",
+                href: "https://twitter.com/KrTirtho",
               },
             ],
           },
           {
-            title: 'More',
+            title: "More",
             items: [
               {
-                label: 'Blog',
-                to: '/blog',
+                label: "Blog",
+                to: "/blog",
               },
               {
-                label: 'GitHub',
-                href: 'https://github.com/KRTirtho/fl-query',
+                label: "GitHub",
+                href: "https://github.com/KRTirtho/fl-query",
               },
             ],
           },
@@ -134,7 +137,7 @@ const config = {
       prism: {
         theme: themes.oneLight,
         darkTheme: themes.oneDark,
-        additionalLanguages: ["dart"]
+        additionalLanguages: ["dart"],
       },
     }),
 };

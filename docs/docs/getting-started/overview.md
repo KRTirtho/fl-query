@@ -4,7 +4,7 @@ title: Overview
 id: overview
 ---
 
-Asynchronous data caching, refetching & invalidation library for Flutter. FL-Query lets you manage & distribute your async data without touching any global state
+Asynchronous data caching, refetching & invalidation library for Flutter. Fl-Query lets you manage & distribute your async data without touching any global state
 
 Fl-Query makes asynchronous server state management a breeze in flutter
 
@@ -32,10 +32,6 @@ For elite flutter_hooks user (Welcome to the flutter cool community btw😎)
 ```bash
 $ flutter pub add flutter_hooks fl_query_hooks
 ```
-
-## Docs
- 
-You can find the documentation of fl-query at https://fl-query.krtirtho.dev/
 
 ## Basic Usage
 
@@ -158,15 +154,12 @@ class MyApp extends HookWidget{
 }
 ```
 
-*To master the fl-query follow the official blog at https://fl-query.krtirtho.dev/blog*
-
 ## Why?
 <p align="center">
 <img src="https://media.giphy.com/media/1M9fmo1WAFVK0/giphy.gif" alt="The hell, why?"/>
 </p>
 
-The main purpose of Fl-Query is providing the easiest way to manage the messy server-state part requiring the least amount of code with code reusability & performance
-This let's you focus more on those cool UI animations & transitions✨. Leave the boring stuff to fl-query
+The main purpose of Fl-Query is providing the easiest way to manage the messy server-state part requiring the least amount of code with code reusability & performance. This let's you focus more on those cool UI animations & transitions✨. Leave the boring stuff to Fl-Query
 
 **Q. Isn't `FutureBuilder` good?**
 
@@ -174,4 +167,4 @@ This let's you focus more on those cool UI animations & transitions✨. Leave th
 
 **Q. So `FutureProvider` from riverpod or provider not enough?**
 
-Probably yes. Although riverpod@v2 has added a lot of caching related features but still optimistic updates, periodic refetching & disk persistence are missing. Let's not forget about infinite pagination, it's a nightmare😅. In case of provider, same story. It's a great package but it's not ideal for server-state management
+Probably yes. Although riverpod@v2 has added a lot of caching related features but still optimistic updates, periodic refetching & disk persistence are missing. Let's not forget about infinite pagination, it's a nightmare😅. In case of provider, same story. It's a great package but it's not the easiest one for server-state management
