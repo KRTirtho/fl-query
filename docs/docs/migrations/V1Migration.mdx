@@ -6,8 +6,65 @@ id: v1-migratin
 
 Fl-Query V1 comes with lot of breaking changes in the API. It is not possible to upgrade to V1 without making changes to your code if you were using anything below V1. This page will help you to migrate to V1.
 
-### No Jobs API
+## Removal of APIs/methods/properties
 
-`QueryJob`, `MutationJob` and `InfiniteQueryJob` all were removed to bring the API closer to React Query. The `externalData` param was found to be vulnerable and was causing memory leaks. Also the query itself should react to external data changes automatically which caused massive performance drawbacks.
+- `QueryJob`, `MutationJob` and `InfiniteQueryJob` all were removed to bring the API closer to React Query. The `externalData` param was found to be vulnerable and was causing memory leaks. Also the query itself should not react to external data changes automatically which caused massive performance drawbacks and circular dependency related issues.
 
-Now everything needs to be passed to `QueryBuilder`, `MutationBuilder` and `InfiniteQueryBuilder` or `useQuery`, `useMutation` and `useInfiniteQuery` hooks directly.
+  Now everything needs to be passed to `QueryBuilder`, `MutationBuilder` and `InfiniteQueryBuilder` or `useQuery`, `useMutation` and `useInfiniteQuery` hooks directly.
+- `keepPreviousData` has been removed from both `Query` and `InfiniteQuery`
+- `QueryClient`'s (formerly `QueryBowl`)
+  - `prefetchQuery` method was removed
+    
+    > use `QueryClient.fetchQuery` instead
+  - `setQueryData` method was removed
+  
+    > use `QueryClient.getQuery().setData` instead
+  - `setInfinityQueryData` method was removed 
+    
+    > use `QueryClient.getInfinityQuery().setPageData` instead
+  - `resetQueries` method was removed 
+    
+    > use `QueryClient.getQueries` and map over them to reset them instead
+  - `removeQueries` method was removed 
+    
+    > use `QueryClient.cache.removeQuery` instead
+  - `onQueriesUpdate` method was removed 
+    
+    > use `QueryClient.getQuery().addListener` instead
+  - `onInfinityQueriesUpdate` method was removed 
+    
+    > use `QueryClient.getInfinityQuery().addListener` instead
+  - `onMutationUpdate` method was removed 
+    
+    > use `QueryClient.getMutation().addListener` instead
+  - `invalidateQueries` method was removed
+- `InfiniteQuery.initialPage` was removed
+- The unnecessary `getPreviousPageParam` is now removed from `InfiniteQuery`
+
+## Renaming/Replacement of APIs/methods/properties
+
+- `QueryBowl` was renamed to `QueryClient`
+  - `refetchQuery` => `refreshQuery`
+  - `refetchQueries` => `refreshQueries`
+  - `refetchInfiniteQuery` => `refreshInfiniteQuery`
+  - `refetchInfiniteQueries` => `refreshInfiniteQueries`
+- `QueryBowlProvider` was renamed to `QueryClientProvider``
+- `Query.refetch` was renamed to `Query.refresh`
+- `InfiniteQuery.refetchPages` has been replaced with `InfiniteQuery.refresh` and `InfiniteQuery.refreshAll`
+
+  Now instead of passing callback, `Future.wait` is used with `refresh` to refetch a segment of pages.
+  `refreshAll` is a shorthand to refetch all pages at once.
+- `getNextPageParam` has been renamed to `nextPage`
+- Also, `fetchNextPage` has been renamed to `fetchNext`
+- `Query` and `InfiniteQuery`'s `setQueryData` has been renamed to `setData` and it now accepts data directly instead of a call back function
+
+## Refactored APIs/methods/properties
+
+All the retry & cache invalidation related properties were moved to their own classes.
+
+- Retry related properties were moved to `RetryConfig` class
+  - `retries` was renamed to `maxRetries`
+- Cache invalidation related properties were moved to `RefreshConfig` class
+  - `staleTime` was renamed to `staleDuration`
+  - `refetchInterval` was renamed to `refreshInterval`
+  - `refetchOnMount` was renamed to `refreshOnMount`
