@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fl_query/src/collections/jobs/mutation_job.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
 import 'package:fl_query/src/core/client.dart';
 import 'package:fl_query/src/core/mutation.dart';
@@ -52,6 +53,32 @@ class MutationBuilder<DataType, ErrorType, VariablesType, RecoveryType>
     this.refreshInfiniteQueries,
     super.key,
   });
+
+  static MutationBuilder<DataType, ErrorType, VariablesType, RecoveryType>
+      withJob<DataType, ErrorType, VariablesType, RecoveryType, ArgsType>({
+    required MutationJob<DataType, ErrorType, VariablesType, RecoveryType,
+            ArgsType>
+        job,
+    required MutationBuilderFn<DataType, ErrorType, VariablesType> builder,
+    Key? key,
+    MutationOnDataFn<DataType, RecoveryType>? onData,
+    MutationOnErrorFn<ErrorType, RecoveryType>? onError,
+    MutationOnMutationFn<VariablesType, RecoveryType>? onMutate,
+    ArgsType? args,
+  }) {
+    return MutationBuilder<DataType, ErrorType, VariablesType, RecoveryType>(
+      job.mutationKey,
+      (variables) => job.task(variables, args),
+      builder: builder,
+      retryConfig: job.retryConfig,
+      onData: onData,
+      onError: onError,
+      onMutate: onMutate,
+      refreshQueries: job.refreshQueries,
+      refreshInfiniteQueries: job.refreshInfiniteQueries,
+      key: key,
+    );
+  }
 
   @override
   State<MutationBuilder<DataType, ErrorType, VariablesType, RecoveryType>>

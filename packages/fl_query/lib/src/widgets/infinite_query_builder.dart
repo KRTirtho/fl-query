@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fl_query/src/collections/jobs/infinite_query_job.dart';
 import 'package:fl_query/src/collections/json_config.dart';
 import 'package:fl_query/src/collections/refresh_config.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
@@ -54,6 +55,31 @@ class InfiniteQueryBuilder<DataType, ErrorType, PageType>
           (jsonConfig != null && enabled) || jsonConfig == null,
           'jsonConfig is only supported when enabled is true',
         );
+
+  static InfiniteQueryBuilder<DataType, ErrorType, PageType>
+      withJob<DataType, ErrorType, PageType, ArgsType>({
+    required InfiniteQueryJob<DataType, ErrorType, PageType, ArgsType> job,
+    required InfiniteQueryBuilderFn<DataType, ErrorType, PageType> builder,
+    ValueChanged<PageEvent<DataType, PageType>>? onData,
+    ValueChanged<PageEvent<ErrorType, PageType>>? onError,
+    Key? key,
+    ArgsType? args,
+  }) {
+    return InfiniteQueryBuilder<DataType, ErrorType, PageType>(
+      job.queryKey,
+      (page) => job.task(page, args),
+      builder: builder,
+      initialPage: job.initialPage,
+      nextPage: job.nextPage,
+      retryConfig: job.retryConfig,
+      refreshConfig: job.refreshConfig,
+      jsonConfig: job.jsonConfig,
+      onData: onData,
+      onError: onError,
+      enabled: job.enabled,
+      key: key,
+    );
+  }
 
   @override
   State<InfiniteQueryBuilder<DataType, ErrorType, PageType>> createState() =>

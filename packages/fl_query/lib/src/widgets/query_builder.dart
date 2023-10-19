@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fl_query/src/collections/jobs/query_job.dart';
 import 'package:fl_query/src/collections/json_config.dart';
 import 'package:fl_query/src/collections/refresh_config.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
@@ -47,6 +48,30 @@ class QueryBuilder<DataType, ErrorType> extends StatefulWidget {
           (jsonConfig != null && enabled) || jsonConfig == null,
           'jsonConfig is only supported when enabled is true',
         );
+
+  static QueryBuilder<DataType, ErrorType>
+      withJob<DataType, ErrorType, ArgsType>({
+    required QueryJob<DataType, ErrorType, ArgsType> job,
+    required QueryBuilderFn<DataType, ErrorType> builder,
+    ValueChanged<DataType>? onData,
+    ValueChanged<ErrorType>? onError,
+    ArgsType? args,
+    Key? key,
+  }) {
+    return QueryBuilder<DataType, ErrorType>(
+      job.queryKey,
+      () => job.task(args),
+      builder: builder,
+      initial: job.initial,
+      retryConfig: job.retryConfig,
+      refreshConfig: job.refreshConfig,
+      jsonConfig: job.jsonConfig,
+      onData: onData,
+      onError: onError,
+      enabled: job.enabled,
+      key: key,
+    );
+  }
 
   @override
   State<QueryBuilder<DataType, ErrorType>> createState() =>
