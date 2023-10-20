@@ -26,7 +26,7 @@ InfiniteQuery<DataType, ErrorType, PageType>
     final query = client.createInfiniteQuery<DataType, ErrorType, PageType>(
       queryKey,
       queryFn,
-      initialParam: initialPage,
+      initialPage: initialPage,
       nextPage: nextPage,
       jsonConfig: jsonConfig,
       refreshConfig: refreshConfig,

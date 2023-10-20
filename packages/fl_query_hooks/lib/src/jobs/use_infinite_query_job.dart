@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 InfiniteQuery<DataType, ErrorType, PageType>
     useInfiniteQueryJob<DataType, ErrorType, PageType, ArgsType>({
   required InfiniteQueryJob<DataType, ErrorType, PageType, ArgsType> job,
+  required ArgsType args,
   ValueChanged<PageEvent<DataType, PageType>>? onData,
   ValueChanged<PageEvent<ErrorType, PageType>>? onError,
-  ArgsType? args,
   List<Object?>? keys,
 }) {
   return useInfiniteQuery<DataType, ErrorType, PageType>(

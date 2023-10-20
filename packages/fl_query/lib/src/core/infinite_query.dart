@@ -122,7 +122,7 @@ class InfiniteQuery<DataType, ErrorType, PageType>
   final RefreshConfig refreshConfig;
   final JsonConfig<DataType>? jsonConfig;
 
-  final PageType _initialParam;
+  final PageType _initialPage;
 
   InfiniteQueryFn<DataType, PageType> _queryFn;
   InfiniteQueryNextPage<DataType, PageType> _nextPage;
@@ -131,11 +131,11 @@ class InfiniteQuery<DataType, ErrorType, PageType>
     this.key,
     InfiniteQueryFn<DataType, PageType> queryFn, {
     required InfiniteQueryNextPage<DataType, PageType> nextPage,
-    required PageType initialParam,
+    required PageType initialPage,
     required this.retryConfig,
     required this.refreshConfig,
     this.jsonConfig,
-  })  : _initialParam = initialParam,
+  })  : _initialPage = initialPage,
         _dataController = StreamController.broadcast(),
         _errorController = StreamController.broadcast(),
         _box = Hive.lazyBox(QueryClient.infiniteQueryCachePrefix),
@@ -144,7 +144,7 @@ class InfiniteQuery<DataType, ErrorType, PageType>
         super(InfiniteQueryState<DataType, ErrorType, PageType>(
           pages: {
             InfiniteQueryPage<DataType, ErrorType, PageType>(
-              page: initialParam,
+              page: initialPage,
               updatedAt: DateTime.now(),
               staleDuration: refreshConfig.staleDuration,
             ),
@@ -490,7 +490,7 @@ class InfiniteQuery<DataType, ErrorType, PageType>
     await _operation?.cancel();
     state = state.copyWith(pages: {
       InfiniteQueryPage<DataType, ErrorType, PageType>(
-        page: _initialParam,
+        page: _initialPage,
         updatedAt: DateTime.now(),
         staleDuration: refreshConfig.staleDuration,
       )

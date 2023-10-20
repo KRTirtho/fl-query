@@ -60,11 +60,11 @@ class MutationBuilder<DataType, ErrorType, VariablesType, RecoveryType>
             ArgsType>
         job,
     required MutationBuilderFn<DataType, ErrorType, VariablesType> builder,
+    required ArgsType args,
     Key? key,
     MutationOnDataFn<DataType, RecoveryType>? onData,
     MutationOnErrorFn<ErrorType, RecoveryType>? onError,
     MutationOnMutationFn<VariablesType, RecoveryType>? onMutate,
-    ArgsType? args,
   }) {
     return MutationBuilder<DataType, ErrorType, VariablesType, RecoveryType>(
       job.mutationKey,

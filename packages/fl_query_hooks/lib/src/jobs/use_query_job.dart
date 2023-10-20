@@ -6,7 +6,7 @@ Query<DataType, ErrorType> useQueryJob<DataType, ErrorType, ArgsType>({
   required QueryJob<DataType, ErrorType, ArgsType> job,
   ValueChanged<DataType>? onData,
   ValueChanged<ErrorType>? onError,
-  ArgsType? args,
+  required ArgsType args,
 }) {
   return useQuery<DataType, ErrorType>(
     job.queryKey,

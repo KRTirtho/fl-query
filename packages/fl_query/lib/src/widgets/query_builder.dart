@@ -53,9 +53,9 @@ class QueryBuilder<DataType, ErrorType> extends StatefulWidget {
       withJob<DataType, ErrorType, ArgsType>({
     required QueryJob<DataType, ErrorType, ArgsType> job,
     required QueryBuilderFn<DataType, ErrorType> builder,
+    required ArgsType args,
     ValueChanged<DataType>? onData,
     ValueChanged<ErrorType>? onError,
-    ArgsType? args,
     Key? key,
   }) {
     return QueryBuilder<DataType, ErrorType>(

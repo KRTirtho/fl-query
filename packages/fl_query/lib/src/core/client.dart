@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:fl_query/src/collections/connectivity_adapter.dart';
 import 'package:fl_query/src/collections/default_configs.dart';
+import 'package:fl_query/src/collections/jobs/infinite_query_job.dart';
+import 'package:fl_query/src/collections/jobs/query_job.dart';
 import 'package:fl_query/src/collections/json_config.dart';
 import 'package:fl_query/src/collections/refresh_config.dart';
 import 'package:fl_query/src/collections/retry_config.dart';
@@ -162,6 +164,20 @@ class QueryClient {
     }
   }
 
+  Future<DataType?> fetchQueryJob<DataType, ErrorType, ArgsType>({
+    required QueryJob<DataType, ErrorType, ArgsType> job,
+    required ArgsType args,
+  }) {
+    return fetchQuery<DataType, ErrorType>(
+      job.queryKey,
+      () => job.task(args),
+      initial: job.initial,
+      retryConfig: job.retryConfig,
+      refreshConfig: job.refreshConfig,
+      jsonConfig: job.jsonConfig,
+    );
+  }
+
   /// Finds the [Query] with the given [key] and returns it
   ///
   /// [exact] can be used to match the key exactly or by prefix
@@ -220,7 +236,7 @@ class QueryClient {
     String key,
     InfiniteQueryFn<DataType, PageType> queryFn, {
     required InfiniteQueryNextPage<DataType, PageType> nextPage,
-    required PageType initialParam,
+    required PageType initialPage,
     RetryConfig? retryConfig,
     RefreshConfig? refreshConfig,
     JsonConfig<DataType>? jsonConfig,
@@ -232,7 +248,7 @@ class QueryClient {
             key,
             queryFn,
             nextPage: nextPage,
-            initialParam: initialParam,
+            initialPage: initialPage,
             retryConfig: retryConfig ?? this.retryConfig,
             refreshConfig: refreshConfig ?? this.refreshConfig,
             jsonConfig: jsonConfig,
@@ -254,7 +270,7 @@ class QueryClient {
     String key,
     InfiniteQueryFn<DataType, PageType> queryFn, {
     required InfiniteQueryNextPage<DataType, PageType> nextPage,
-    required PageType initialParam,
+    required PageType initialPage,
     RetryConfig? retryConfig,
     RefreshConfig? refreshConfig,
     JsonConfig<DataType>? jsonConfig,
@@ -266,7 +282,7 @@ class QueryClient {
         key,
         queryFn,
         nextPage: nextPage,
-        initialParam: initialParam,
+        initialPage: initialPage,
         retryConfig: retryConfig,
         refreshConfig: refreshConfig,
         jsonConfig: jsonConfig,
@@ -290,6 +306,22 @@ class QueryClient {
     } catch (e) {
       return null;
     }
+  }
+
+  Future<DataType?>
+      fetchInfiniteQueryJob<DataType, ErrorType, PageType, ArgsType>({
+    required InfiniteQueryJob<DataType, ErrorType, PageType, ArgsType> job,
+    required ArgsType args,
+  }) {
+    return fetchInfiniteQuery<DataType, ErrorType, PageType>(
+      job.queryKey,
+      (page) => job.task(page, args),
+      nextPage: job.nextPage,
+      initialPage: job.initialPage,
+      retryConfig: job.retryConfig,
+      refreshConfig: job.refreshConfig,
+      jsonConfig: job.jsonConfig,
+    );
   }
 
   /// Finds the [InfiniteQuery] with the given [key]

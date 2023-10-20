@@ -9,7 +9,7 @@ typedef QueryJobVariableKeyFn<DataType, ErrorType, ArgsType>
     = QueryJob<DataType, ErrorType, ArgsType> Function(String variable);
 
 class QueryJob<DataType, ErrorType, ArgsType> {
-  final QueryJobFn<DataType, ArgsType?> task;
+  final QueryJobFn<DataType, ArgsType> task;
   final String queryKey;
 
   final DataType? initial;

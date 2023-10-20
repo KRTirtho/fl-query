@@ -12,7 +12,7 @@ typedef MutationJobVariableKeyFn<DataType, ErrorType, VariablesType,
         Function(String variable);
 
 class MutationJob<DataType, ErrorType, VariablesType, RecoveryType, ArgsType> {
-  final MutationJobFn<DataType, VariablesType, ArgsType?> task;
+  final MutationJobFn<DataType, VariablesType, ArgsType> task;
   final String mutationKey;
 
   final RetryConfig? retryConfig;

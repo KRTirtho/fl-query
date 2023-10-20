@@ -11,7 +11,7 @@ typedef InfiniteQueryJobVariableKeyFn<DataType, ErrorType, PageType, ArgsType>
         String variable);
 
 class InfiniteQueryJob<DataType, ErrorType, PageType, ArgsType> {
-  final InfiniteQueryJobFn<DataType, PageType, ArgsType?> task;
+  final InfiniteQueryJobFn<DataType, PageType, ArgsType> task;
   final String queryKey;
 
   final PageType initialPage;

@@ -60,10 +60,10 @@ class InfiniteQueryBuilder<DataType, ErrorType, PageType>
       withJob<DataType, ErrorType, PageType, ArgsType>({
     required InfiniteQueryJob<DataType, ErrorType, PageType, ArgsType> job,
     required InfiniteQueryBuilderFn<DataType, ErrorType, PageType> builder,
+    required ArgsType args,
     ValueChanged<PageEvent<DataType, PageType>>? onData,
     ValueChanged<PageEvent<ErrorType, PageType>>? onError,
     Key? key,
-    ArgsType? args,
   }) {
     return InfiniteQueryBuilder<DataType, ErrorType, PageType>(
       job.queryKey,
@@ -116,7 +116,7 @@ class _InfiniteQueryBuilderState<DataType, ErrorType, PageType>
     query = client.createInfiniteQuery(
       widget.queryKey,
       widget.queryFn,
-      initialParam: widget.initialPage,
+      initialPage: widget.initialPage,
       nextPage: widget.nextPage,
       retryConfig: widget.retryConfig,
       refreshConfig: widget.refreshConfig,

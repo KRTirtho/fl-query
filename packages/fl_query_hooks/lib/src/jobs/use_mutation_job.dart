@@ -9,7 +9,7 @@ Mutation<DataType, ErrorType, VariablesType>
   MutationOnDataFn<DataType, RecoveryType>? onData,
   MutationOnErrorFn<ErrorType, RecoveryType>? onError,
   MutationOnMutationFn<VariablesType, RecoveryType>? onMutate,
-  ArgsType? args,
+  required ArgsType args,
   List<Object?>? keys,
 }) {
   return useMutation(
