@@ -1,0 +1,186 @@
+---
+title: Jobs API
+sidebar_position: 1
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+All this time, we've been directly supplying `queryKey`, `queryFn` etc to `QueryBuilder` and so on. But this might looks repetetive or might break the rules of DRY (Don't Repeat Yourself). So to tackle this issue Fl-Query has an alternate API to create queries/infinite queries/mutations.
+
+Jobs are nothing but a collection of arguments of `*Builder`s. It is just a more declarative way to create queries/infinite queries/mutations.
+
+## Query Job
+
+A `QueryJob` consists of same arguments as `QueryBuilder`
+
+```dart
+final job = QueryJob<List<Todo>, dynamic, HttpApi>(
+  queryKey: "todos",
+  task: (api) => api.getTodos(),
+);
+```
+
+You might notice the third type argument `HttpApi`. That's the new `ArgsType`. Because QueryJob is isolated from widget tree and outside APIs are not accessible from there, you've to manually pass anything you need to the `task` function. In this case, we need an instance of `HttpApi` to call `getTodos()`.
+
+### `QueryBuilder.withJob` and `useQueryJob`
+
+`QueryBuilder.withJob` is a static method that takes a `QueryJob` and returns a `QueryBuilder`. It also accepts event callbacks such as `onError` and `onData`. Also a special argument called `args` which is passed to the `task` function.
+
+Similarly, we have a `useQueryJob` if you're using `flutter_hooks`
+
+<Tabs>
+  <TabItem value="vanilla" label="Vanilla">
+
+```dart
+QueryBuilder.withJob(
+  job: job, // QueryJob we created earlier
+  args: httpApi,
+  onError: (error) => print(error),
+  onData: (data) => print(data),
+  builder: /* ... */,
+);
+```
+
+  </TabItem>
+  <TabItem value="flutter_hooks" label="Flutter Hooks">
+
+```dart
+useQueryJob(
+  job: job, // QueryJob we created earlier
+  args: httpApi,
+  onError: (error) => print(error),
+  onData: (data) => print(data),
+  builder: /* ... */,
+);
+```
+
+  </TabItem>
+</Tabs>
+
+## InfiniteQuery Job
+
+Just like `QueryJob`, `InfiniteQueryJob` is the collection of arguments that is passed to `InfiniteQueryBuilder` or `useInfiniteQuery`
+
+```dart
+final job = InfiniteQueryBuilder<PagedProducts, ClientException, int, HttpApi>(
+  queryKey: "products",
+  task: (page, api) => api.getProductsPaginated(page),
+  nextPage: (lastPage, lastPageData) {
+    /// returning [null] will set [hasNextPage] to [false]
+    if (lastPageData.products.length < 10) return null;
+    return lastPage + 1;
+  },
+  initialPage: 0,
+);
+```
+
+### `InfiniteQueryBuilder.withJob` and `useInfiniteQueryJob`
+
+Just like `QueryBuilder.withJob`, `InfiniteQueryBuilder.withJob` is a static method that takes a `InfiniteQueryJob` and returns a `InfiniteQueryBuilder`. It also accepts event callbacks such as `onError` and `onData`. Also a special argument called `args` which is passed to the `task` function.
+
+Simiarly, we have a `useInfiniteQueryJob` if you're using `flutter_hooks`
+
+<Tabs>
+  <TabItem value="vanilla" label="Vanilla">
+
+```dart
+InfiniteQueryBuilder.withJob(
+  job: job, // InfiniteQueryJob we created earlier
+  args: httpApi,
+  onError: (error) => print(error),
+  onData: (data) => print(data),
+  builder: /* ... */,
+);
+```
+
+  </TabItem>
+  <TabItem value="flutter_hooks" label="Flutter Hooks">
+
+```dart
+useInfiniteQueryJob(
+  job: job, // InfiniteQueryJob we created earlier
+  args: httpApi,
+  onError: (error) => print(error),
+  onData: (data) => print(data),
+  builder: /* ... */,
+);
+```
+
+  </TabItem>
+</Tabs>
+
+
+## Mutation Job
+
+For mutations we've `MutationJob` it is similar to `QueryJob` but has `mutationKey` instead of `queryKey`
+
+```dart
+final job = MutationJob<Todo, dynamic, Todo, void, HttpApi>(
+  mutationKey: "create-todo",
+  task: (variables, api) => api.createTodo(),
+);
+```
+
+:::info
+`MutationJob` has both `variables` and `args` which can be confusing. But use variables for passing data that are supposed to be sent, that means data that can change on next mutation.
+
+Use `args` for passing anything that is not supposed to change, like an API instance, authentication info or a config etc.
+:::
+
+### `MutationBuilder.withJob` and `useMutationJob`
+
+Just like `QueryBuilder.withJob`, `MutationBuilder.withJob` is a static method that takes a `MutationJob` and returns a `MutationBuilder`. It also accepts event callbacks such as `onMutate`, `onError` and `onData`. Also a special argument called `args` which is passed to the `task` function.
+
+Simiarly, we have a `useMutationJob` if you're using `flutter_hooks`
+
+<Tabs>
+  <TabItem value="vanilla" label="Vanilla">
+
+```dart
+MutationBuilder.withJob(
+  job: job, // MutationJob we created earlier
+  args: httpApi,
+  onError: (error) => print(error),
+  onData: (data) => print(data),
+  builder: /* ... */,
+);
+```
+
+  </TabItem>
+  <TabItem value="flutter_hooks" label="Flutter Hooks">
+
+```dart
+useInfiniteQueryJob(
+  job: job, // MutationJob we created earlier
+  args: httpApi,
+  onError: (error) => print(error),
+  onData: (data) => print(data),
+  builder: /* ... */,
+);
+```
+
+  </TabItem>
+</Tabs>
+
+## Dynamic Jobs
+
+Every job has `.withVariableKey` static that allows creating queries/mutations with changing data on the fly. It returns a function that accepts a variable key (String). Which will create a new instance of the job with the new variable key.
+
+Here's the example usage for `Query`:
+
+```dart
+final job = QueryJob.withVariableKey<List<Todo>, dynamic, HttpApi>(
+  baseQueryKey: "todos/", // the variable key will be appended to this
+  task: (variableKey, api) => api.getTodo(variableKey),
+);
+
+// later in the widget tree
+QueryBuilder.withJob(
+  job: job(todoId),
+  args: httpApi,
+  builder: /* ... */,
+);
+```
+
+Everything is just as same as for `Mutation` and `InfiniteQuery`..

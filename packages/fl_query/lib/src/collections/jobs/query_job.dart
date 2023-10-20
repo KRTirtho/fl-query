@@ -4,6 +4,10 @@ import 'package:fl_query/src/collections/retry_config.dart';
 
 typedef QueryJobFn<DataType, ArgsType> = Future<DataType> Function(
     ArgsType args);
+typedef QueryJobVariableFn<DataType, ArgsType> = Future<DataType> Function(
+  String variableKey,
+  ArgsType args,
+);
 
 typedef QueryJobVariableKeyFn<DataType, ErrorType, ArgsType>
     = QueryJob<DataType, ErrorType, ArgsType> Function(String variable);
@@ -37,16 +41,16 @@ class QueryJob<DataType, ErrorType, ArgsType> {
   static QueryJobVariableKeyFn<DataType, ErrorType, ArgsType>
       withVariableKey<DataType, ErrorType, ArgsType>({
     required String baseQueryKey,
-    required QueryJobFn<DataType, ArgsType?> task,
+    required QueryJobVariableFn<DataType, ArgsType?> task,
     DataType? initial,
     RetryConfig? retryConfig,
     RefreshConfig? refreshConfig,
     JsonConfig<DataType>? jsonConfig,
     bool enabled = true,
   }) {
-    return (String variable) => QueryJob(
-          queryKey: "$baseQueryKey$variable",
-          task: task,
+    return (String variableKey) => QueryJob(
+          queryKey: "$baseQueryKey$variableKey",
+          task: (args) => task(variableKey, args),
           initial: initial,
           retryConfig: retryConfig,
           refreshConfig: refreshConfig,

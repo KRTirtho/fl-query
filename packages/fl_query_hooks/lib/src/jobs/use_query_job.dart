@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 
 Query<DataType, ErrorType> useQueryJob<DataType, ErrorType, ArgsType>({
   required QueryJob<DataType, ErrorType, ArgsType> job,
+  required ArgsType args,
   ValueChanged<DataType>? onData,
   ValueChanged<ErrorType>? onError,
-  required ArgsType args,
 }) {
   return useQuery<DataType, ErrorType>(
     job.queryKey,

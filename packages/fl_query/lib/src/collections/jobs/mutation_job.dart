@@ -6,6 +6,13 @@ typedef MutationJobFn<DataType, VariablesType, ArgsType> = Future<DataType>
   ArgsType args,
 );
 
+typedef MutationJobVariableFn<DataType, VariablesType, ArgsType>
+    = Future<DataType> Function(
+  String variableKey,
+  VariablesType variables,
+  ArgsType args,
+);
+
 typedef MutationJobVariableKeyFn<DataType, ErrorType, VariablesType,
         RecoveryType, ArgsType>
     = MutationJob<DataType, ErrorType, VariablesType, RecoveryType, ArgsType>
@@ -33,14 +40,14 @@ class MutationJob<DataType, ErrorType, VariablesType, RecoveryType, ArgsType> {
       withVariableKey<DataType, ErrorType, VariablesType, RecoveryType,
           ArgsType>({
     required String baseMutationKey,
-    required MutationJobFn<DataType, VariablesType, ArgsType?> task,
+    required MutationJobVariableFn<DataType, VariablesType, ArgsType?> task,
     RetryConfig? retryConfig,
     List<String>? refreshQueries,
     List<String>? refreshInfiniteQueries,
   }) {
-    return (String variable) => MutationJob(
-          mutationKey: "$baseMutationKey$variable",
-          task: task,
+    return (String variableKey) => MutationJob(
+          mutationKey: "$baseMutationKey$variableKey",
+          task: (variables, args) => task(variableKey, variables, args),
           retryConfig: retryConfig,
           refreshQueries: refreshQueries,
           refreshInfiniteQueries: refreshInfiniteQueries,

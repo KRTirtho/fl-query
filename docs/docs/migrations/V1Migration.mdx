@@ -8,9 +8,6 @@ Fl-Query V1 comes with lot of breaking changes in the API. It is not possible to
 
 ## Removal of APIs/methods/properties
 
-- `QueryJob`, `MutationJob` and `InfiniteQueryJob` all were removed to bring the API closer to React Query. The `externalData` param was found to be vulnerable and was causing memory leaks. Also the query itself should not react to external data changes automatically which caused massive performance drawbacks and circular dependency related issues.
-
-  Now everything needs to be passed to `QueryBuilder`, `MutationBuilder` and `InfiniteQueryBuilder` or `useQuery`, `useMutation` and `useInfiniteQuery` hooks directly.
 - `keepPreviousData` has been removed from both `Query` and `InfiniteQuery`
 - `QueryClient`'s (formerly `QueryBowl`)
   - `prefetchQuery` method was removed
@@ -51,6 +48,7 @@ Fl-Query V1 comes with lot of breaking changes in the API. It is not possible to
 - `QueryBowlProvider` was renamed to `QueryClientProvider`
 - `Query.refetch` was renamed to `Query.refresh`
 - `InfiniteQuery.refetchPages` has been replaced with `InfiniteQuery.refresh` and `InfiniteQuery.refreshAll`
+- `externalData` was renamed to `args` for `QueryJob`, `InfiniteQueryJob` and `MutationJob`
 
   Now instead of passing callback, `Future.wait` is used with `refresh` to refetch a segment of pages.
   `refreshAll` is a shorthand to refetch all pages at once.
@@ -62,6 +60,8 @@ Fl-Query V1 comes with lot of breaking changes in the API. It is not possible to
 
 All the retry & cache invalidation related properties were moved to their own classes.
 
+- `QueryBuilder`, `InfiniteQueryBuilder` and `MutationBuilder` doesn't accept jobs by default. To use the old Jobs API, `.withJob` constructor must be used.
+- Similarly, `useQuery`, `useInfiniteQuery`, `useMutation` doesn't accept jobs now. Use `useQueryJob`, `useInfiniteQueryJob` and `useMutationJob` instead.
 - Retry related properties were moved to `RetryConfig` class
   - `retries` was renamed to `maxRetries`
 - Cache invalidation related properties were moved to `RefreshConfig` class
