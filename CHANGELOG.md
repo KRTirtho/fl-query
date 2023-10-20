@@ -3,6 +3,40 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2023-10-20
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - [`fl_query` - `v1.0.0`](#fl_query---v100)
+ - [`fl_query_hooks` - `v1.0.0`](#fl_query_hooks---v100)
+
+Packages with other changes:
+
+ - [`fl_query_connectivity_plus_adapter` - `v0.1.0`](#fl_query_connectivity_plus_adapter---v010)
+ - [`fl_query_devtools` - `v0.1.0`](#fl_query_devtools---v010)
+
+Packages graduated to a stable release (see pre-releases prior to the stable version for changelog entries):
+
+ - `fl_query` - `v1.0.0`
+ - `fl_query_connectivity_plus_adapter` - `v0.1.0`
+ - `fl_query_devtools` - `v0.1.0`
+ - `fl_query_hooks` - `v1.0.0`
+
+---
+
+#### `fl_query` - `v1.0.0`
+
+#### `fl_query_hooks` - `v1.0.0`
+
+#### `fl_query_connectivity_plus_adapter` - `v0.1.0`
+
+#### `fl_query_devtools` - `v0.1.0`
+
+
 ## 2023-10-18
 
 ### Changes

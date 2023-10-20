@@ -1,3 +1,7 @@
+## 1.0.0
+
+ - Graduate package to a stable release. See pre-releases prior to this version for changelog entries.
+
 ## 1.0.0-alpha.6
 
  - **FIX**(fl_query): use sync connection checker instead of async in every operation.
