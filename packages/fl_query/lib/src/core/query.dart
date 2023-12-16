@@ -31,17 +31,19 @@ class QueryState<DataType, ErrorType> with Invalidation {
     bool loading = false,
   }) : _loading = loading;
 
+  // Use functions to allow setting nulls
+  // https://stackoverflow.com/a/71591609
   QueryState<DataType, ErrorType> copyWith({
-    DataType? data,
-    ErrorType? error,
+    DataType? Function()? data,
+    ErrorType? Function()? error,
     DateTime? updatedAt,
     bool? loading,
   }) {
     return QueryState<DataType, ErrorType>(
       updatedAt: updatedAt ?? this.updatedAt,
       staleDuration: staleDuration,
-      data: data ?? this.data,
-      error: error ?? this.error,
+      data: data != null ? data() : this.data,
+      error: error != null ? error() : this.error,
       loading: loading ?? this._loading,
     );
   }
@@ -82,7 +84,7 @@ class Query<DataType, ErrorType>
           _initial = jsonConfig!.fromJson(
             Map.castFrom<dynamic, dynamic, String, dynamic>(json),
           );
-          state = state.copyWith(data: _initial, updatedAt: DateTime.now());
+          state = state.copyWith(data: () => _initial, updatedAt: DateTime.now());
         }
       }).then((_) {
         if (hasListeners) {
@@ -158,8 +160,8 @@ class Query<DataType, ErrorType>
         config: retryConfig,
         onSuccessful: (DataType? data) {
           state = state.copyWith(
-            data: data,
-            error: null,
+            data: () => data,
+            error: () => null,
             updatedAt: DateTime.now(),
             loading: false,
           );
@@ -175,7 +177,7 @@ class Query<DataType, ErrorType>
         },
         onFailed: (ErrorType? error) {
           state = state.copyWith(
-            error: error,
+            error: () => error,
             updatedAt: DateTime.now(),
             loading: false,
           );
@@ -206,7 +208,7 @@ class Query<DataType, ErrorType>
 
   void setData(DataType data) {
     state = state.copyWith(
-      data: data,
+      data: () => data,
       updatedAt: DateTime.now(),
       loading: false,
     );
@@ -215,7 +217,7 @@ class Query<DataType, ErrorType>
   Future<void> reset() async {
     await _operation?.cancel();
     state = state.copyWith(
-      data: _initial,
+      data: () => _initial,
       updatedAt: DateTime.now(),
       loading: false,
     );
