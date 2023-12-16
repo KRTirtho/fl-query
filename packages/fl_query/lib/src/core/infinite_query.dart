@@ -41,7 +41,6 @@ class InfiniteQueryPage<DataType, ErrorType, PageType> with Invalidation {
     bool loading = false,
   }) : _loading = loading;
 
-  // TODO
   InfiniteQueryPage<DataType, ErrorType, PageType> copyWith({
     DataType? Function()? data,
     ErrorType? Function()? error,
