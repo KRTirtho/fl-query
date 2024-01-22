@@ -42,16 +42,16 @@ class InfiniteQueryPage<DataType, ErrorType, PageType> with Invalidation {
   }) : _loading = loading;
 
   InfiniteQueryPage<DataType, ErrorType, PageType> copyWith({
-    DataType? data,
-    ErrorType? error,
+    DataType? Function()? data,
+    ErrorType? Function()? error,
     bool? loading,
   }) {
     return InfiniteQueryPage<DataType, ErrorType, PageType>(
       page: page,
       updatedAt: DateTime.now(),
       staleDuration: staleDuration,
-      data: data ?? this.data,
-      error: error ?? this.error,
+      data: data != null ? data() : this.data,
+      error: error != null ? error() : this.error,
       loading: loading ?? _loading,
     );
   }
@@ -303,7 +303,7 @@ class InfiniteQuery<DataType, ErrorType, PageType>
         config: retryConfig,
         onSuccessful: (data) async {
           final dataPage =
-              storedPage.copyWith(data: data, error: null, loading: false);
+              storedPage.copyWith(data: () => data, error: null, loading: false);
           state = state.copyWith(
             pages: {...state.pages..remove(dataPage), dataPage},
           );
@@ -325,7 +325,7 @@ class InfiniteQuery<DataType, ErrorType, PageType>
           }
         },
         onFailed: (error) {
-          final errorPage = storedPage.copyWith(error: error, loading: false);
+          final errorPage = storedPage.copyWith(error: () => error, loading: false);
           state = state.copyWith(
             pages: {
               ...state.pages..remove(errorPage),
@@ -426,7 +426,7 @@ class InfiniteQuery<DataType, ErrorType, PageType>
             staleDuration: refreshConfig.staleDuration,
           ),
         )
-        .copyWith(data: data, loading: false);
+        .copyWith(data: () => data, loading: false);
 
     state = state.copyWith(
       pages: {

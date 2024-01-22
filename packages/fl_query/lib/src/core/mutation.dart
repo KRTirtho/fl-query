@@ -27,15 +27,17 @@ class MutationState<DataType, ErrorType, VariablesType> {
   })  : _loading = loading,
         updatedAt = updatedAt ?? DateTime.now();
 
+  // Use functions to allow setting nulls
+  // https://stackoverflow.com/a/71591609
   MutationState<DataType, ErrorType, VariablesType> copyWith({
-    DataType? data,
-    ErrorType? error,
+    DataType? Function()? data,
+    ErrorType? Function()? error,
     DateTime? updatedAt,
     bool? loading,
   }) {
     return MutationState<DataType, ErrorType, VariablesType>(
-      data: data ?? this.data,
-      error: error ?? this.error,
+      data: data != null ? data() : this.data,
+      error: error != null ? error() : this.error,
       loading: loading ?? this._loading,
       updatedAt: updatedAt ?? DateTime.now(),
     );
@@ -109,13 +111,13 @@ class Mutation<DataType, ErrorType, VariablesType>
         },
         config: retryConfig,
         onSuccessful: (data) {
-          state = state.copyWith(data: data, loading: false);
+          state = state.copyWith(data: () => data, loading: false, error: () => null);
           if (data is DataType) {
             _dataController.add(data);
           }
         },
         onFailed: (error) {
-          state = state.copyWith(error: error, loading: false);
+          state = state.copyWith(error: () => error, loading: false);
           if (error is ErrorType) {
             _errorController.add(error);
           }
