@@ -1,6 +1,6 @@
 # This is a generated file; do not edit or check into version control.
-path_provider=/home/krtirtho/.pub-cache/hosted/pub.dev/path_provider-2.0.15/
-path_provider_android=/home/krtirtho/.pub-cache/hosted/pub.dev/path_provider_android-2.0.27/
-path_provider_foundation=/home/krtirtho/.pub-cache/hosted/pub.dev/path_provider_foundation-2.2.3/
-path_provider_linux=/home/krtirtho/.pub-cache/hosted/pub.dev/path_provider_linux-2.1.11/
-path_provider_windows=/home/krtirtho/.pub-cache/hosted/pub.dev/path_provider_windows-2.1.6/
+path_provider=/Users/petrkubes/.pub-cache/hosted/pub.dev/path_provider-2.1.2/
+path_provider_android=/Users/petrkubes/.pub-cache/hosted/pub.dev/path_provider_android-2.2.2/
+path_provider_foundation=/Users/petrkubes/.pub-cache/hosted/pub.dev/path_provider_foundation-2.3.2/
+path_provider_linux=/Users/petrkubes/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1/
+path_provider_windows=/Users/petrkubes/.pub-cache/hosted/pub.dev/path_provider_windows-2.2.1/
