@@ -1,4 +1,4 @@
 .vscode/dryrun.log
 .vscode/configurationCache.log
 .idea
-.dart_tool
+.dart_tool/
