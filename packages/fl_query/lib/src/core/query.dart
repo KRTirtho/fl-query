@@ -184,6 +184,8 @@ class Query<DataType, ErrorType>
           if (error is ErrorType) _errorController.add(error);
         },
       );
+
+      return await _operation?.valueOrCancellation(null);
     });
   }
 
