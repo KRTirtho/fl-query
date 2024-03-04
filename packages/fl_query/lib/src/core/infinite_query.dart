@@ -336,6 +336,8 @@ class InfiniteQuery<DataType, ErrorType, PageType>
             _errorController.add(PageEvent.fromPage(errorPage));
         },
       );
+
+      await _operation?.valueOrCancellation(null);
     });
   }
 

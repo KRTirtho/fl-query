@@ -24,6 +24,14 @@ class HomePage extends StatelessWidget {
             title: const Text('Mutation'),
             onTap: () => GoRouter.of(context).push('/mutation'),
           ),
+          ListTile(
+            title: const Text('Mutation awaits result'),
+            onTap: () => GoRouter.of(context).push('/mutation-awaits-result'),
+          ),
+          ListTile(
+            title: const Text('Multiple Queries'),
+            onTap: () => GoRouter.of(context).push('/multiple-queries'),
+          ),
         ],
       ),
     );
