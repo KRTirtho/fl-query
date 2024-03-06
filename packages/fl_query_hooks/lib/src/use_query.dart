@@ -27,7 +27,16 @@ Query<DataType, ErrorType> useQuery<DataType, ErrorType>(
       queryFn,
       initial: initial,
       jsonConfig: jsonConfig,
-      refreshConfig: refreshConfig,
+      refreshConfig: refreshConfig != null
+          ? RefreshConfig(
+              staleDuration: refreshConfig.staleDuration,
+              refreshInterval: refreshConfig.refreshInterval,
+              refreshOnMount: enabled ? refreshConfig.refreshOnMount : false,
+              refreshOnNetworkStateChange:
+                  enabled ? refreshConfig.refreshOnNetworkStateChange : false,
+              refreshOnQueryFnChange:
+                  enabled ? refreshConfig.refreshOnQueryFnChange : false)
+          : null,
       retryConfig: retryConfig,
     );
     return query;
