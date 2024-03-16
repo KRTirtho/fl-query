@@ -99,6 +99,7 @@ class InfiniteQueryState<DataType, ErrorType, PageType> {
 class PageEvent<T, P> {
   final P page;
   final T data;
+
   const PageEvent(this.page, this.data);
 
   factory PageEvent.fromPage(
@@ -227,8 +228,11 @@ class InfiniteQuery<DataType, ErrorType, PageType>
       state.pages.map((e) => e.data).whereType<DataType>().toList();
 
   /// All the errors of pages that has failed to fetch
-  List<ErrorType> get errors =>
-      state.pages.map((e) => e.error).whereType<ErrorType>().toList();
+  List<ErrorType> get errors => state.pages
+      .map((e) => e.error)
+      .where((e) => e != null) // When the error type is dynamic, null would not be filtered out by whereType
+      .whereType<ErrorType>()
+      .toList();
 
   /// The last page that has been fetched
   PageType get lastPage => state.lastPage;
@@ -270,9 +274,11 @@ class InfiniteQuery<DataType, ErrorType, PageType>
   bool get isInactive => !hasListeners;
 
   bool get hasPages => pages.isNotEmpty;
+
   bool get hasErrors => errors.isNotEmpty;
 
   bool get hasPageData => !hasPages ? false : state.pages.last.data != null;
+
   bool get hasPageError => !hasPages ? false : state.pages.last.error != null;
 
   bool get hasNextPage => getNextPage != null;
@@ -302,8 +308,8 @@ class InfiniteQuery<DataType, ErrorType, PageType>
         () => _queryFn(page),
         config: retryConfig,
         onSuccessful: (data) async {
-          final dataPage =
-              storedPage.copyWith(data: () => data, error: null, loading: false);
+          final dataPage = storedPage.copyWith(
+              data: () => data, error: null, loading: false);
           state = state.copyWith(
             pages: {...state.pages..remove(dataPage), dataPage},
           );
@@ -325,7 +331,8 @@ class InfiniteQuery<DataType, ErrorType, PageType>
           }
         },
         onFailed: (error) {
-          final errorPage = storedPage.copyWith(error: () => error, loading: false);
+          final errorPage =
+              storedPage.copyWith(error: () => error, loading: false);
           state = state.copyWith(
             pages: {
               ...state.pages..remove(errorPage),
