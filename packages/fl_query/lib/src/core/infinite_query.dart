@@ -69,7 +69,7 @@ class InfiniteQueryPage<DataType, ErrorType, PageType> with Invalidation {
 }
 
 class InfiniteQueryState<DataType, ErrorType, PageType> {
-  final Set<InfiniteQueryPage<DataType, ErrorType, PageType>> pages;
+  final List<InfiniteQueryPage<DataType, ErrorType, PageType>> pages;
 
   InfiniteQueryState({
     required this.pages,
@@ -87,7 +87,7 @@ class InfiniteQueryState<DataType, ErrorType, PageType> {
   }
 
   InfiniteQueryState<DataType, ErrorType, PageType> copyWith(
-      {Set<InfiniteQueryPage<DataType, ErrorType, PageType>>? pages}) {
+      {List<InfiniteQueryPage<DataType, ErrorType, PageType>>? pages}) {
     return InfiniteQueryState<DataType, ErrorType, PageType>(
       pages: pages ?? this.pages,
     );
@@ -143,13 +143,13 @@ class InfiniteQuery<DataType, ErrorType, PageType>
         _queryFn = queryFn,
         _nextPage = nextPage,
         super(InfiniteQueryState<DataType, ErrorType, PageType>(
-          pages: {
+          pages: [
             InfiniteQueryPage<DataType, ErrorType, PageType>(
               page: initialPage,
               updatedAt: DateTime.now(),
               staleDuration: refreshConfig.staleDuration,
             ),
-          },
+          ],
         )) {
     if (jsonConfig != null) {
       _mutex.protect(() async {
@@ -170,7 +170,7 @@ class InfiniteQuery<DataType, ErrorType, PageType>
                     staleDuration: refreshConfig.staleDuration,
                   ),
                 )
-                .toSet(),
+                .toList(),
           );
         }
       }).then((_) {
@@ -230,7 +230,8 @@ class InfiniteQuery<DataType, ErrorType, PageType>
   /// All the errors of pages that has failed to fetch
   List<ErrorType> get errors => state.pages
       .map((e) => e.error)
-      .where((e) => e != null) // When the error type is dynamic, null would not be filtered out by whereType
+      // When the error type is dynamic, null would not be filtered out by whereType
+      .where((e) => e != null)
       .whereType<ErrorType>()
       .toList();
 
@@ -283,6 +284,16 @@ class InfiniteQuery<DataType, ErrorType, PageType>
 
   bool get hasNextPage => getNextPage != null;
 
+  _replaceOrAddPage(InfiniteQueryPage<DataType, ErrorType, PageType> newPage) {
+    final pageIdx = state.pages.indexWhere((e) => e.page == newPage.page);
+
+    final newPages = (pageIdx == -1)
+        ? [...state.pages, newPage]
+        : ([...state.pages]..[pageIdx] = newPage);
+
+    state = state.copyWith(pages: newPages);
+  }
+
   Future<void> _operate(PageType page) async {
     if (!QueryClient.connectivity.isConnectedSync &&
         retryConfig.cancelWhenOffline) {
@@ -298,21 +309,15 @@ class InfiniteQuery<DataType, ErrorType, PageType>
           loading: true,
         ),
       );
-      state = state.copyWith(
-        pages: {
-          ...state.pages..remove(storedPage),
-          storedPage,
-        },
-      );
+      _replaceOrAddPage(storedPage);
       _operation = cancellableRetryOperation(
         () => _queryFn(page),
         config: retryConfig,
         onSuccessful: (data) async {
           final dataPage = storedPage.copyWith(
               data: () => data, error: null, loading: false);
-          state = state.copyWith(
-            pages: {...state.pages..remove(dataPage), dataPage},
-          );
+          _replaceOrAddPage(dataPage);
+
           if (dataPage.data is DataType) {
             _dataController.add(PageEvent.fromPage(dataPage));
             if (jsonConfig != null) {
@@ -333,12 +338,8 @@ class InfiniteQuery<DataType, ErrorType, PageType>
         onFailed: (error) {
           final errorPage =
               storedPage.copyWith(error: () => error, loading: false);
-          state = state.copyWith(
-            pages: {
-              ...state.pages..remove(errorPage),
-              errorPage,
-            },
-          );
+          _replaceOrAddPage(errorPage);
+
           if (errorPage.error is ErrorType)
             _errorController.add(PageEvent.fromPage(errorPage));
         },
@@ -437,12 +438,7 @@ class InfiniteQuery<DataType, ErrorType, PageType>
         )
         .copyWith(data: () => data, loading: false);
 
-    state = state.copyWith(
-      pages: {
-        ...state.pages..remove(newPage),
-        newPage,
-      },
-    );
+    _replaceOrAddPage(newPage);
   }
 
   Widget resolve(
@@ -497,13 +493,14 @@ class InfiniteQuery<DataType, ErrorType, PageType>
   /// persistent cache
   Future<void> reset() async {
     await _operation?.cancel();
-    state = state.copyWith(pages: {
+    state = state.copyWith(pages: [
       InfiniteQueryPage<DataType, ErrorType, PageType>(
         page: _initialPage,
         updatedAt: DateTime.now(),
         staleDuration: refreshConfig.staleDuration,
       )
-    });
+    ]);
+
     _box.delete(key);
   }
 
