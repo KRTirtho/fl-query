@@ -1,6 +1,6 @@
 name: fl_query_connectivity_plus_adapter
 description: Connectivity Plus adapter for FlQuery Connectivity
-version: 0.1.0
+version: 0.1.0+1
 
 homepage: https://fl-query.krtirtho.dev
 repository: https://github.com/KRTirtho/tree/main/packages/fl_query_connectivity_plus_adapter
@@ -13,7 +13,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  fl_query: ^1.0.0
+  fl_query: ^1.1.0
   connectivity_plus: ^4.0.1
 
 dev_dependencies:

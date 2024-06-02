@@ -3,6 +3,47 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2024-06-02
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`fl_query` - `v1.1.0`](#fl_query---v110)
+ - [`fl_query_connectivity_plus_adapter` - `v0.1.0+1`](#fl_query_connectivity_plus_adapter---v0101)
+ - [`fl_query_devtools` - `v0.1.0+1`](#fl_query_devtools---v0101)
+ - [`fl_query_hooks` - `v1.1.0`](#fl_query_hooks---v110)
+
+---
+
+#### `fl_query` - `v1.1.0`
+
+ - **FIX**: infinite query did not load pages in the correct order (#64).
+ - **FIX**: infinite query hasErrors always true for dynamic error types.
+ - **FIX**: schedule to queue doesn't work and stale queries cause infinite loop.
+ - **FIX**: error not resetting after successful query/mutation (#43).
+ - **FEAT**: add is fetching getter (#65).
+
+#### `fl_query_connectivity_plus_adapter` - `v0.1.0+1`
+
+ - **FIX**: schedule to queue doesn't work and stale queries cause infinite loop.
+
+#### `fl_query_devtools` - `v0.1.0+1`
+
+ - **FIX**: schedule to queue doesn't work and stale queries cause infinite loop.
+
+#### `fl_query_hooks` - `v1.1.0`
+
+ - **FIX**: schedule to queue doesn't work and stale queries cause infinite loop.
+ - **FEAT**: add is fetching getter (#65).
+
+
 ## 2023-10-20
 
 ### Changes

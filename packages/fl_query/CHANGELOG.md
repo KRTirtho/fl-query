@@ -1,3 +1,11 @@
+## 1.1.0
+
+ - **FIX**: infinite query did not load pages in the correct order (#64).
+ - **FIX**: infinite query hasErrors always true for dynamic error types.
+ - **FIX**: schedule to queue doesn't work and stale queries cause infinite loop.
+ - **FIX**: error not resetting after successful query/mutation (#43).
+ - **FEAT**: add is fetching getter (#65).
+
 ## 1.0.0
 
  - Graduate package to a stable release. See pre-releases prior to this version for changelog entries.
