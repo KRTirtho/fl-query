@@ -137,6 +137,7 @@ class Query<DataType, ErrorType>
       (!hasData && !hasError && state._loading);
   bool get isRefreshing =>
       ((!isInitial && hasData) || hasError) && state._loading;
+  bool get isFetching => isLoading || isRefreshing;
   bool get isInactive => !hasListeners;
   bool get hasData => state.data != null;
   bool get hasError => state.error != null;

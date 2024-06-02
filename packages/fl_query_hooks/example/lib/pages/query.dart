@@ -46,7 +46,7 @@ class QueryPage extends HookWidget {
           child: Text(query.data ?? 'No Data'),
         );
       }),
-      body: query.isLoading
+      body: query.isFetching
           ? const Center(
               child: CircularProgressIndicator(),
             )
