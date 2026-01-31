@@ -15,7 +15,6 @@ class MutationPage extends HookWidget {
         Map<String, dynamic>, dynamic>(
       'sign-up',
       (variables) {
-        print('asdf');
         return Future.delayed(
           const Duration(seconds: 1),
           () => {
