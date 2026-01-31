@@ -50,11 +50,7 @@ class InternetConnectivityChecker
 
   Future<bool> hasConnection() async {
     final connectivityResult = await (Connectivity().checkConnectivity());
-    final hasNetwork = [
-      ConnectivityResult.mobile,
-      ConnectivityResult.wifi,
-      ConnectivityResult.ethernet,
-    ].contains(connectivityResult);
+    final hasNetwork = !connectivityResult.contains(ConnectivityResult.none);
 
     final isVpn =
         connectivityResult == ConnectivityResult.vpn || await isVpnActive();

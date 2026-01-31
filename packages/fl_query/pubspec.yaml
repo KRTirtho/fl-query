@@ -13,10 +13,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  async: ^2.10.0
+  async: ^2.13.0
   collection: ^1.16.0
   mutex: ^3.0.1
-  state_notifier: ^0.7.2+1
+  state_notifier: ^1.0.0
   hive_ce: ^2.19.1
   hive_ce_flutter: ^2.3.4
 
