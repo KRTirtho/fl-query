@@ -100,6 +100,7 @@ class Mutation<DataType, ErrorType, VariablesType>
   Future<void> _operate(VariablesType variables) async {
     if (!QueryClient.connectivity.isConnectedSync &&
         retryConfig.cancelWhenOffline) {
+      print('offline: ${QueryClient.connectivity.isConnectedSync}');
       return;
     }
     return _mutex.protect(() async {

@@ -14,7 +14,7 @@ dependencies:
   flutter:
     sdk: flutter
   fl_query: ^1.1.0
-  connectivity_plus: ^4.0.1
+  connectivity_plus: ^7.0.0
 
 dev_dependencies:
   flutter_test:

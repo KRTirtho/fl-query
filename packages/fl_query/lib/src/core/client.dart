@@ -14,7 +14,8 @@ import 'package:fl_query/src/core/mutation.dart';
 import 'package:fl_query/src/core/provider.dart';
 import 'package:fl_query/src/core/query.dart';
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/adapters.dart';
+import 'package:hive_ce/hive.dart';
+import 'package:hive_ce_flutter/adapters.dart';
 
 /// Base Client for managing [Query], [InfiniteQuery] and [Mutation] objects
 /// and all related configuration

@@ -10,7 +10,7 @@ import 'package:fl_query/src/core/mixins/retryer.dart';
 import 'package:fl_query/src/core/mixins/validation.dart';
 import 'package:fl_query/src/widgets/state_resolvers/infinite_query_state.dart';
 import 'package:flutter/widgets.dart' hide Listener;
-import 'package:hive_flutter/adapters.dart';
+import 'package:hive_ce/hive.dart';
 import 'package:mutex/mutex.dart';
 import 'package:state_notifier/state_notifier.dart';
 

@@ -16,9 +16,10 @@ dependencies:
   flutter:
     sdk: flutter
   fl_query: ^1.1.0
-  flutter_hooks: ^0.20.0
+  flutter_hooks: ^0.21.3
+#  flutter_hooks: ^0.20.0
 
 dev_dependencies:
-  flutter_lints: ^2.0.0
+  flutter_lints: ^5.0.0
   flutter_test:
     sdk: flutter

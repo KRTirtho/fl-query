@@ -6,7 +6,7 @@ import 'package:fl_query/src/core/infinite_query.dart';
 import 'package:fl_query/src/core/mutation.dart';
 import 'package:fl_query/src/core/query.dart';
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hive_ce/hive.dart';
 
 enum QueryCacheEventType {
   addQuery,
